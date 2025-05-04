@@ -75,10 +75,10 @@
 
 3. **Calendar Components**
 
-   - [ ] Create monthly calendar view component
-   - [ ] Implement day cell component with status indicators
-   - [ ] Add color-coding for holidays (orange) and suggested leave (green)
-   - [ ] Build calendar navigation between months
+   - [x] Create monthly calendar view component
+   - [x] Implement day cell component with status indicators
+   - [x] Add color-coding for holidays (orange) and suggested leave (green)
+   - [x] Build calendar navigation between months
 
 4. **Results Display**
    - [x] Create results summary component

@@ -218,52 +218,100 @@ function findOptimalByGreedy(
   workdays: Date[],
   maxLeaveDays: number
 ): AlgorithmResult {
-  // Score each potential leave day based on adjacent free days
-  const scoredDays = workdays.map((date) => {
-    // Check days before and after
-    const dayBefore = new Date(date);
-    dayBefore.setDate(date.getDate() - 1);
+  // Create a map of all dates for fast checking of free days
+  const allDates = getDatesInYear(year);
+  const freeDaysMap: Record<string, boolean> = {};
 
-    const dayAfter = new Date(date);
-    dayAfter.setDate(date.getDate() + 1);
-
-    let score = 0;
-
-    // Higher score if adjacent to weekends or holidays
-    if (isFreeDay(dayBefore, holidays)) {
-      score += 10;
-    }
-
-    if (isFreeDay(dayAfter, holidays)) {
-      score += 10;
-    }
-
-    // Check two days before/after for longer breaks
-    const twoDaysBefore = new Date(date);
-    twoDaysBefore.setDate(date.getDate() - 2);
-
-    const twoDaysAfter = new Date(date);
-    twoDaysAfter.setDate(date.getDate() + 2);
-
-    if (isFreeDay(dayBefore, holidays) && isFreeDay(twoDaysBefore, holidays)) {
-      score += 5;
-    }
-
-    if (isFreeDay(dayAfter, holidays) && isFreeDay(twoDaysAfter, holidays)) {
-      score += 5;
-    }
-
-    return { date, score };
+  allDates.forEach((date) => {
+    const dateKey = date.toISOString().split('T')[0];
+    freeDaysMap[dateKey] = isWeekendDay(date) || isHoliday(date, holidays);
   });
 
-  // Sort by score (highest first)
-  scoredDays.sort((a, b) => b.score - a.score);
+  // We'll iteratively add leave days to maximize consecutive breaks
+  let selectedDays: Date[] = [];
+  let remainingDays = maxLeaveDays;
 
-  // Take the top N days
-  const selectedDays = scoredDays
-    .slice(0, maxLeaveDays)
-    .map((d) => d.date)
-    .sort((a, b) => a.getTime() - b.getTime());
+  while (remainingDays > 0 && workdays.length > 0) {
+    // Update our free days map with currently selected leave days
+    selectedDays.forEach((date) => {
+      const dateKey = date.toISOString().split('T')[0];
+      freeDaysMap[dateKey] = true;
+    });
+
+    // Score each potential leave day based on adjacent free days
+    const scoredDays = workdays
+      .filter((date) => {
+        // Skip dates already selected
+        const dateKey = date.toISOString().split('T')[0];
+        return !freeDaysMap[dateKey];
+      })
+      .map((date) => {
+        // Check days before and after
+        const dayBefore = new Date(date);
+        dayBefore.setDate(date.getDate() - 1);
+
+        const dayAfter = new Date(date);
+        dayAfter.setDate(date.getDate() + 1);
+
+        const twoDaysBefore = new Date(date);
+        twoDaysBefore.setDate(date.getDate() - 2);
+
+        const twoDaysAfter = new Date(date);
+        twoDaysAfter.setDate(date.getDate() + 2);
+
+        let score = 0;
+
+        // Get date keys for checking
+        const dayBeforeKey = dayBefore.toISOString().split('T')[0];
+        const dayAfterKey = dayAfter.toISOString().split('T')[0];
+        const twoDaysBeforeKey = twoDaysBefore.toISOString().split('T')[0];
+        const twoDaysAfterKey = twoDaysAfter.toISOString().split('T')[0];
+
+        // Check connectivity - prioritize days that connect existing free days
+        if (freeDaysMap[dayBeforeKey] && freeDaysMap[dayAfterKey]) {
+          // This leave day would connect two existing free periods - highest priority
+          score += 30;
+        } else {
+          // Higher score if adjacent to existing free days
+          if (freeDaysMap[dayBeforeKey]) {
+            score += 10;
+
+            // Check if taking this day extends an existing chain
+            if (freeDaysMap[twoDaysBeforeKey]) {
+              score += 5;
+            }
+          }
+
+          if (freeDaysMap[dayAfterKey]) {
+            score += 10;
+
+            // Check if taking this day extends an existing chain
+            if (freeDaysMap[twoDaysAfterKey]) {
+              score += 5;
+            }
+          }
+        }
+
+        return { date, score };
+      });
+
+    // If no valid days are left, break
+    if (scoredDays.length === 0) break;
+
+    // Sort by score (highest first)
+    scoredDays.sort((a, b) => b.score - a.score);
+
+    // Take the highest scoring day
+    selectedDays.push(scoredDays[0].date);
+    remainingDays--;
+
+    // Optionally, remove selected day from workdays to prevent reselection
+    const selectedDateStr = scoredDays[0].date.toISOString();
+    workdays = workdays.filter((d) => d.toISOString() !== selectedDateStr);
+  }
+
+  // Sort the selected days chronologically
+  selectedDays.sort((a, b) => a.getTime() - b.getTime());
 
   const breaks = calculateConsecutiveBreaks(year, holidays, selectedDays);
   const totalTimeOff = breaks.reduce((sum, b) => sum + b.duration, 0);
