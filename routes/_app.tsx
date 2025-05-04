@@ -1,15 +1,12 @@
 import { type PageProps } from "$fresh/server.ts";
 import FooterIsland from "../islands/Footer.tsx";
 import HeaderIsland from "../islands/Header.tsx";
-// NOTE: Assuming Footer component from components/Footer.tsx is NOT needed here
-// as dark mode toggle seems to be elsewhere (e.g., LeaveCalculator island)
-// and About/Privacy links are added manually below.
 
 export default function App({ Component }: PageProps) {
   return (
-    <html>
+    <html lang="en">
       <head>
-        <meta charset="utf-8" />
+        <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta
           name="description"
@@ -42,11 +39,10 @@ export default function App({ Component }: PageProps) {
         >
         </script>
       </head>
-      {/* Removed bg/text classes from body, handled by html.dark */}
       <body>
         <div class="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
           <HeaderIsland />
-          <main class="flex-grow">
+          <main className="flex-grow">
             <Component /> {/* Page content goes here */}
           </main>
           <FooterIsland />

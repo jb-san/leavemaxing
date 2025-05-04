@@ -26,7 +26,7 @@ const CalendarMonth: FunctionalComponent<CalendarMonthProps> = (
   // --- Determine if month is in the past ---
   let isPastMonth = false;
   if (currentDateString) {
-    const currentMonthNum = parseInt(currentDateString.split("-")[1], 10) - 1; // 0-indexed
+    const currentMonthNum = parseInt(currentDateString.split("-")[1], 10) - 1;
     const currentYearNum = parseInt(currentDateString.split("-")[0], 10);
     if (
       year < currentYearNum ||
@@ -42,11 +42,9 @@ const CalendarMonth: FunctionalComponent<CalendarMonthProps> = (
 
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-  // Apply opacity to the entire month container if it's in the past
+  // REMOVE opacity from the month container
   const monthContainerClasses =
-    `p-3 border dark:border-gray-700 rounded shadow-sm bg-white dark:bg-gray-800 min-h-[250px] ${
-      isPastMonth ? "opacity-50" : ""
-    }`;
+    `p-3 border dark:border-gray-700 rounded shadow-sm bg-white dark:bg-gray-800 min-h-[250px]`;
 
   return (
     <div class={monthContainerClasses}>
@@ -80,26 +78,34 @@ const CalendarMonth: FunctionalComponent<CalendarMonthProps> = (
           }
           // --- End Check ---
 
+          // Base classes
           let dayClasses =
-            "border dark:border-gray-600 p-1 rounded aspect-square flex items-center justify-center text-gray-700 dark:text-gray-300";
-          // Add opacity class if month or day is in the past
+            "border dark:border-gray-600 p-1 rounded aspect-square flex items-center justify-center";
+
+          // Determine text and background based on state
           if (isPastMonth || isPastDay) {
-            dayClasses += " opacity-50";
-          }
-
-          // Apply other styling classes
-          if (weekend) {
+            // Past Day: Use slightly more contrasty muted text
+            dayClasses += weekend
+              ? " text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50"
+              : " text-gray-500 dark:text-gray-400";
+          } else if (suggestedDates.has(dateString)) {
+            // Suggested Day
             dayClasses +=
-              " bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400";
-          } else if (suggestedDates.has(dateString)) { // Prioritize suggested leave styling over holiday
-            dayClasses +=
-              " bg-green-300 dark:bg-green-600 font-bold text-green-900 dark:text-green-100 ring-2 ring-green-500 dark:ring-green-400";
+              " bg-green-300 dark:bg-green-200 text-green-800 dark:text-green-800 font-bold ring-1 ring-green-500 dark:ring-green-600"; // Lighter dark bg, darker dark text, adjusted ring
           } else if (holidayDates.has(dateString)) {
+            // Holiday Day
             dayClasses +=
-              " bg-orange-300 dark:bg-orange-600 font-bold text-orange-900 dark:text-orange-100";
+              " bg-orange-300 dark:bg-orange-200 text-orange-800 dark:text-orange-800 font-bold"; // Lighter dark bg, darker dark text
+          } else if (weekend) {
+            // Weekend Day
+            dayClasses +=
+              " font-medium bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-200"; // Bolder, lighter dark text
+          } else {
+            // Default Day
+            dayClasses += " font-medium text-gray-700 dark:text-gray-200"; // Bolder, lighter dark text
           }
 
-          // Add hover effect only if not a past day/month
+          // Add hover effect only if NOT past
           if (!isPastMonth && !isPastDay) {
             dayClasses +=
               " hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-150";
