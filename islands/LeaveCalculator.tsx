@@ -122,10 +122,12 @@ export default function LeaveCalculator() {
   };
 
   return (
-    <div class="p-4 mx-auto max-w-4xl">
-      <h1 class="text-2xl font-bold mb-4">LeaveMaxing</h1>
+    <div class="p-4 mx-auto max-w-7xl">
+      <h1 class="text-3xl font-bold mb-6 text-center md:text-left">
+        LeaveMaxing
+      </h1>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 p-4 border rounded bg-white shadow">
         <YearSelector
           selectedYear={selectedYear.value}
           onChange={handleYearChange}
@@ -144,25 +146,28 @@ export default function LeaveCalculator() {
         />
       </div>
 
-      {/* Button and Status Section */}
-      <div class="mb-6 flex items-center gap-4">
+      <div class="mb-6 flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-4">
         <button
           onClick={handleCalculateClick}
           disabled={isLoadingHolidays.value || isCalculating.value ||
             !holidays.value}
-          class="px-6 py-2 bg-blue-600 text-white rounded font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white rounded font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {isCalculating.value ? "Calculating..." : "Calculate Optimal Leave"}
         </button>
-        {isLoadingHolidays.value && (
-          <p class="text-gray-600">Loading holidays...</p>
-        )}
-        {error.value && <p class="text-red-500">Error: {error.value}</p>}
+        <div class="flex items-center gap-2 text-sm">
+          {isLoadingHolidays.value && (
+            <p class="text-gray-600">Loading holidays...</p>
+          )}
+          {isCalculating.value && !isLoadingHolidays.value && (
+            <p class="text-gray-600">Calculating...</p>
+          )}
+          {error.value && <p class="text-red-500">Error: {error.value}</p>}
+        </div>
       </div>
 
-      {/* Calendar Display Area */}
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {holidays.value && !isLoadingHolidays.value && (
+        {!isLoadingHolidays.value && holidays.value && (
           Array.from({ length: 12 }).map((_, i) => (
             <CalendarMonth
               key={`${selectedYear.value}-${i}`}
@@ -172,6 +177,18 @@ export default function LeaveCalculator() {
               suggestedLeaveDays={suggestedLeave.value}
             />
           ))
+        )}
+        {(isLoadingHolidays.value || !holidays.value && !error.value) && (
+          <p class="sm:col-span-2 lg:col-span-3 text-center text-gray-500 py-10">
+            {isLoadingHolidays.value
+              ? "Loading calendar..."
+              : "Select year and country to load calendar."}
+          </p>
+        )}
+        {error.value && !isLoadingHolidays.value && (
+          <p class="sm:col-span-2 lg:col-span-3 text-center text-red-500 py-10">
+            Error loading holiday data. Cannot display calendar.
+          </p>
         )}
       </div>
     </div>

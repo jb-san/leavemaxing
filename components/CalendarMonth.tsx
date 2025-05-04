@@ -28,14 +28,14 @@ const CalendarMonth: FunctionalComponent<CalendarMonthProps> = (
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return (
-    <div class="p-4 border rounded shadow mb-4 bg-white">
-      <h3 class="text-lg font-semibold text-center mb-2">
+    <div class="p-3 border rounded shadow-sm bg-white min-h-[250px]">
+      <h3 class="text-md font-semibold text-center mb-2">
         {monthName} {year}
       </h3>
-      <div class="grid grid-cols-7 gap-1 text-center text-sm">
+      <div class="grid grid-cols-7 gap-0.5 text-center text-xs">
         {/* Weekday headers */}
         {weekDays.map((day) => (
-          <div key={day} class="font-medium text-gray-600 pb-1">{day}</div>
+          <div key={day} class="font-medium text-gray-500 pb-1">{day}</div>
         ))}
         {/* Blank days before the 1st */}
         {blanks.map((_, index) => <div key={`blank-${index}`}></div>)}
@@ -45,16 +45,19 @@ const CalendarMonth: FunctionalComponent<CalendarMonthProps> = (
           const dateString = formatDate(date);
           const weekend = isWeekend(date);
 
-          let dayClasses = "border p-2 rounded"; // Base classes
+          let dayClasses =
+            "border p-1 rounded aspect-square flex items-center justify-center";
           if (weekend) {
             dayClasses += " bg-gray-100 text-gray-500";
           }
           if (holidayDates.has(dateString)) {
-            dayClasses += " bg-orange-300 font-bold"; // Holiday: Orange
+            dayClasses += " bg-orange-300 font-bold text-orange-900";
           }
           if (suggestedDates.has(dateString)) {
-            dayClasses += " bg-green-300 font-bold ring-2 ring-green-500"; // Suggested: Green + Ring
+            dayClasses +=
+              " bg-green-300 font-bold text-green-900 ring-2 ring-green-500";
           }
+          dayClasses += " hover:bg-gray-200 transition-colors duration-150";
 
           return (
             <div key={day} class={dayClasses}>

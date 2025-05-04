@@ -13,8 +13,18 @@ const YearSelector: FunctionalComponent<YearSelectorProps> = (
 
   return (
     <div>
-      <label htmlFor="year-select">Year:</label>
-      <select id="year-select" value={selectedYear} onChange={onChange}>
+      <label
+        htmlFor="year-select"
+        class="block text-sm font-medium text-gray-700 mb-1"
+      >
+        Year:
+      </label>
+      <select
+        id="year-select"
+        value={selectedYear}
+        onChange={onChange}
+        class="form-select block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+      >
         {years.map((year) => (
           <option key={year} value={year}>
             {year}
