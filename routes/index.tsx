@@ -1,7 +1,7 @@
 import { Head } from "$fresh/runtime.ts";
 // Remove default Counter import if present
 // import Counter from "../islands/Counter.tsx";
-import Footer from "../components/Footer.tsx"; // <-- Import Footer
+// import Footer from "../components/Footer.tsx"; // <-- REMOVE Footer import
 import LeaveCalculator from "../islands/LeaveCalculator.tsx"; // <-- Import our island
 
 export default function Home() {
@@ -14,7 +14,7 @@ export default function Home() {
           content="Select your country and find the best days to take leave to maximize consecutive days off, including public holidays."
         />
       </Head>
-      <div class="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900">
+      <div class="flex flex-col min-h-screen">
         <main class="flex-grow">
           {/* Remove default Fresh content */}
           {
@@ -34,7 +34,8 @@ export default function Home() {
           {/* Render our main component */}
           <LeaveCalculator />
         </main>
-        <Footer /> {/* <-- Render Footer */}
+        {/* <Footer /> */}
+        {/* <-- REMOVE Footer rendering */}
       </div>
     </>
   );

@@ -1,4 +1,10 @@
 import { type PageProps } from "$fresh/server.ts";
+import FooterIsland from "../islands/Footer.tsx";
+import HeaderIsland from "../islands/Header.tsx";
+// NOTE: Assuming Footer component from components/Footer.tsx is NOT needed here
+// as dark mode toggle seems to be elsewhere (e.g., LeaveCalculator island)
+// and About/Privacy links are added manually below.
+
 export default function App({ Component }: PageProps) {
   return (
     <html>
@@ -11,14 +17,33 @@ export default function App({ Component }: PageProps) {
         />
         <title>LeaveMaxing - Optimize Your Vacation Days</title>
         <link rel="stylesheet" href="/styles.css" />
+        {/* Inline script to apply theme from localStorage ASAP */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  const theme = localStorage.getItem('theme');
+                  if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } catch (_) {}
+              })();
+            `,
+          }}
+        />
       </head>
+      {/* Removed bg/text classes from body, handled by html.dark */}
       <body>
-        <Component />
-        <footer class="text-center text-gray-500 text-sm py-4">
-          <a href="/about" class="hover:underline">About</a>
-          <span class="mx-2">|</span>
-          <a href="/privacy-policy" class="hover:underline">Privacy Policy</a>
-        </footer>
+        <div class="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+          <HeaderIsland />
+          <main class="flex-grow">
+            <Component /> {/* Page content goes here */}
+          </main>
+          <FooterIsland />
+        </div>
       </body>
     </html>
   );

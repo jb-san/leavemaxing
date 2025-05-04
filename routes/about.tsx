@@ -43,8 +43,6 @@ export default function AboutPage() {
           holiday data. Always double-check with official sources and your
           employer's leave policy.
         </p>
-
-        <a href="/" class="text-blue-600 hover:underline">Back to Calculator</a>
       </div>
     </>
   );

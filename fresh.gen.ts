@@ -8,7 +8,10 @@ import * as $about from "./routes/about.tsx";
 import * as $api_joke from "./routes/api/joke.ts";
 import * as $greet_name_ from "./routes/greet/[name].tsx";
 import * as $index from "./routes/index.tsx";
+import * as $privacy_policy from "./routes/privacy-policy.tsx";
 import * as $Counter from "./islands/Counter.tsx";
+import * as $Footer from "./islands/Footer.tsx";
+import * as $Header from "./islands/Header.tsx";
 import * as $LeaveCalculator from "./islands/LeaveCalculator.tsx";
 import type { Manifest } from "$fresh/server.ts";
 
@@ -20,9 +23,12 @@ const manifest = {
     "./routes/api/joke.ts": $api_joke,
     "./routes/greet/[name].tsx": $greet_name_,
     "./routes/index.tsx": $index,
+    "./routes/privacy-policy.tsx": $privacy_policy,
   },
   islands: {
     "./islands/Counter.tsx": $Counter,
+    "./islands/Footer.tsx": $Footer,
+    "./islands/Header.tsx": $Header,
     "./islands/LeaveCalculator.tsx": $LeaveCalculator,
   },
   baseUrl: import.meta.url,

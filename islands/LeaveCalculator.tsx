@@ -155,21 +155,6 @@ export default function LeaveCalculator() {
 
   return (
     <div class="p-4 mx-auto max-w-7xl dark:bg-gray-900 min-h-screen">
-      <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">
-          LeaveMaxing
-        </h1>
-        <button
-          onClick={toggleDarkMode}
-          class="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-          aria-label={darkMode.value
-            ? "Switch to light mode"
-            : "Switch to dark mode"}
-        >
-          {darkMode.value ? "☀️" : "🌙"}
-        </button>
-      </div>
-
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 p-4 border dark:border-gray-700 rounded bg-white dark:bg-gray-800 shadow">
         <YearSelector
           selectedYear={selectedYear.value}
