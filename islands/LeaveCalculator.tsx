@@ -260,14 +260,37 @@ export default function LeaveCalculator() {
 
     try {
       const suggestions = calculateOptimalLeave(
-        holidays.value!, // Non-null assertion ok due to earlier check
+        holidays.value!,
         availableLeaveDays.value,
         selectedYear.value,
         priorityQuarter.value,
-        currentYear === selectedYear.value ? currentDateString : null, // Pass current date only if it's the current year
+        currentYear === selectedYear.value ? currentDateString : null,
       );
       suggestedLeave.value = suggestions;
       console.log("Calculation finished. Suggestions:", suggestions);
+
+      // --- Scroll to current month if current year ---
+      if (currentYear === selectedYear.value) {
+        // Use setTimeout to allow DOM to update after suggestions are set
+        setTimeout(() => {
+          const currentMonthIndex = today.getMonth(); // 0-indexed
+          const targetId =
+            `month-card-${selectedYear.value}-${currentMonthIndex}`;
+          const targetElement = document.getElementById(targetId);
+          if (targetElement) {
+            console.log(`Scrolling to element: #${targetId}`);
+            targetElement.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
+          } else {
+            console.warn(
+              `Target element #${targetId} not found for scrolling.`,
+            );
+          }
+        }, 100); // Small delay (e.g., 100ms) to wait for render
+      }
+      // --- End Scroll Logic ---
     } catch (err) {
       console.error("Error during leave calculation:", err);
       error.value = "Failed to calculate leave suggestions.";

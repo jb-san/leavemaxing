@@ -45,9 +45,10 @@ const CalendarMonth: FunctionalComponent<CalendarMonthProps> = (
   // REMOVE opacity from the month container
   const monthContainerClasses =
     `p-3 border dark:border-gray-700 rounded shadow-sm bg-white dark:bg-gray-800 min-h-[250px]`;
+  const monthId = `month-card-${year}-${month}`; // Create ID for the month card
 
   return (
-    <div class={monthContainerClasses}>
+    <div id={monthId} class={monthContainerClasses}>
       <h3 class="text-md font-semibold text-center mb-2 dark:text-gray-200">
         {monthName} {year}
       </h3>
