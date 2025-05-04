@@ -34,6 +34,13 @@ export default function App({ Component }: PageProps) {
             `,
           }}
         />
+        {/* Plausible Analytics Script */}
+        <script
+          defer
+          data-domain="leavemaxing.com"
+          src="https://plausible.io/js/script.js"
+        >
+        </script>
       </head>
       {/* Removed bg/text classes from body, handled by html.dark */}
       <body>
