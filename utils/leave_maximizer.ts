@@ -204,26 +204,15 @@ export function calculateOptimalLeave(
     return [];
   }
 
-  console.log(
-    `Calculating optimal leave (Bridge Finder) for ${year}, ${availableLeaveDays} days... Priority Quarter: ${priorityQuarter}, Current Date Filter: ${
-      currentDateString ?? "None"
-    }`,
-  );
-
   // --- Filter holidays if it's the current year ---
   let effectiveHolidays = holidays;
   if (currentDateString) {
-    console.log(`Filtering holidays before ${currentDateString}`);
     effectiveHolidays = holidays.filter((h) => h.date >= currentDateString!);
-    console.log(
-      `Effective holidays after filtering: ${effectiveHolidays.length}`,
-    );
   }
   // --- End Filter ---
 
   // Use effectiveHolidays from now on
   if (effectiveHolidays.length === 0) {
-    console.log("No effective holidays remaining after filtering.");
     return [];
   }
 
@@ -232,7 +221,6 @@ export function calculateOptimalLeave(
   const workdaysSet = new Set(getWorkdays(year, baseFreeDaysSet)); // For quick lookup
 
   if (freeBlocks.length < 2) {
-    console.log("No gaps found between free blocks.");
     return []; // No bridges possible if less than 2 blocks
   }
 
@@ -249,7 +237,6 @@ export function calculateOptimalLeave(
 
     // --- Check if bridge start is in the past ---
     if (currentDateString && blockBefore.end < currentDateString) {
-      // console.debug(`  Skipping bridge starting after ${blockBefore.end} as it's before ${currentDateString}`);
       continue; // Don't consider bridges where the first part has already ended before today
     }
     // --- End Check ---
@@ -274,11 +261,6 @@ export function calculateOptimalLeave(
           const midGapIndex = Math.floor(bridgeWorkdays.length / 2);
           const midGapDate = bridgeWorkdays[midGapIndex] || bridgeWorkdays[0]; // Handle empty/single day gaps
           if (midGapDate && getQuarter(midGapDate) === priorityQuarterNum) {
-            console.debug(
-              `  Applying quarter bonus to bridge starting ${
-                bridgeWorkdays[0]
-              }`,
-            );
             score *= QUARTER_BONUS;
           }
         }
@@ -296,8 +278,6 @@ export function calculateOptimalLeave(
   }
 
   if (potentialBridges.length === 0) {
-    console.log("No viable bridge opportunities found.");
-    // TODO: Fallback?
     return [];
   }
 
@@ -307,17 +287,6 @@ export function calculateOptimalLeave(
       return b.score - a.score; // Higher score first
     }
     return a.gapLength - b.gapLength; // Shorter gap first for tie-break
-  });
-
-  console.log(`Found ${potentialBridges.length} potential bridges.`);
-  potentialBridges.slice(0, 5).forEach((b, index) => { // Log top 5 scores
-    console.debug(
-      `  [Bridge Debug] Top Bridge ${index + 1}: Score=${
-        b.score.toFixed(2)
-      }, Gap=${b.gapLength} days (${
-        b.gapDays[0]
-      }...), TotalLen=${b.totalBlockLength}`,
-    );
   });
 
   // 3. Select best bridges greedily
@@ -335,19 +304,11 @@ export function calculateOptimalLeave(
       // --- Check if the first suggested leave day is in the past ---
       const firstLeaveDay = bridge.gapDays[0];
       if (currentDateString && firstLeaveDay < currentDateString) {
-        // console.debug(`  Skipping selected bridge starting ${firstLeaveDay} as it's before ${currentDateString}`);
         continue; // Don't select a bridge where the leave starts in the past
       }
       // --- End Check ---
 
       if (!alreadyTaken) {
-        console.log(
-          `  Selecting bridge: ${bridge.gapLength} day(s) starting ${
-            bridge.gapDays[0]
-          } (Score: ${
-            bridge.score.toFixed(2)
-          }, Total length: ${bridge.totalBlockLength})`,
-        );
         bridge.gapDays.forEach((day) => selectedLeaveDays.add(day));
         leaveDaysRemaining -= bridge.gapLength;
 
@@ -361,11 +322,6 @@ export function calculateOptimalLeave(
   }
 
   const finalSuggestions = Array.from(selectedLeaveDays).sort();
-  console.log(
-    `Bridge finder finished. Suggestions: [${finalSuggestions.join(", ")}]`,
-  );
-
-  // TODO: If leaveDaysRemaining > 0, maybe use remaining days with the old simple greedy approach?
 
   return finalSuggestions;
 }

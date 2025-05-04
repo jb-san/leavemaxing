@@ -1,4 +1,4 @@
-import { effect, useSignal } from "@preact/signals";
+import { useSignal } from "@preact/signals";
 import { useCallback, useEffect } from "preact/hooks";
 import CalendarMonth from "../components/CalendarMonth.tsx";
 import CountrySelector from "../components/CountrySelector.tsx";
@@ -156,39 +156,41 @@ export default function LeaveCalculator() {
   const darkMode = useSignal<boolean>(getInitialDarkMode());
 
   // Effect to apply dark class and save preference
-  effect(() => {
-    const isDark = darkMode.value;
-    if (typeof window !== "undefined" && window.localStorage) {
-      localStorage.setItem("darkMode", String(isDark));
-      if (isDark) {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
-      console.log(`Dark mode toggled: ${isDark}`);
-    }
-  });
+  // effect(() => {
+  //   const isDark = darkMode.value;
+  //   if (typeof window !== "undefined" && window.localStorage) {
+  //     localStorage.setItem("darkMode", String(isDark));
+  //     if (isDark) {
+  //       document.documentElement.classList.add("dark");
+  //     } else {
+  //       document.documentElement.classList.remove("dark");
+  //     }
+  //     // Remove console.log
+  //     // console.log(`Dark mode toggled: ${isDark}`);
+  //   }
+  // });
 
   // Effect to detect country from browser language on initial load
   useEffect(() => {
     if (typeof window !== "undefined" && navigator.language) {
       try {
         const lang = navigator.language;
-        console.log("Detected browser language:", lang);
+        // Remove console.log
+        // console.log("Detected browser language:", lang);
         const region = lang.split("-")[1]?.toUpperCase(); // Get region code (e.g., US from en-US)
         if (region && supportedCountryCodes.has(region)) {
-          console.log(`Setting initial country based on language: ${region}`);
+          // Remove console.log
+          // console.log(`Setting initial country based on language: ${region}`);
           // Check if the signal already exists - important if using SSR props later
           if (selectedCountry.peek() !== region) {
             selectedCountry.value = region; // Set the detected country
           }
         } else {
-          console.log(
-            `Region code '${region}' not in supported list or not found.`,
-          );
+          // Remove console.log
+          // console.log(`Region code '${region}' not in supported list or not found.`);
         }
       } catch (e) {
-        console.error("Error detecting country from language:", e);
+        console.error("Error detecting country from language:", e); // Keep console.error
       }
     }
     // Run this effect only once on mount
@@ -214,7 +216,7 @@ export default function LeaveCalculator() {
           holidays.value = fetchedHolidays;
         }
       } catch (err) {
-        console.error("Error in fetchHolidays effect:", err);
+        console.error("Error in fetchHolidays effect:", err); // Keep console.error
         if (active) {
           error.value = "Failed to fetch holiday data.";
           holidays.value = null;
@@ -235,12 +237,14 @@ export default function LeaveCalculator() {
   // --- ADD Calculation Handler ---
   const handleCalculateClick = useCallback(async () => {
     if (!holidays.value || isLoadingHolidays.value) {
-      console.log("Cannot calculate: Holidays not loaded or still loading.");
+      // Remove console.log
+      // console.log("Cannot calculate: Holidays not loaded or still loading.");
       return; // Don't calculate if holidays aren't ready
     }
     if (availableLeaveDays.value <= 0) {
       suggestedLeave.value = []; // Clear if no leave days
-      console.log("Cannot calculate: No available leave days.");
+      // Remove console.log
+      // console.log("Cannot calculate: No available leave days.");
       return;
     }
 
@@ -248,7 +252,8 @@ export default function LeaveCalculator() {
     error.value = null; // Clear previous errors
     suggestedLeave.value = []; // Clear previous suggestions
 
-    console.log("Calculation started...");
+    // Remove console.log
+    // console.log("Calculation started...");
 
     // Get current date in YYYY-MM-DD format
     const today = new Date();
@@ -267,7 +272,8 @@ export default function LeaveCalculator() {
         currentYear === selectedYear.value ? currentDateString : null,
       );
       suggestedLeave.value = suggestions;
-      console.log("Calculation finished. Suggestions:", suggestions);
+      // Remove console.log
+      // console.log("Calculation finished. Suggestions:", suggestions);
 
       // --- Scroll to current month if current year ---
       if (currentYear === selectedYear.value) {
@@ -278,7 +284,8 @@ export default function LeaveCalculator() {
             `month-card-${selectedYear.value}-${currentMonthIndex}`;
           const targetElement = document.getElementById(targetId);
           if (targetElement) {
-            console.log(`Scrolling to element: #${targetId}`);
+            // Remove console.log
+            // console.log(`Scrolling to element: #${targetId}`);
             targetElement.scrollIntoView({
               behavior: "smooth",
               block: "start",
@@ -286,13 +293,13 @@ export default function LeaveCalculator() {
           } else {
             console.warn(
               `Target element #${targetId} not found for scrolling.`,
-            );
+            ); // Keep console.warn
           }
         }, 100); // Small delay (e.g., 100ms) to wait for render
       }
       // --- End Scroll Logic ---
     } catch (err) {
-      console.error("Error during leave calculation:", err);
+      console.error("Error during leave calculation:", err); // Keep console.error
       error.value = "Failed to calculate leave suggestions.";
     } finally {
       isCalculating.value = false;
