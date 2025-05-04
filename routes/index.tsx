@@ -8,7 +8,11 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>LeaveMaxing</title>
+        <title>LeaveMaxing - Maximize Your Vacation Days</title>
+        <meta
+          name="description"
+          content="Select your country and find the best days to take leave to maximize consecutive days off, including public holidays."
+        />
       </Head>
       <div class="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900">
         <main class="flex-grow">
