@@ -1,0 +1,49 @@
+---
+import Layout from '../layouts/Layout.astro';
+import LeaveForm from '../components/LeaveForm';
+
+// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
+// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+---
+
+<Layout title="LeaveMaxing - Maximize Your Time Off">
+  <div class="min-h-screen bg-gradient-to-r from-indigo-500 to-purple-600 py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center text-white mb-12">
+        <h1 class="text-4xl md:text-5xl font-bold mb-6">LeaveMaxing</h1>
+        <p class="text-xl max-w-3xl mx-auto">
+          Maximize your time off by strategically planning your leave days around holidays and
+          weekends.
+        </p>
+      </div>
+
+      <div class="mt-10">
+        <LeaveForm client:load />
+      </div>
+
+      <div class="mt-16 bg-white/10 backdrop-blur-sm p-6 rounded-lg text-white max-w-3xl mx-auto">
+        <h2 class="text-2xl font-semibold mb-4">How It Works</h2>
+
+        <div class="space-y-4">
+          <div>
+            <h3 class="text-xl font-medium">1. Select Your Country and Year</h3>
+            <p>We use public holiday data to find the best days to take leave.</p>
+          </div>
+
+          <div>
+            <h3 class="text-xl font-medium">2. Enter Available Leave Days</h3>
+            <p>Tell us how many leave days you have available to use.</p>
+          </div>
+
+          <div>
+            <h3 class="text-xl font-medium">3. Get Optimal Leave Plan</h3>
+            <p>
+              Our algorithm will calculate the most efficient way to use your leave days for maximum
+              time off.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
