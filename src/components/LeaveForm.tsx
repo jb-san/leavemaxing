@@ -1,28 +1,29 @@
 import { useState } from 'react';
 import { getCachedHolidays } from '../utils/api';
+import { sortedCountries } from '../utils/countryData';
 import { formatDate } from '../utils/dateUtils';
 import { findOptimalLeaveDays } from '../utils/leaveMaximizer';
 
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 6 }, (_, i) => currentYear + i);
 
-const countries = [
-  { code: 'US', name: 'United States' },
-  { code: 'GB', name: 'United Kingdom' },
-  { code: 'DE', name: 'Germany' },
-  { code: 'FR', name: 'France' },
-  { code: 'JP', name: 'Japan' },
-  { code: 'CA', name: 'Canada' },
-  { code: 'AU', name: 'Australia' },
-];
-
 export default function LeaveForm() {
   const [year, setYear] = useState<number>(currentYear);
   const [country, setCountry] = useState<string>('US');
+  const [countrySearch, setCountrySearch] = useState<string>('');
   const [leaveDays, setLeaveDays] = useState<number>(15);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<any>(null);
+
+  // Filter countries based on search
+  const filteredCountries = countrySearch
+    ? sortedCountries.filter(
+        (c) =>
+          c.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
+          c.countryCode.toLowerCase().includes(countrySearch.toLowerCase())
+      )
+    : sortedCountries;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,18 +69,28 @@ export default function LeaveForm() {
           <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
             Country
           </label>
-          <select
-            id="country"
-            value={country}
-            onChange={(e) => setCountry(e.target.value)}
-            className="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-          >
-            {countries.map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search countries..."
+              value={countrySearch}
+              onChange={(e) => setCountrySearch(e.target.value)}
+              className="block w-full px-3 py-2 mb-1 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            />
+            <select
+              id="country"
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
+              className="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              size={countrySearch ? 5 : 1}
+            >
+              {filteredCountries.map((c) => (
+                <option key={c.countryCode} value={c.countryCode}>
+                  {c.name} ({c.countryCode})
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div>
