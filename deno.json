@@ -24,12 +24,17 @@
     "$fresh/": "https://deno.land/x/fresh@1.7.3/",
     "preact": "https://esm.sh/preact@10.22.0",
     "preact/": "https://esm.sh/preact@10.22.0/",
+    "react": "https://esm.sh/preact@10.22.0/compat",
+    "react-dom": "https://esm.sh/preact@10.22.0/compat",
+    "react-dom/test-utils": "https://esm.sh/preact@10.22.0/test-utils",
+    "react/jsx-runtime": "https://esm.sh/preact@10.22.0/jsx-runtime",
     "@preact/signals": "https://esm.sh/*@preact/signals@1.2.2",
     "@preact/signals-core": "https://esm.sh/*@preact/signals-core@1.5.1",
     "tailwindcss": "npm:tailwindcss@3.4.1",
     "tailwindcss/": "npm:/tailwindcss@3.4.1/",
     "tailwindcss/plugin": "npm:/tailwindcss@3.4.1/plugin.js",
     "@tailwindcss/forms": "npm:@tailwindcss/forms@0.5.7",
+    "@headlessui/react": "npm:@headlessui/react@^1.7",
     "$std/": "https://deno.land/std@0.216.0/"
   },
   "compilerOptions": {

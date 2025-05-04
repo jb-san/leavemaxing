@@ -3,11 +3,15 @@ import { FunctionalComponent } from "preact";
 interface CountrySelectorProps {
   selectedCountry: string;
   onChange: (e: Event) => void;
-  // TODO: Add countries prop later if fetching dynamically
+}
+
+interface Country {
+  code: string;
+  name: string;
 }
 
 // Full list of countries supported by Nager.Date API (sorted)
-const supportedCountries = [
+const supportedCountries: Country[] = [
   { code: "AL", name: "Albania" },
   { code: "AD", name: "Andorra" },
   { code: "AR", name: "Argentina" },
@@ -139,7 +143,7 @@ const CountrySelector: FunctionalComponent<CountrySelectorProps> = (
       <select
         id="country-select"
         value={selectedCountry}
-        onChange={onChange}
+        onChange={onChange} // The handler now expects an Event
         class="form-select block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:text-gray-200"
       >
         {supportedCountries.map((country) => (
