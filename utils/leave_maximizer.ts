@@ -190,6 +190,7 @@ function getQuarter(dateString: string): number {
  * @param availableLeaveDays The number of leave days the user has.
  * @param year The selected year.
  * @param priorityQuarter The preferred quarter (e.g., "q1", "q2", "q3", "q4", or "any").
+ * @param currentDateString The current date (YYYY-MM-DD) if filtering past dates, otherwise null.
  * @returns An array of suggested leave date strings (YYYY-MM-DD).
  */
 export function calculateOptimalLeave(
@@ -197,22 +198,41 @@ export function calculateOptimalLeave(
   availableLeaveDays: number,
   year: number,
   priorityQuarter: string, // e.g., "q1", "q2", "q3", "q4", or "any"
+  currentDateString: string | null, // Add current date parameter
 ): string[] {
-  if (!holidays || holidays.length === 0 || availableLeaveDays <= 0) {
+  if (!holidays || availableLeaveDays <= 0) {
     return [];
   }
 
   console.log(
-    `Calculating optimal leave (Bridge Finder) for ${year}, ${availableLeaveDays} days... Priority Quarter: ${priorityQuarter}`,
+    `Calculating optimal leave (Bridge Finder) for ${year}, ${availableLeaveDays} days... Priority Quarter: ${priorityQuarter}, Current Date Filter: ${
+      currentDateString ?? "None"
+    }`,
   );
 
-  const baseFreeDaysSet = getAllFreeDays(year, holidays);
+  // --- Filter holidays if it's the current year ---
+  let effectiveHolidays = holidays;
+  if (currentDateString) {
+    console.log(`Filtering holidays before ${currentDateString}`);
+    effectiveHolidays = holidays.filter((h) => h.date >= currentDateString!);
+    console.log(
+      `Effective holidays after filtering: ${effectiveHolidays.length}`,
+    );
+  }
+  // --- End Filter ---
+
+  // Use effectiveHolidays from now on
+  if (effectiveHolidays.length === 0) {
+    console.log("No effective holidays remaining after filtering.");
+    return [];
+  }
+
+  const baseFreeDaysSet = getAllFreeDays(year, effectiveHolidays);
   const freeBlocks = findFreeBlocks(baseFreeDaysSet);
   const workdaysSet = new Set(getWorkdays(year, baseFreeDaysSet)); // For quick lookup
 
   if (freeBlocks.length < 2) {
     console.log("No gaps found between free blocks.");
-    // TODO: Fallback? Maybe use the simple greedy approach here for adjacent days?
     return []; // No bridges possible if less than 2 blocks
   }
 
@@ -226,6 +246,13 @@ export function calculateOptimalLeave(
   for (let i = 0; i < freeBlocks.length - 1; i++) {
     const blockBefore = freeBlocks[i];
     const blockAfter = freeBlocks[i + 1];
+
+    // --- Check if bridge start is in the past ---
+    if (currentDateString && blockBefore.end < currentDateString) {
+      // console.debug(`  Skipping bridge starting after ${blockBefore.end} as it's before ${currentDateString}`);
+      continue; // Don't consider bridges where the first part has already ended before today
+    }
+    // --- End Check ---
 
     const daysInGap = daysBetween(blockBefore.end, blockAfter.start) - 1;
 
@@ -304,6 +331,15 @@ export function calculateOptimalLeave(
       const alreadyTaken = bridge.gapDays.some((day) =>
         selectedLeaveDays.has(day)
       );
+
+      // --- Check if the first suggested leave day is in the past ---
+      const firstLeaveDay = bridge.gapDays[0];
+      if (currentDateString && firstLeaveDay < currentDateString) {
+        // console.debug(`  Skipping selected bridge starting ${firstLeaveDay} as it's before ${currentDateString}`);
+        continue; // Don't select a bridge where the leave starts in the past
+      }
+      // --- End Check ---
+
       if (!alreadyTaken) {
         console.log(
           `  Selecting bridge: ${bridge.gapLength} day(s) starting ${

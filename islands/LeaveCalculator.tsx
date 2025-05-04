@@ -106,15 +106,21 @@ export default function LeaveCalculator() {
 
     console.log("Calculation started...");
 
+    // Get current date in YYYY-MM-DD format
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentDateString = today.toISOString().split("T")[0];
+
     // Use setTimeout to allow UI to update (show loading state) before heavy calc
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     try {
       const suggestions = calculateOptimalLeave(
-        holidays.value,
+        holidays.value!, // Non-null assertion ok due to earlier check
         availableLeaveDays.value,
         selectedYear.value,
         priorityQuarter.value,
+        currentYear === selectedYear.value ? currentDateString : null, // Pass current date only if it's the current year
       );
       suggestedLeave.value = suggestions;
       console.log("Calculation finished. Suggestions:", suggestions);
@@ -198,15 +204,27 @@ export default function LeaveCalculator() {
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {!isLoadingHolidays.value && holidays.value && (
-          Array.from({ length: 12 }).map((_, i) => (
-            <CalendarMonth
-              key={`${selectedYear.value}-${i}`}
-              year={selectedYear.value}
-              month={i}
-              holidays={holidays.value || []}
-              suggestedLeaveDays={suggestedLeave.value}
-            />
-          ))
+          (() => {
+            // Determine current date string once before the loop
+            const today = new Date();
+            const currentYearCheck = today.getFullYear();
+            const currentDateStringCheck = today.toISOString().split("T")[0];
+            const isCurrentYear = selectedYear.value === currentYearCheck;
+
+            return Array.from({ length: 12 }).map((_, i) => (
+              <CalendarMonth
+                key={`${selectedYear.value}-${i}`}
+                year={selectedYear.value}
+                month={i}
+                holidays={holidays.value || []}
+                suggestedLeaveDays={suggestedLeave.value}
+                // Pass current date only if it's the current year
+                currentDateString={isCurrentYear
+                  ? currentDateStringCheck
+                  : null}
+              />
+            ));
+          })()
         )}
         {(isLoadingHolidays.value || !holidays.value && !error.value) && (
           <p class="sm:col-span-2 lg:col-span-3 text-center text-gray-500 py-10">
