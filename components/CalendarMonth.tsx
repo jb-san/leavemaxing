@@ -28,14 +28,19 @@ const CalendarMonth: FunctionalComponent<CalendarMonthProps> = (
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return (
-    <div class="p-3 border rounded shadow-sm bg-white min-h-[250px]">
-      <h3 class="text-md font-semibold text-center mb-2">
+    <div class="p-3 border dark:border-gray-700 rounded shadow-sm bg-white dark:bg-gray-800 min-h-[250px]">
+      <h3 class="text-md font-semibold text-center mb-2 dark:text-gray-200">
         {monthName} {year}
       </h3>
       <div class="grid grid-cols-7 gap-0.5 text-center text-xs">
         {/* Weekday headers */}
         {weekDays.map((day) => (
-          <div key={day} class="font-medium text-gray-500 pb-1">{day}</div>
+          <div
+            key={day}
+            class="font-medium text-gray-500 dark:text-gray-400 pb-1"
+          >
+            {day}
+          </div>
         ))}
         {/* Blank days before the 1st */}
         {blanks.map((_, index) => <div key={`blank-${index}`}></div>)}
@@ -46,18 +51,21 @@ const CalendarMonth: FunctionalComponent<CalendarMonthProps> = (
           const weekend = isWeekend(date);
 
           let dayClasses =
-            "border p-1 rounded aspect-square flex items-center justify-center";
+            "border dark:border-gray-600 p-1 rounded aspect-square flex items-center justify-center text-gray-700 dark:text-gray-300";
           if (weekend) {
-            dayClasses += " bg-gray-100 text-gray-500";
+            dayClasses +=
+              " bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400";
           }
           if (holidayDates.has(dateString)) {
-            dayClasses += " bg-orange-300 font-bold text-orange-900";
+            dayClasses +=
+              " bg-orange-300 dark:bg-orange-600 font-bold text-orange-900 dark:text-orange-100";
           }
           if (suggestedDates.has(dateString)) {
             dayClasses +=
-              " bg-green-300 font-bold text-green-900 ring-2 ring-green-500";
+              " bg-green-300 dark:bg-green-600 font-bold text-green-900 dark:text-green-100 ring-2 ring-green-500 dark:ring-green-400";
           }
-          dayClasses += " hover:bg-gray-200 transition-colors duration-150";
+          dayClasses +=
+            " hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-150";
 
           return (
             <div key={day} class={dayClasses}>

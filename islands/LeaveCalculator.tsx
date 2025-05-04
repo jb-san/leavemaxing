@@ -1,4 +1,4 @@
-import { useSignal } from "@preact/signals";
+import { effect, useSignal } from "@preact/signals";
 import { useCallback, useEffect } from "preact/hooks";
 import CalendarMonth from "../components/CalendarMonth.tsx";
 import CountrySelector from "../components/CountrySelector.tsx";
@@ -8,6 +8,19 @@ import YearSelector from "../components/YearSelector.tsx";
 import { getPublicHolidays, Holiday } from "../utils/holidays.ts";
 import { calculateOptimalLeave } from "../utils/leave_maximizer.ts";
 // import { calculateOptimalLeave } from "../utils/leave_maximizer.ts"; // Will be needed later
+
+// Helper: Check localStorage safely (for SSR compatibility)
+function getInitialDarkMode() {
+  if (typeof window !== "undefined" && window.localStorage) {
+    const storedPref = window.localStorage.getItem("darkMode");
+    if (storedPref) {
+      return storedPref === "true";
+    }
+    // Check system preference if no stored preference
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+  return false; // Default to light mode on server or if localStorage unavailable
+}
 
 export default function LeaveCalculator() {
   const currentYear = new Date().getFullYear();
@@ -21,6 +34,21 @@ export default function LeaveCalculator() {
   const isLoadingHolidays = useSignal(false); // Renamed for clarity
   const isCalculating = useSignal(false); // New signal for calculation state
   const error = useSignal<string | null>(null);
+  const darkMode = useSignal<boolean>(getInitialDarkMode());
+
+  // Effect to apply dark class and save preference
+  effect(() => {
+    const isDark = darkMode.value;
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.setItem("darkMode", String(isDark));
+      if (isDark) {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+      console.log(`Dark mode toggled: ${isDark}`);
+    }
+  });
 
   // Effect to fetch holidays when year or country changes
   useEffect(() => {
@@ -121,13 +149,28 @@ export default function LeaveCalculator() {
     priorityQuarter.value = (e.target as HTMLSelectElement).value;
   };
 
-  return (
-    <div class="p-4 mx-auto max-w-7xl">
-      <h1 class="text-3xl font-bold mb-6 text-center md:text-left">
-        LeaveMaxing
-      </h1>
+  const toggleDarkMode = () => {
+    darkMode.value = !darkMode.value;
+  };
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 p-4 border rounded bg-white shadow">
+  return (
+    <div class="p-4 mx-auto max-w-7xl dark:bg-gray-900 min-h-screen">
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">
+          LeaveMaxing
+        </h1>
+        <button
+          onClick={toggleDarkMode}
+          class="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+          aria-label={darkMode.value
+            ? "Switch to light mode"
+            : "Switch to dark mode"}
+        >
+          {darkMode.value ? "☀️" : "🌙"}
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 p-4 border dark:border-gray-700 rounded bg-white dark:bg-gray-800 shadow">
         <YearSelector
           selectedYear={selectedYear.value}
           onChange={handleYearChange}
@@ -151,18 +194,20 @@ export default function LeaveCalculator() {
           onClick={handleCalculateClick}
           disabled={isLoadingHolidays.value || isCalculating.value ||
             !holidays.value}
-          class="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white rounded font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          class="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white rounded font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors dark:bg-blue-500 dark:hover:bg-blue-600"
         >
           {isCalculating.value ? "Calculating..." : "Calculate Optimal Leave"}
         </button>
         <div class="flex items-center gap-2 text-sm">
           {isLoadingHolidays.value && (
-            <p class="text-gray-600">Loading holidays...</p>
+            <p class="text-gray-600 dark:text-gray-400">Loading holidays...</p>
           )}
           {isCalculating.value && !isLoadingHolidays.value && (
-            <p class="text-gray-600">Calculating...</p>
+            <p class="text-gray-600 dark:text-gray-400">Calculating...</p>
           )}
-          {error.value && <p class="text-red-500">Error: {error.value}</p>}
+          {error.value && (
+            <p class="text-red-500 dark:text-red-400">Error: {error.value}</p>
+          )}
         </div>
       </div>
 

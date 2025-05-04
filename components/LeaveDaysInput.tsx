@@ -12,7 +12,7 @@ const LeaveDaysInput: FunctionalComponent<LeaveDaysInputProps> = (
     <div>
       <label
         htmlFor="leave-days"
-        class="block text-sm font-medium text-gray-700 mb-1"
+        class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
       >
         Available Leave Days:
       </label>
@@ -25,7 +25,7 @@ const LeaveDaysInput: FunctionalComponent<LeaveDaysInputProps> = (
         placeholder="e.g., 10"
         value={value}
         onInput={onChange}
-        class="form-input block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+        class="form-input block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:text-gray-200"
       />
     </div>
   );

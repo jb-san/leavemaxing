@@ -132,7 +132,7 @@ const CountrySelector: FunctionalComponent<CountrySelectorProps> = (
     <div>
       <label
         htmlFor="country-select"
-        class="block text-sm font-medium text-gray-700 mb-1"
+        class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
       >
         Country:
       </label>
@@ -140,7 +140,7 @@ const CountrySelector: FunctionalComponent<CountrySelectorProps> = (
         id="country-select"
         value={selectedCountry}
         onChange={onChange}
-        class="form-select block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+        class="form-select block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-700 dark:text-gray-200"
       >
         {supportedCountries.map((country) => (
           <option key={country.code} value={country.code}>
