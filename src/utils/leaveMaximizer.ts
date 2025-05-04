@@ -231,83 +231,160 @@ function findOptimalByGreedy(
   let selectedDays: Date[] = [];
   let remainingDays = maxLeaveDays;
 
-  while (remainingDays > 0 && workdays.length > 0) {
-    // Update our free days map with currently selected leave days
-    selectedDays.forEach((date) => {
-      const dateKey = date.toISOString().split('T')[0];
-      freeDaysMap[dateKey] = true;
-    });
+  // Helper function to check if a date is a good bridge day
+  const isBridgeDay = (date: Date): boolean => {
+    const dayBefore = new Date(date);
+    dayBefore.setDate(date.getDate() - 1);
 
-    // Score each potential leave day based on adjacent free days
-    const scoredDays = workdays
-      .filter((date) => {
-        // Skip dates already selected
-        const dateKey = date.toISOString().split('T')[0];
-        return !freeDaysMap[dateKey];
-      })
-      .map((date) => {
-        // Check days before and after
-        const dayBefore = new Date(date);
-        dayBefore.setDate(date.getDate() - 1);
+    const dayAfter = new Date(date);
+    dayAfter.setDate(date.getDate() + 1);
 
-        const dayAfter = new Date(date);
-        dayAfter.setDate(date.getDate() + 1);
+    const dayBeforeKey = dayBefore.toISOString().split('T')[0];
+    const dayAfterKey = dayAfter.toISOString().split('T')[0];
 
-        const twoDaysBefore = new Date(date);
-        twoDaysBefore.setDate(date.getDate() - 2);
+    // Check if this day connects two free periods
+    return freeDaysMap[dayBeforeKey] && freeDaysMap[dayAfterKey];
+  };
 
-        const twoDaysAfter = new Date(date);
-        twoDaysAfter.setDate(date.getDate() + 2);
+  // Helper function to check if a day extends a free period
+  const extendsFreePeriod = (date: Date): boolean => {
+    const dayBefore = new Date(date);
+    dayBefore.setDate(date.getDate() - 1);
 
-        let score = 0;
+    const dayAfter = new Date(date);
+    dayAfter.setDate(date.getDate() + 1);
 
-        // Get date keys for checking
-        const dayBeforeKey = dayBefore.toISOString().split('T')[0];
-        const dayAfterKey = dayAfter.toISOString().split('T')[0];
-        const twoDaysBeforeKey = twoDaysBefore.toISOString().split('T')[0];
-        const twoDaysAfterKey = twoDaysAfter.toISOString().split('T')[0];
+    const dayBeforeKey = dayBefore.toISOString().split('T')[0];
+    const dayAfterKey = dayAfter.toISOString().split('T')[0];
 
-        // Check connectivity - prioritize days that connect existing free days
-        if (freeDaysMap[dayBeforeKey] && freeDaysMap[dayAfterKey]) {
-          // This leave day would connect two existing free periods - highest priority
-          score += 30;
-        } else {
-          // Higher score if adjacent to existing free days
-          if (freeDaysMap[dayBeforeKey]) {
-            score += 10;
+    // Check if this day is adjacent to a free period
+    return freeDaysMap[dayBeforeKey] || freeDaysMap[dayAfterKey];
+  };
 
-            // Check if taking this day extends an existing chain
-            if (freeDaysMap[twoDaysBeforeKey]) {
-              score += 5;
-            }
-          }
+  // First, find all bridge opportunities
+  const bridgeOpportunities: Date[][] = [];
 
-          if (freeDaysMap[dayAfterKey]) {
-            score += 10;
+  for (const workday of workdays) {
+    // Skip if already selected as leave
+    const dateKey = workday.toISOString().split('T')[0];
+    if (freeDaysMap[dateKey]) continue;
 
-            // Check if taking this day extends an existing chain
-            if (freeDaysMap[twoDaysAfterKey]) {
-              score += 5;
-            }
-          }
+    // Look for 1-4 day bridge opportunities
+    for (let length = 1; length <= 4; length++) {
+      // Check if we have enough consecutive days available
+      let consecutiveDays: Date[] = [workday];
+      let allAvailable = true;
+
+      // Build up sequence of consecutive days
+      for (let i = 1; i < length; i++) {
+        const nextDay = new Date(workday);
+        nextDay.setDate(workday.getDate() + i);
+        const nextDayKey = nextDay.toISOString().split('T')[0];
+
+        // Check if this day is a workday (not weekend/holiday) and not already selected
+        if (freeDaysMap[nextDayKey]) {
+          allAvailable = false;
+          break;
         }
 
-        return { date, score };
-      });
+        // Add to potential sequence
+        consecutiveDays.push(nextDay);
+      }
 
-    // If no valid days are left, break
-    if (scoredDays.length === 0) break;
+      if (!allAvailable) continue;
 
-    // Sort by score (highest first)
-    scoredDays.sort((a, b) => b.score - a.score);
+      // Check if this sequence forms a bridge between free periods
+      const startDay = consecutiveDays[0];
+      const endDay = consecutiveDays[consecutiveDays.length - 1];
 
-    // Take the highest scoring day
-    selectedDays.push(scoredDays[0].date);
-    remainingDays--;
+      const dayBefore = new Date(startDay);
+      dayBefore.setDate(startDay.getDate() - 1);
 
-    // Optionally, remove selected day from workdays to prevent reselection
-    const selectedDateStr = scoredDays[0].date.toISOString();
-    workdays = workdays.filter((d) => d.toISOString() !== selectedDateStr);
+      const dayAfter = new Date(endDay);
+      dayAfter.setDate(endDay.getDate() + 1);
+
+      const dayBeforeKey = dayBefore.toISOString().split('T')[0];
+      const dayAfterKey = dayAfter.toISOString().split('T')[0];
+
+      // Check if this sequence bridges free periods or extends at least one free period
+      if (freeDaysMap[dayBeforeKey] && freeDaysMap[dayAfterKey]) {
+        // This is a true bridge - connects two free periods
+        bridgeOpportunities.push(consecutiveDays);
+      } else if (freeDaysMap[dayBeforeKey] || freeDaysMap[dayAfterKey]) {
+        // This extends a free period
+        bridgeOpportunities.push(consecutiveDays);
+      }
+    }
+  }
+
+  // Score each bridge opportunity
+  const scoredBridges = bridgeOpportunities.map((bridgeDays) => {
+    const startDay = bridgeDays[0];
+    const endDay = bridgeDays[bridgeDays.length - 1];
+
+    const dayBefore = new Date(startDay);
+    dayBefore.setDate(startDay.getDate() - 1);
+
+    const dayAfter = new Date(endDay);
+    dayAfter.setDate(endDay.getDate() + 1);
+
+    const dayBeforeKey = dayBefore.toISOString().split('T')[0];
+    const dayAfterKey = dayAfter.toISOString().split('T')[0];
+
+    let score = 0;
+
+    // True bridge (connects two free periods) gets highest score
+    if (freeDaysMap[dayBeforeKey] && freeDaysMap[dayAfterKey]) {
+      score = 40 - bridgeDays.length * 5; // Penalize longer sequences slightly
+    }
+    // Extending a free period gets medium score
+    else if (freeDaysMap[dayBeforeKey] || freeDaysMap[dayAfterKey]) {
+      score = 20 - bridgeDays.length * 2; // Penalize longer sequences slightly
+    }
+
+    // Check if the free period being extended is a holiday (higher value)
+    if (freeDaysMap[dayBeforeKey]) {
+      const isHolidayBefore = holidays.some((h) => h.date.split('T')[0] === dayBeforeKey);
+      if (isHolidayBefore) score += 10;
+    }
+
+    if (freeDaysMap[dayAfterKey]) {
+      const isHolidayAfter = holidays.some((h) => h.date.split('T')[0] === dayAfterKey);
+      if (isHolidayAfter) score += 10;
+    }
+
+    return {
+      days: bridgeDays,
+      score,
+    };
+  });
+
+  // Sort bridges by score (highest first)
+  scoredBridges.sort((a, b) => b.score - a.score);
+
+  // Select the best bridge opportunities until we've used all leave days
+  for (const bridge of scoredBridges) {
+    // Skip if we don't have enough days left
+    if (bridge.days.length > remainingDays) continue;
+
+    // Skip if any of these days are already selected
+    const alreadySelected = bridge.days.some((day) => {
+      return selectedDays.some((selected) => selected.toISOString() === day.toISOString());
+    });
+    if (alreadySelected) continue;
+
+    // Add these days to our selection
+    selectedDays = [...selectedDays, ...bridge.days];
+    remainingDays -= bridge.days.length;
+
+    // Update free days map
+    bridge.days.forEach((day) => {
+      const dayKey = day.toISOString().split('T')[0];
+      freeDaysMap[dayKey] = true;
+    });
+
+    // Stop if we've used all leave days
+    if (remainingDays === 0) break;
   }
 
   // Sort the selected days chronologically
