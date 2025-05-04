@@ -130,6 +130,30 @@ describe('Leave Maximizer', () => {
       // but it's a good heuristic to check
       expect(recommendsDay).toBe(true);
     });
+
+    it('should prioritize leave days in the selected quarter', () => {
+      // Select Q4 as priority quarter (Oct-Dec)
+      const priorityQuarter = 4;
+      const result = findOptimalLeaveDays(2023, sampleHolidays, 10, priorityQuarter);
+
+      // Count how many days are in Q4
+      const q4Days = result.leavePlan.recommendedLeaveDays.filter(
+        (date) => date.getMonth() >= 9 && date.getMonth() <= 11
+      ).length;
+
+      // With Q4 priority and Thanksgiving + Christmas, we should have more days in Q4
+      expect(q4Days).toBeGreaterThan(0);
+
+      // Compare with non-priority result
+      const nonPriorityResult = findOptimalLeaveDays(2023, sampleHolidays, 10);
+      const nonPriorityQ4Days = nonPriorityResult.leavePlan.recommendedLeaveDays.filter(
+        (date) => date.getMonth() >= 9 && date.getMonth() <= 11
+      ).length;
+
+      // Should recommend more or equal number of days in Q4 when prioritized
+      // Note: this is a soft check as it depends on the specific holidays
+      expect(q4Days).toBeGreaterThanOrEqual(nonPriorityQ4Days);
+    });
   });
 
   describe('generateLeaveStrategies', () => {
@@ -164,6 +188,23 @@ describe('Leave Maximizer', () => {
       }
 
       expect(foundDifference).toBe(true);
+    });
+
+    it('should consider priority quarter in different strategies', () => {
+      // Select Q1 as priority quarter (Jan-Mar)
+      const priorityQuarter = 1;
+      const results = generateLeaveStrategies(2023, sampleHolidays, 15, priorityQuarter);
+
+      // Ensure we got multiple strategies
+      expect(results.length).toBeGreaterThan(1);
+
+      // The first strategy (highest score) should have days in Q1
+      const q1Days = results[0].leavePlan.recommendedLeaveDays.filter(
+        (date) => date.getMonth() >= 0 && date.getMonth() <= 2
+      ).length;
+
+      // There should be some Q1 days in the top strategy with Q1 priority
+      expect(q1Days).toBeGreaterThan(0);
     });
   });
 });

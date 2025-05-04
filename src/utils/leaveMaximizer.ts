@@ -121,7 +121,8 @@ function calculateConsecutiveBreaks(
 export function findOptimalLeaveDays(
   year: number,
   holidays: PublicHoliday[],
-  maxLeaveDays: number
+  maxLeaveDays: number,
+  priorityQuarter: number = 0
 ): AlgorithmResult {
   // Find all potential workdays (days we could take off)
   const workdays = findWorkdays(year, holidays);
@@ -131,11 +132,17 @@ export function findOptimalLeaveDays(
 
   // For small numbers of leave days, we can try all combinations
   if (effectiveMaxLeaveDays <= 10 && workdays.length <= 252) {
-    return findOptimalByBruteForce(year, holidays, workdays, effectiveMaxLeaveDays);
+    return findOptimalByBruteForce(
+      year,
+      holidays,
+      workdays,
+      effectiveMaxLeaveDays,
+      priorityQuarter
+    );
   }
 
   // For larger numbers, use a greedy algorithm
-  return findOptimalByGreedy(year, holidays, workdays, effectiveMaxLeaveDays);
+  return findOptimalByGreedy(year, holidays, workdays, effectiveMaxLeaveDays, priorityQuarter);
 }
 
 /**
@@ -145,7 +152,8 @@ function findOptimalByBruteForce(
   year: number,
   holidays: PublicHoliday[],
   workdays: Date[],
-  maxLeaveDays: number
+  maxLeaveDays: number,
+  priorityQuarter: number = 0
 ): AlgorithmResult {
   let bestScore = -1;
   let bestPlan: LeavePlan | null = null;
@@ -168,7 +176,19 @@ function findOptimalByBruteForce(
         consecutiveBreaks: breaks,
       };
 
-      const score = scoreLeavePlan(plan);
+      let score = scoreLeavePlan(plan);
+
+      // Boost score for days in the priority quarter
+      if (priorityQuarter > 0) {
+        const startMonth = (priorityQuarter - 1) * 3;
+        const endMonth = startMonth + 2;
+
+        const daysInPriorityQuarter = currentSelection.filter(
+          (date) => date.getMonth() >= startMonth && date.getMonth() <= endMonth
+        ).length;
+
+        score += daysInPriorityQuarter * 5; // Reduced from 10 to 5 points per day
+      }
 
       if (score > bestScore) {
         bestScore = score;
@@ -199,7 +219,7 @@ function findOptimalByBruteForce(
 
   if (!bestPlan) {
     // Fallback to greedy if something went wrong
-    return findOptimalByGreedy(year, holidays, workdays, maxLeaveDays);
+    return findOptimalByGreedy(year, holidays, workdays, maxLeaveDays, priorityQuarter);
   }
 
   return {
@@ -216,7 +236,8 @@ function findOptimalByGreedy(
   year: number,
   holidays: PublicHoliday[],
   workdays: Date[],
-  maxLeaveDays: number
+  maxLeaveDays: number,
+  priorityQuarter: number = 0
 ): AlgorithmResult {
   // Create a map of all dates for fast checking of free days
   const allDates = getDatesInYear(year);
@@ -259,6 +280,17 @@ function findOptimalByGreedy(
 
     // Check if this day is adjacent to a free period
     return freeDaysMap[dayBeforeKey] || freeDaysMap[dayAfterKey];
+  };
+
+  // Helper function to check if a date is in the priority quarter
+  const isInPriorityQuarter = (date: Date): boolean => {
+    if (priorityQuarter === 0) return false;
+
+    const month = date.getMonth();
+    const startMonth = (priorityQuarter - 1) * 3;
+    const endMonth = startMonth + 2;
+
+    return month >= startMonth && month <= endMonth;
   };
 
   // First, find all bridge opportunities
@@ -353,6 +385,20 @@ function findOptimalByGreedy(
       if (isHolidayAfter) score += 10;
     }
 
+    // Apply bonus for days in priority quarter
+    if (priorityQuarter > 0) {
+      const daysInPriorityQuarter = bridgeDays.filter(isInPriorityQuarter).length;
+      if (daysInPriorityQuarter > 0) {
+        // Give modest boost for bridges in priority quarter (reduced from 15 to 5)
+        score += daysInPriorityQuarter * 5;
+
+        // Extra bonus if ALL days in the bridge are in priority quarter (reduced from 10 to 5)
+        if (daysInPriorityQuarter === bridgeDays.length) {
+          score += 5;
+        }
+      }
+    }
+
     return {
       days: bridgeDays,
       score,
@@ -411,12 +457,13 @@ function findOptimalByGreedy(
 export function generateLeaveStrategies(
   year: number,
   holidays: PublicHoliday[],
-  maxLeaveDays: number
+  maxLeaveDays: number,
+  priorityQuarter: number = 0
 ): AlgorithmResult[] {
   const results: AlgorithmResult[] = [];
 
   // Strategy 1: Maximize consecutive days off (default)
-  results.push(findOptimalLeaveDays(year, holidays, maxLeaveDays));
+  results.push(findOptimalLeaveDays(year, holidays, maxLeaveDays, priorityQuarter));
 
   // Strategy 2: Focus on first half of the year
   const workdaysFirstHalf = findWorkdays(year, holidays).filter((d) => d.getMonth() < 6);
@@ -425,7 +472,8 @@ export function generateLeaveStrategies(
     year,
     holidays,
     workdaysFirstHalf,
-    Math.floor(maxLeaveDays / 2)
+    Math.floor(maxLeaveDays / 2),
+    priorityQuarter
   );
   results.push(firstHalfResult);
 
@@ -436,7 +484,8 @@ export function generateLeaveStrategies(
     year,
     holidays,
     workdaysSecondHalf,
-    Math.floor(maxLeaveDays / 2)
+    Math.floor(maxLeaveDays / 2),
+    priorityQuarter
   );
   results.push(secondHalfResult);
 
@@ -455,9 +504,21 @@ export function generateLeaveStrategies(
       (d) => d.getMonth() >= startMonth && d.getMonth() <= endMonth
     );
 
-    const daysPerQuarter = Math.floor(maxLeaveDays / 4);
+    // Give more days to priority quarter if one is selected
+    let daysPerQuarter = Math.floor(maxLeaveDays / 4);
+    if (priorityQuarter > 0 && quarter === priorityQuarter - 1) {
+      daysPerQuarter = Math.floor(maxLeaveDays * 0.3); // 30% of days to priority quarter (reduced from 33%)
+    } else if (priorityQuarter > 0) {
+      daysPerQuarter = Math.floor(maxLeaveDays * 0.23); // 23% to other quarters (more balanced distribution)
+    }
 
-    const quarterResult = findOptimalByGreedy(year, holidays, workdaysQuarter, daysPerQuarter);
+    const quarterResult = findOptimalByGreedy(
+      year,
+      holidays,
+      workdaysQuarter,
+      daysPerQuarter,
+      priorityQuarter
+    );
 
     quarterlyResults.recommendedLeaveDays = [
       ...quarterlyResults.recommendedLeaveDays,
