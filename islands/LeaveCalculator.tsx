@@ -9,6 +9,125 @@ import { getPublicHolidays, Holiday } from "../utils/holidays.ts";
 import { calculateOptimalLeave } from "../utils/leave_maximizer.ts";
 // import { calculateOptimalLeave } from "../utils/leave_maximizer.ts"; // Will be needed later
 
+// List of supported country codes (extracted from CountrySelector)
+const supportedCountryCodes = new Set([
+  "AL",
+  "AD",
+  "AR",
+  "AM",
+  "AU",
+  "AT",
+  "AX",
+  "BS",
+  "BB",
+  "BY",
+  "BE",
+  "BZ",
+  "BJ",
+  "BO",
+  "BA",
+  "BW",
+  "BR",
+  "BG",
+  "CA",
+  "CL",
+  "CN",
+  "CO",
+  "CR",
+  "HR",
+  "CU",
+  "CY",
+  "CZ",
+  "DK",
+  "DO",
+  "EC",
+  "EG",
+  "SV",
+  "EE",
+  "FO",
+  "FI",
+  "FR",
+  "GA",
+  "GM",
+  "GE",
+  "DE",
+  "GI",
+  "GR",
+  "GL",
+  "GD",
+  "GT",
+  "GG",
+  "GY",
+  "HT",
+  "HN",
+  "HK",
+  "HU",
+  "IS",
+  "ID",
+  "IE",
+  "IM",
+  "IT",
+  "JM",
+  "JP",
+  "JE",
+  "KZ",
+  "LV",
+  "LS",
+  "LI",
+  "LT",
+  "LU",
+  "MG",
+  "MT",
+  "MX",
+  "MD",
+  "MC",
+  "MN",
+  "ME",
+  "MS",
+  "MA",
+  "MZ",
+  "NA",
+  "NL",
+  "NZ",
+  "NI",
+  "NE",
+  "NG",
+  "MK",
+  "NO",
+  "PA",
+  "PG",
+  "PY",
+  "PE",
+  "PH",
+  "PL",
+  "PT",
+  "PR",
+  "RO",
+  "RU",
+  "SM",
+  "RS",
+  "SG",
+  "SK",
+  "SI",
+  "ZA",
+  "KR",
+  "ES",
+  "SR",
+  "SJ",
+  "SE",
+  "CH",
+  "TR",
+  "TN",
+  "UA",
+  "GB",
+  "US",
+  "UY",
+  "VA",
+  "VE",
+  "VN",
+  "ZW",
+]);
+
 // Helper: Check localStorage safely (for SSR compatibility)
 function getInitialDarkMode() {
   if (typeof window !== "undefined" && window.localStorage) {
@@ -49,6 +168,31 @@ export default function LeaveCalculator() {
       console.log(`Dark mode toggled: ${isDark}`);
     }
   });
+
+  // Effect to detect country from browser language on initial load
+  useEffect(() => {
+    if (typeof window !== "undefined" && navigator.language) {
+      try {
+        const lang = navigator.language;
+        console.log("Detected browser language:", lang);
+        const region = lang.split("-")[1]?.toUpperCase(); // Get region code (e.g., US from en-US)
+        if (region && supportedCountryCodes.has(region)) {
+          console.log(`Setting initial country based on language: ${region}`);
+          // Check if the signal already exists - important if using SSR props later
+          if (selectedCountry.peek() !== region) {
+            selectedCountry.value = region; // Set the detected country
+          }
+        } else {
+          console.log(
+            `Region code '${region}' not in supported list or not found.`,
+          );
+        }
+      } catch (e) {
+        console.error("Error detecting country from language:", e);
+      }
+    }
+    // Run this effect only once on mount
+  }, []);
 
   // Effect to fetch holidays when year or country changes
   useEffect(() => {
@@ -153,10 +297,6 @@ export default function LeaveCalculator() {
 
   const handleQuarterChange = (e: Event) => {
     priorityQuarter.value = (e.target as HTMLSelectElement).value;
-  };
-
-  const toggleDarkMode = () => {
-    darkMode.value = !darkMode.value;
   };
 
   return (
