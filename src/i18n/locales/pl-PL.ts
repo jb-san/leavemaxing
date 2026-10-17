@@ -8,6 +8,7 @@ export const plPL: Copy = {
     navPlanner: "Planer",
     navCompare: "Porównaj",
     navBest: "Najlepsze kraje",
+    navTogether: "Razem",
     navPlans: "Moje plany",
     navMenu: "Menu",
     navMain: "Nawigacja",

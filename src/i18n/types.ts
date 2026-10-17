@@ -15,6 +15,7 @@ export interface Copy {
     navPlanner: string;
     navCompare: string;
     navBest: string;
+    navTogether: string;
     navPlans: string;
     navMenu: string;
     navMain: string;

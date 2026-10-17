@@ -8,6 +8,7 @@ export const itIT: Copy = {
     navPlanner: "Pianificatore",
     navCompare: "Confronta",
     navBest: "Paesi migliori",
+    navTogether: "Insieme",
     navPlans: "I miei piani",
     navMenu: "Menu",
     navMain: "Navigazione",

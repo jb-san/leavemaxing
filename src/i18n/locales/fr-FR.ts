@@ -8,6 +8,7 @@ export const frFR: Copy = {
     navPlanner: "Planificateur",
     navCompare: "Comparer",
     navBest: "Meilleurs pays",
+    navTogether: "Ensemble",
     navPlans: "Mes plans",
     navMenu: "Menu",
     navMain: "Navigation",

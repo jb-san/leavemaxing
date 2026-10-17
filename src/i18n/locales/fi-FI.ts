@@ -8,6 +8,7 @@ export const fiFI: Copy = {
     navPlanner: "Suunnittelija",
     navCompare: "Vertaa",
     navBest: "Parhaat maat",
+    navTogether: "Yhdessä",
     navPlans: "Omat suunnitelmat",
     navMenu: "Valikko",
     navMain: "Päävalikko",

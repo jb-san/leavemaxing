@@ -8,6 +8,7 @@ export const csCZ: Copy = {
     navPlanner: "Plánovač",
     navCompare: "Porovnat",
     navBest: "Nejlepší země",
+    navTogether: "Společně",
     navPlans: "Moje plány",
     navMenu: "Menu",
     navMain: "Navigace",

@@ -6,6 +6,7 @@ export const svSE: Copy = {
     navPlanner: "Planerare",
     navCompare: "Jämför",
     navBest: "Bästa länderna",
+    navTogether: "Tillsammans",
     navPlans: "Mina planer",
     navMenu: "Meny",
     navMain: "Huvudmeny",

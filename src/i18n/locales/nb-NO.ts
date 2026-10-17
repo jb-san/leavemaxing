@@ -10,6 +10,7 @@ export const nbNO: Copy = {
     navPlanner: "Planlegger",
     navCompare: "Sammenlign",
     navBest: "Beste land",
+    navTogether: "Sammen",
     navPlans: "Mine planer",
     navMenu: "Meny",
     navMain: "Hovedmeny",

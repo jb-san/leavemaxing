@@ -8,6 +8,7 @@ export const ptPT: Copy = {
     navPlanner: "Planeador",
     navCompare: "Comparar",
     navBest: "Melhores países",
+    navTogether: "Juntos",
     navPlans: "Os meus planos",
     navMenu: "Menu",
     navMain: "Navegação",

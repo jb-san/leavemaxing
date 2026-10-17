@@ -361,6 +361,13 @@
   .day:active .mk {
     transform: scale(0.92);
   }
+  /* Days that can't be changed don't react to the pointer. */
+  .day:disabled {
+    cursor: default;
+  }
+  .day:disabled .mk {
+    transform: none;
+  }
   .day .mk svg {
     width: 15px;
     height: 15px;

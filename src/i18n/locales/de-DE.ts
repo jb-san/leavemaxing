@@ -6,6 +6,7 @@ export const deDE: Copy = {
     navPlanner: "Planer",
     navCompare: "Vergleichen",
     navBest: "Beste Länder",
+    navTogether: "Gemeinsam",
     navPlans: "Meine Pläne",
     navMenu: "Menü",
     navMain: "Hauptnavigation",

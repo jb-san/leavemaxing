@@ -6,6 +6,7 @@ export const daDK: Copy = {
     navPlanner: "Planlægger",
     navCompare: "Sammenlign",
     navBest: "Bedste lande",
+    navTogether: "Sammen",
     navPlans: "Mine planer",
     navMenu: "Menu",
     navMain: "Hovedmenu",

@@ -8,6 +8,7 @@ export const nlNL: Copy = {
     navPlanner: "Planner",
     navCompare: "Vergelijk",
     navBest: "Beste landen",
+    navTogether: "Samen",
     navPlans: "Mijn plannen",
     navMenu: "Menu",
     navMain: "Hoofdmenu",
