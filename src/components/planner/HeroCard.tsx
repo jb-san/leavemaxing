@@ -82,7 +82,7 @@ export function HeroCard({
         </div>
 
         <BudgetDots used={stats.leaveUsed} budget={budget} />
-        <YearStrip plan={plan} range={range} />
+        <YearStrip plan={plan} range={range} today={today} />
 
         <dl className="grid grid-cols-[auto_auto_minmax(0,1fr)] gap-x-8 gap-y-1 border-t border-hero-line pt-4">
           <Stat label="Breaks" value={String(stats.breaksWithLeave)} />
@@ -165,13 +165,18 @@ function BudgetDots({ used, budget }: { used: number; budget: number }) {
 export function YearStrip({
   plan,
   range,
+  today,
   compact = false,
 }: {
   plan: Plan;
   range: { start: DayNum; end: DayNum };
+  /** Days before this are already behind you and drawn faded. */
+  today?: DayNum;
   compact?: boolean;
 }) {
   const span = range.end - range.start + 1;
+  // Only mark the past while the year is under way.
+  const past = today !== undefined && today > range.start && today <= range.end;
   const pct = (d: DayNum) => `${(Math.min(Math.max(d - range.start, 0), span) / span) * 100}%`;
   const ticks: { day: DayNum; label: string }[] = [];
   const startParts = parts(range.start);
@@ -184,6 +189,12 @@ export function YearStrip({
   return (
     <div className={cx("relative", compact ? "h-6" : "h-10")} aria-hidden="true">
       <div className="absolute inset-x-0 top-[14px] h-1.5 rounded-full bg-hero-line" />
+      {past && (
+        <div
+          className="absolute left-0 top-[14px] h-1.5 rounded-full bg-hero-muted/45"
+          style={{ width: pct(today as DayNum) }}
+        />
+      )}
       {plan.breaks
         .filter((b) => b.end >= range.start && b.start <= range.end)
         .map((b) => (
@@ -192,15 +203,25 @@ export function YearStrip({
             className={cx(
               "absolute top-[9px] h-4 min-w-2.5 rounded-full",
               b.leave > 0 ? "bg-lime" : "bg-sun/70",
+              past && b.end < (today as DayNum) && "opacity-35",
             )}
             style={{ left: pct(b.start), width: `calc(${pct(b.end + 1)} - ${pct(b.start)})` }}
           />
         ))}
+      {past && (
+        <div
+          className="absolute top-[7px] h-5 w-0.5 -translate-x-1/2 rounded-full bg-hero-ink"
+          style={{ left: pct(today as DayNum) }}
+        />
+      )}
       {!compact &&
         ticks.map((t) => (
           <span
             key={t.day}
-            className="absolute top-7 text-[10px] text-hero-muted"
+            className={cx(
+              "absolute top-7 text-[10px] text-hero-muted",
+              past && t.day + 27 < (today as DayNum) && "opacity-50",
+            )}
             style={{ left: pct(t.day) }}
           >
             {t.label}

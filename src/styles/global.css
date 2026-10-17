@@ -163,6 +163,34 @@
     border: 1px solid var(--line);
     box-shadow: 0 2px 0 var(--line);
   }
+  /* The mascot talking: a card with a tail pointing down-left at it. */
+  .bubble {
+    position: relative;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 22px 22px 22px 6px;
+    box-shadow: 0 2px 0 var(--line);
+    padding: 12px 16px;
+  }
+  /* Tail: a line-coloured triangle with a card-coloured one inset 1px, so the border carries round it. */
+  .bubble::before,
+  .bubble::after {
+    content: "";
+    position: absolute;
+    bottom: 8px;
+    width: 12px;
+    height: 14px;
+    clip-path: polygon(100% 0, 0 100%, 100% 100%);
+  }
+  .bubble::before {
+    left: -12px;
+    background: var(--line);
+  }
+  .bubble::after {
+    left: -10px;
+    bottom: 9px;
+    background: var(--card);
+  }
   .field-label {
     font-size: 13px;
     font-weight: 600;
@@ -373,6 +401,13 @@
   }
   .day[data-past] {
     opacity: 0.42;
+  }
+  /* A month that is over fades as a whole, so its days don't fade twice. */
+  .card[data-past] {
+    opacity: 0.5;
+  }
+  .card[data-past] .day[data-past] {
+    opacity: 1;
   }
   .day[data-br]::before {
     content: "";
