@@ -98,29 +98,24 @@ async function deployToCloudflare() {
   const fileCount = Object.keys(manifest).length;
   console.log(`   Found ${fileCount} files`);
 
-  // Step 2: Create deployment
+  // Step 2: Create deployment with form data
   console.log("\n🔄 Creating deployment...");
   const createUrl =
     `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/${PROJECT_NAME}/deployments`;
 
-  const deploymentPayload: {
-    branch?: string;
-    manifest: UploadManifest;
-    commit_hash?: string;
-  } = {
-    manifest,
-  };
+  const formData = new FormData();
+  if (branch) formData.append("branch", branch);
+  if (commitHash) formData.append("commit_hash", commitHash);
 
-  if (branch) deploymentPayload.branch = branch;
-  if (commitHash) deploymentPayload.commit_hash = commitHash;
+  // Add manifest as JSON string in a field called "manifest"
+  formData.append("manifest", JSON.stringify(manifest));
 
   const createResponse = await fetch(createUrl, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${CLOUDFLARE_API_TOKEN}`,
-      "Content-Type": "application/json",
     },
-    body: JSON.stringify(deploymentPayload),
+    body: formData,
   });
 
   if (!createResponse.ok) {
