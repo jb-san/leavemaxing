@@ -1,7 +1,7 @@
 ---
 import HolidayList from "~/components/HolidayList.astro";
 import Planner from "~/components/planner/Planner";
-import { countryByCode, regionName } from "~/data";
+import { countryByCode } from "~/data";
 import { readHolidayFile, filesFor, buildToday } from "~/data/server";
 import { locales, replaceTokens, getLocale, isRegionalCountry } from "~/data/locales";
 import { SITE } from "~/data/site";
@@ -13,7 +13,7 @@ import { toPlanInput, yearsNeeded } from "~/lib/planInput";
 import { plan } from "~/lib/planner/plan";
 
 export function getStaticPaths() {
-  const paths: Array<{ params: { locale: string; slug: string; year: string; region: string } }> = [];
+  const paths: Array<{ params: { locale: string; page: string; region: string } }> = [];
   const years = [2027, 2028];
   
   for (const [localeCode, locale] of Object.entries(locales)) {
@@ -38,8 +38,7 @@ export function getStaticPaths() {
         paths.push({
           params: {
             locale: localeCode.toLowerCase(),
-            slug: locale.slug,
-            year: String(year),
+            page: `${locale.slug}-${year}`,
             region: regionSlug
           }
         });
@@ -50,8 +49,16 @@ export function getStaticPaths() {
   return paths;
 }
 
-const { locale: localeParam, slug, year: yearParam, region: regionSlug } = Astro.params;
-const year = Number(yearParam);
+const { locale: localeParam, page, region: regionSlug } = Astro.params;
+
+// Parse the page param to extract slug and year
+const yearMatch = page?.match(/-(\d{4})$/);
+if (!yearMatch) {
+  return Astro.redirect('/404');
+}
+
+const year = Number(yearMatch[1]);
+const slug = page.slice(0, -5); // Remove "-YYYY" from end
 
 // Find locale config
 const locale = getLocale(localeParam.replace('-', '-').toUpperCase()) || 
@@ -139,9 +146,9 @@ const description = replaceTokens(locale.translations.pageDescription, {
   total: stats.daysOff
 });
 
-const h1 = replaceTokens(locale.translations.h1Region, { year, region: regionFullName });
+const h1 = replaceTokens(locale.translations.h1Region, { year, region: regionFullName || '' });
 
-const canonicalPath = `/${localeParam}/${slug}-${year}/${regionSlug}/`;
+const canonicalPath = `/${localeParam}/${page}/${regionSlug}/`;
 const canonicalUrl = new URL(canonicalPath, SITE.url).href;
 
 // Build hreflang links
@@ -167,7 +174,7 @@ const jsonLd = {
       itemListElement: [
         { "@type": "ListItem", position: 1, name: "leavemaxxing", item: SITE.url },
         { "@type": "ListItem", position: 2, name: country.name, item: `${SITE.url}/${locale.country.toLowerCase()}/` },
-        { "@type": "ListItem", position: 3, name: `${locale.bridgeTerm} ${year}`, item: `${SITE.url}/${localeParam}/${slug}-${year}/` },
+        { "@type": "ListItem", position: 3, name: `${locale.bridgeTerm} ${year}`, item: `${SITE.url}/${localeParam}/${page}/` },
         { "@type": "ListItem", position: 4, name: regionFullName, item: canonicalUrl },
       ],
     },
@@ -189,9 +196,6 @@ const jsonLd = {
 const regionalHolidays = file.holidays.filter(h => 
   h.regions && h.regions.includes(regionCode)
 );
-const nationalHolidays = file.holidays.filter(h => 
-  h.national !== false && (!h.regions || h.regions.length === 0)
-);
 ---
 
 <Base 
@@ -207,7 +211,7 @@ const nationalHolidays = file.holidays.filter(h =>
     <nav aria-label="Breadcrumb" class="text-sm font-semibold text-muted">
       <a href="/" class="hover:text-ink">Planner</a> /
       <a href={`/${locale.country.toLowerCase()}/`} class="hover:text-ink">{country.name}</a> / 
-      <a href={`/${localeParam}/${slug}-${year}/`} class="hover:text-ink">{locale.bridgeTerm} {year}</a> /
+      <a href={`/${localeParam}/${page}/`} class="hover:text-ink">{locale.bridgeTerm} {year}</a> /
       <span aria-current="page">{regionFullName}</span>
     </nav>
     <h1 class="text-[clamp(28px,4vw,44px)] font-extrabold leading-tight">
@@ -336,7 +340,7 @@ const nationalHolidays = file.holidays.filter(h =>
                 .replace(/^-|-$/g, '');
               return (
                 <li>
-                  <a href={`/${localeParam}/${locale.slug}-${year}/${slug}/`} class="hover:text-lime-ink hover:underline">
+                  <a href={`/${localeParam}/${page}/${slug}/`} class="hover:text-lime-ink hover:underline">
                     {name}
                   </a>
                 </li>

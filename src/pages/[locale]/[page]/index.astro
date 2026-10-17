@@ -1,19 +1,19 @@
 ---
 import HolidayList from "~/components/HolidayList.astro";
 import Planner from "~/components/planner/Planner";
-import { countries, countryByCode } from "~/data";
+import { countryByCode } from "~/data";
 import { readHolidayFile, filesFor, buildToday } from "~/data/server";
 import { locales, replaceTokens, getLocale } from "~/data/locales";
 import { SITE } from "~/data/site";
 import Base from "~/layouts/Base.astro";
-import { formatRange, formatDate } from "~/lib/dates";
+import { formatRange } from "~/lib/dates";
 import { defaultSettings } from "~/lib/settings";
 import { calculateBridgePlans, formatBreak } from "~/lib/bridgeDays";
 import { toPlanInput, yearsNeeded } from "~/lib/planInput";
 import { plan } from "~/lib/planner/plan";
 
 export function getStaticPaths() {
-  const paths: Array<{ params: { locale: string; slug: string; year: string } }> = [];
+  const paths: Array<{ params: { locale: string; page: string } }> = [];
   const years = [2027, 2028];
   
   for (const [localeCode, locale] of Object.entries(locales)) {
@@ -21,8 +21,7 @@ export function getStaticPaths() {
       paths.push({
         params: {
           locale: localeCode.toLowerCase(),
-          slug: locale.slug,
-          year: String(year)
+          page: `${locale.slug}-${year}`
         }
       });
     }
@@ -31,8 +30,17 @@ export function getStaticPaths() {
   return paths;
 }
 
-const { locale: localeParam, slug, year: yearParam } = Astro.params;
-const year = Number(yearParam);
+const { locale: localeParam, page } = Astro.params;
+
+// Parse the page param to extract slug and year
+// page format: "slug-YYYY" (e.g., "dlugie-weekendy-2027")
+const yearMatch = page?.match(/-(\d{4})$/);
+if (!yearMatch) {
+  return Astro.redirect('/404');
+}
+
+const year = Number(yearMatch[1]);
+const slug = page.slice(0, -5); // Remove "-YYYY" from end
 
 // Find locale config
 const locale = getLocale(localeParam.replace('-', '-').toUpperCase()) || 
@@ -98,7 +106,7 @@ const description = replaceTokens(locale.translations.pageDescription, {
 
 const h1 = replaceTokens(locale.translations.h1, { year });
 
-const canonicalPath = `/${localeParam}/${slug}-${year}/`;
+const canonicalPath = `/${localeParam}/${page}/`;
 const canonicalUrl = new URL(canonicalPath, SITE.url).href;
 
 // Build hreflang links
