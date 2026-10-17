@@ -1,0 +1,189 @@
+---
+import { Mascot } from "~/components/Mascot";
+import Planner from "~/components/planner/Planner";
+import { countryByCode, meta } from "~/data";
+import { locales } from "~/data/locales";
+import { buildToday, readHolidayFile, serverPlan } from "~/data/server";
+import { SITE } from "~/data/site";
+import { getCopy, intlLocale } from "~/i18n";
+import { countryName } from "~/i18n/format";
+import { homeAlternates, localizedBestYears } from "~/i18n/routes";
+import Base from "~/layouts/Base.astro";
+import { shellAlternates } from "~/lib/hreflang";
+import { regionCopy } from "~/lib/regionLabels";
+import { publishedRegionCodes } from "~/lib/regionSets";
+import { defaultSettings } from "~/lib/settings";
+
+export function getStaticPaths() {
+  return Object.keys(locales).map((code) => ({ params: { locale: code.toLowerCase() } }));
+}
+
+const param = Astro.params.locale ?? "";
+const locale = Object.values(locales).find((item) => item.code.toLowerCase() === param);
+if (!locale) return Astro.redirect("/404");
+
+const copy = getCopy(locale.code);
+const now = new Date();
+const preferred = now.getMonth() >= 9 ? now.getFullYear() + 1 : now.getFullYear();
+const year = meta.years.includes(preferred) ? preferred : now.getFullYear();
+const settings = defaultSettings(locale.country, year);
+settings.budget = locale.defaultBudget;
+const { files } = serverPlan(settings);
+const country = countryByCode.get(locale.country);
+const place = countryName(locale.country, intlLocale(locale.code), country?.name ?? locale.country);
+const bridgeYear = localizedBestYears(now)[0] ?? 2027;
+const file = readHolidayFile(locale.country, bridgeYear);
+const regions = country?.regional
+  ? publishedRegionCodes(locale.country, Object.keys(country.regions), file)
+  : [];
+const canonical = `${SITE.url}/${param}/`;
+const hreflangs = shellAlternates(homeAlternates(SITE.url));
+const bestYear = localizedBestYears(now).at(-1);
+const steps = [
+  { title: copy.home.step1Title, text: copy.home.step1Text },
+  { title: copy.home.step2Title, text: copy.home.step2Text },
+  { title: copy.home.step3Title, text: copy.home.step3Text },
+  { title: copy.home.step4Title, text: copy.home.step4Text },
+];
+const years = [2027, 2028];
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      name: "leavemaxxing",
+      url: canonical,
+      description: copy.home.description,
+      inLanguage: locale.code,
+    },
+    {
+      "@type": "WebApplication",
+      name: "leavemaxxing",
+      url: canonical,
+      description: copy.home.description,
+      applicationCategory: "LifestyleApplication",
+      operatingSystem: "Any",
+      inLanguage: locale.code,
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    },
+  ],
+};
+---
+
+<Base
+  title={copy.home.title}
+  description={copy.home.description}
+  jsonLd={jsonLd}
+  wide
+  locale={locale.code}
+  lang={locale.code}
+  canonical={canonical}
+  hreflangs={hreflangs}
+  image={`/og/l/${param}.png`}
+>
+  <div class="flex flex-col gap-3 pb-7 pt-3 sm:flex-row sm:items-end sm:justify-between">
+    <h1 class="max-w-[16ch] text-[clamp(34px,5.4vw,64px)] font-extrabold leading-[0.95]">{copy.home.h1}</h1>
+    <p class="max-w-[44ch] text-[15px] text-muted sm:pb-1">{copy.home.intro}</p>
+  </div>
+
+  <Planner
+    client:load
+    initial={settings}
+    files={files}
+    today={buildToday}
+    mode="home"
+    years={meta.years}
+    locale={locale.code}
+    localizeRegions
+  />
+
+  <section aria-labelledby="how" class="mt-16">
+    <h2 id="how" class="text-3xl font-extrabold">{copy.home.how}</h2>
+    <ol class="mt-6 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-4">
+      {
+        steps.map((s, i) => (
+          <li class="flex flex-col gap-1.5">
+            <span class="font-display text-5xl font-black leading-none text-lime-strong" aria-hidden="true">
+              {i + 1}
+            </span>
+            <h3 class="mt-2 text-xl font-bold">{s.title}</h3>
+            <p class="max-w-[34ch] text-sm text-muted">{s.text}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  <section aria-labelledby="years" class="mt-16">
+    <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+      <h2 id="years" class="text-3xl font-extrabold">{copy.home.years}</h2>
+      {
+        bestYear && (
+          <a
+            href={`/${param}/best/${bestYear}/`}
+            class="text-sm font-semibold underline decoration-lime decoration-2 underline-offset-4"
+          >
+            {copy.home.ranking}
+          </a>
+        )
+      }
+    </div>
+    <ul class="mt-5 flex flex-wrap gap-x-6 gap-y-3">
+      {
+        years.map((item) => (
+          <li>
+            <a
+              href={`/${param}/${locale.slug}-${item}/`}
+              class="flex items-center gap-2 font-semibold decoration-lime decoration-2 underline-offset-4 hover:underline"
+            >
+              <span class="text-lg leading-none" aria-hidden="true">
+                {country?.flag}
+              </span>
+              {locale.bridgeTerm} {item}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  {
+    regions.length > 0 && (
+      <section aria-labelledby="regions" class="mt-16">
+        <h2 id="regions" class="text-3xl font-extrabold">
+          {copy.home.regions}
+          {place ? ` · ${place}` : ""}
+        </h2>
+        <ul class="mt-5 flex flex-wrap gap-x-6 gap-y-3">
+          {regions.map((code) => {
+            const region = regionCopy(locale.country, code, country?.regions[code] ?? code);
+            return (
+              <li>
+                <a
+                  href={`/${param}/${locale.slug}-${bridgeYear}/${region.slug}/`}
+                  class="font-semibold decoration-lime decoration-2 underline-offset-4 hover:underline"
+                >
+                  {region.name}
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+    )
+  }
+
+  <section aria-labelledby="private" class="mt-16 flex items-start gap-4 border-t border-line pt-8">
+    <Mascot size={48} mood="happy" title="" />
+    <div>
+      <h2 id="private" class="text-xl font-bold">{copy.home.privateTitle}</h2>
+      <p class="mt-1 max-w-[62ch] text-sm text-muted">
+        {copy.home.privateBody}{" "}
+        <a href={`/${param}/about/`} class="font-semibold text-ink underline decoration-lime decoration-2 underline-offset-4">
+          {copy.home.privateLink}
+        </a>
+      </p>
+    </div>
+  </section>
+</Base>

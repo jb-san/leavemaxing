@@ -7,6 +7,7 @@ interface RawDay {
   date: string;
   name: string;
   local: string;
+  names: Record<string, string>;
 }
 
 /**
@@ -37,6 +38,17 @@ const EXCLUDE_HOLIDAYS: Record<string, RegExp[]> = {
 function publicDays(hd: Holidays, year: number): RawDay[] {
   const en = hd.getHolidays(year, "en");
   const local = hd.getHolidays(year);
+  const supported = new Set(hd.getLanguages());
+  const byLang = new Map<string, Map<number, string>>();
+  for (const lang of supported) {
+    if (lang === "en") continue;
+    const map = new Map<number, string>();
+    for (const h of hd.getHolidays(year, lang)) {
+      if (h.type !== "public") continue;
+      if (!map.has(h.start.getTime())) map.set(h.start.getTime(), h.name);
+    }
+    byLang.set(lang, map);
+  }
   const out: RawDay[] = [];
   en.forEach((h, i) => {
     if (h.type !== "public") return;
@@ -44,12 +56,19 @@ function publicDays(hd: Holidays, year: number): RawDay[] {
     // Skip half days such as "Christmas Eve from 14:00".
     if (duration < 0.75) return;
     const first = h.date.slice(0, 10);
-    const localName = local[i]?.name ?? h.name;
+    const aligned = local[i]?.start.getTime() === h.start.getTime() ? local[i] : undefined;
+    const localName =
+      aligned?.name ?? local.find((item) => item.start.getTime() === h.start.getTime())?.name ?? h.name;
+    const names: Record<string, string> = {};
+    for (const [lang, map] of byLang) {
+      const translated = map.get(h.start.getTime());
+      if (translated && translated !== h.name) names[lang] = translated;
+    }
     const days = Math.max(1, Math.round(duration));
     for (let k = 0; k < days; k++) {
       const d = new Date(Date.parse(`${first}T00:00:00Z`) + k * DAY_MS).toISOString().slice(0, 10);
       if (!d.startsWith(String(year))) continue;
-      out.push({ date: d, name: h.name, local: localName });
+      out.push({ date: d, name: h.name, local: localName, names });
     }
   });
   return out;
@@ -105,7 +124,13 @@ export function extractCountryYear(country: string, year: number, regions: strin
   if (deFacto) {
     for (const h of deFacto) {
       const date = `${year}-${String(h.month).padStart(2, "0")}-${String(h.day).padStart(2, "0")}`;
-      const raw: RawDay = { date, name: h.name, local: h.local ?? h.name };
+      const localName = h.local ?? h.name;
+      const raw: RawDay = {
+        date,
+        name: h.name,
+        local: localName,
+        names: localName !== h.name ? { sv: localName } : {},
+      };
       entries.set(key(raw), { day: raw, national: true, regions: new Set() });
     }
   }
@@ -113,7 +138,12 @@ export function extractCountryYear(country: string, year: number, regions: strin
   if (country === "SE") {
     const midsummerEve = getMidsummerEve(year);
     if (midsummerEve) {
-      const raw: RawDay = { date: midsummerEve, name: "Midsummer Eve", local: "Midsommarafton" };
+      const raw: RawDay = {
+        date: midsummerEve,
+        name: "Midsummer Eve",
+        local: "Midsommarafton",
+        names: { sv: "Midsommarafton" },
+      };
       entries.set(key(raw), { day: raw, national: true, regions: new Set() });
     }
   }
@@ -137,6 +167,7 @@ export function extractCountryYear(country: string, year: number, regions: strin
     .map((e) => {
       const entry: HolidayEntry = { date: e.day.date, name: e.day.name };
       if (e.day.local && e.day.local !== e.day.name) entry.local = e.day.local;
+      if (Object.keys(e.day.names).length > 0) entry.names = e.day.names;
       const everywhere =
         regions.length === 0 || (e.national && (e.regions.size === regions.length || e.regions.size === 0));
       if (!everywhere) entry.regions = [...e.regions].sort();

@@ -1,10 +1,17 @@
 ---
 import { Mascot } from "~/components/Mascot";
 import { countries } from "~/data";
+import { SITE } from "~/data/site";
+import { aboutAlternates } from "~/i18n/routes";
 import Base from "~/layouts/Base.astro";
+import { shellAlternates } from "~/lib/hreflang";
 ---
 
-<Base title="How leavemaxxing plans your leave" description="How leavemaxxing finds the leave days that turn weekends and public holidays into the longest breaks, and where the holiday data comes from.">
+<Base
+  title="How leavemaxxing plans your leave"
+  description="How leavemaxxing finds the leave days that turn weekends and public holidays into the longest breaks, and where the holiday data comes from."
+  hreflangs={shellAlternates(aboutAlternates(SITE.url))}
+>
   <article class="card mx-auto mt-2 max-w-3xl p-6 sm:p-10">
     <div class="flex items-center gap-4">
       <Mascot size={64} mood="wow" title="" />

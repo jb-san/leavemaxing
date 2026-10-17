@@ -1,61 +1,62 @@
 ---
 import { countryByCode } from "~/data";
-import { fromIso, MONTHS_LONG, parts, WEEKDAYS_LONG, weekdayMon0 } from "~/lib/dates";
-import type { HolidayFile } from "~/lib/holidays";
+import { getCopy, intlLocale } from "~/i18n";
+import { calendarLabels, countryName } from "~/i18n/format";
+import { fromIso, parts, weekdayMon0 } from "~/lib/dates";
+import { holidayName, type HolidayFile } from "~/lib/holidays";
 import { regionCopy } from "~/lib/regionLabels";
 
 interface Props {
   file: HolidayFile;
-  /** Use German region names on localized pages. */
+  /** Use local region names on localized pages. */
   localizeRegions?: boolean;
+  /** UI locale. English pages omit it and keep English names. */
+  locale?: string;
 }
 
-const { file, localizeRegions = false } = Astro.props;
+const { file, localizeRegions = false, locale } = Astro.props;
+const copy = getCopy(locale);
+const h = copy.holiday;
+const labels = calendarLabels(intlLocale(locale));
 const country = countryByCode.get(file.country);
+const countryLabel = countryName(file.country, intlLocale(locale), country?.name ?? file.country);
 const regionName = (code: string) => {
   const source = country?.regions[code] ?? code;
   return localizeRegions ? regionCopy(file.country, code, source).name : source;
 };
 
-const BRIDGE: Record<number, string> = {
-  0: "Long weekend: Sat to Mon",
-  1: "Take Monday off for a 4-day weekend",
-  3: "Take Friday off for a 4-day weekend",
-  4: "Long weekend: Fri to Sun",
-  5: "Falls on a Saturday",
-  6: "Falls on a Sunday",
-};
-const rows = file.holidays.map((h) => {
-  const d = fromIso(h.date);
+const tips = [h.tipMon, h.tipTue, h.tipMid, h.tipThu, h.tipFri, h.tipSat, h.tipSun];
+const rows = file.holidays.map((holiday) => {
+  const d = fromIso(holiday.date);
   const p = parts(d);
   const wd = weekdayMon0(d);
+  const shown = holidayName(holiday, locale);
   return {
-    ...h,
     day: p.day,
-    month: MONTHS_LONG[p.month - 1],
-    weekday: WEEKDAYS_LONG[wd],
-    tip: BRIDGE[wd] ?? "Midweek: bridge it with 2 days",
-    where: h.regions ? h.regions.map(regionName).join(", ") : null,
+    month: labels.monthsLong[p.month - 1],
+    weekday: labels.weekdaysLong[wd],
+    name: shown,
+    local: !locale && holiday.local && holiday.local !== holiday.name ? holiday.local : null,
+    tip: tips[wd] ?? h.tipMid,
+    where: holiday.regions ? holiday.regions.map(regionName).join(", ") : null,
   };
 });
-const nationalCount = new Set(file.holidays.filter((h) => h.national !== false).map((h) => h.date)).size;
+const nationalCount = new Set(file.holidays.filter((holiday) => holiday.national !== false).map((holiday) => holiday.date)).size;
+const intro = `${h.intro.replace("{count}", String(nationalCount)).replace("{year}", String(file.year)).replace("{country}", countryLabel)}${rows.some((r) => r.where) ? h.regional : ""}. ${h.bridgeNote}`;
 ---
 
 <section aria-labelledby="holidays-title" class="card min-w-0 p-5 sm:p-7">
   <h2 id="holidays-title" class="text-2xl font-bold">
-    Public holidays in {country?.name} {file.year}
+    {h.title.replace("{country}", countryLabel).replace("{year}", String(file.year))}
   </h2>
-  <p class="mt-1 text-sm text-muted">
-    {nationalCount} national public holidays{rows.some((r) => r.where) ? ", plus regional ones" : ""}. Holidays on a Tuesday or
-    Thursday are the best bridge days.
-  </p>
-  <div class="mt-5 overflow-x-auto" tabindex="0" role="region" aria-label="Public holidays table">
+  <p class="mt-1 text-sm text-muted">{intro}</p>
+  <div class="mt-5 overflow-x-auto" tabindex="0" role="region" aria-label={h.table}>
     <table class="w-full min-w-[520px] text-left text-sm">
       <thead class="text-xs uppercase tracking-wider text-muted">
         <tr>
-          <th class="pb-3 pr-4 font-bold">Date</th>
-          <th class="pb-3 pr-4 font-bold">Holiday</th>
-          <th class="pb-3 font-bold">Leave tip</th>
+          <th class="pb-3 pr-4 font-bold">{h.date}</th>
+          <th class="pb-3 pr-4 font-bold">{h.name}</th>
+          <th class="pb-3 font-bold">{h.tip}</th>
         </tr>
       </thead>
       <tbody class="divide-y divide-line">
@@ -71,7 +72,7 @@ const nationalCount = new Set(file.holidays.filter((h) => h.national !== false).
               <td class="py-3 pr-4 align-top">
                 <span class="font-semibold">{r.name}</span>
                 {r.local && <span class="block text-xs text-muted">{r.local}</span>}
-                {r.where && <span class="mt-1 block text-xs text-muted">Only in {r.where}</span>}
+                {r.where && <span class="mt-1 block text-xs text-muted">{h.onlyIn.replace("{where}", r.where)}</span>}
               </td>
               <td class="py-3 align-top text-muted">{r.tip}</td>
             </tr>

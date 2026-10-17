@@ -1,6 +1,7 @@
 import { SlidersHorizontal } from "lucide-react";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { countries, countryByCode, placeName } from "~/data";
+import { I18nProvider, useI18n } from "~/i18n/context";
 import {
   type DayNum,
   dayNum,
@@ -15,13 +16,12 @@ import { type HolidayFile, holidayMap, loadHolidayFile } from "~/lib/holidays";
 import { runPlan } from "~/lib/planClient";
 import { toPlanInput, yearsNeeded } from "~/lib/planInput";
 import { classifyDays, plan as planSync } from "~/lib/planner/plan";
-import { type Plan, type PlanInput, STYLES } from "~/lib/planner/types";
+import type { Plan, PlanInput, Style } from "~/lib/planner/types";
 import { regionCopy } from "~/lib/regionLabels";
 import { defaultSettings, fromQuery, planPath, type Settings, shareUrl, toQuery } from "~/lib/settings";
 import { addPlan, loadLast, recordBest, saveLast } from "~/lib/storage";
 import { BreaksList } from "./BreaksList";
 import { Calendar, CalendarPlaceholder, Legend } from "./Calendar";
-import { plural } from "./copy";
 import { DayMenu } from "./DayMenu";
 import { ExportDialog, SaveDialog, ShareDialog } from "./Dialogs";
 import { HeroCard } from "./HeroCard";
@@ -56,6 +56,8 @@ export interface PlannerProps {
   years: number[];
   /** Show German region names on localized pages. English pages keep the source names. */
   localizeRegions?: boolean;
+  /** UI locale, for example `de-DE`. English pages omit it. */
+  locale?: string;
 }
 
 type Dialog = "settings" | "share" | "export" | "save" | null;
@@ -63,7 +65,19 @@ type Dialog = "settings" | "share" | "export" | "save" | null;
 const fileKey = (country: string, year: number) => `${country}/${year}`;
 
 export default function Planner(props: PlannerProps) {
+  return (
+    <I18nProvider code={props.locale}>
+      <PlannerApp {...props} />
+    </I18nProvider>
+  );
+}
+
+function PlannerApp(props: PlannerProps) {
+  const i18n = useI18n();
+  const p = i18n.m.planner;
   const { years, mode } = props;
+  const styleName = (id: Style) =>
+    id === "weekends" ? p.styleWeekends : id === "long" ? p.styleLong : p.styleBalanced;
   const [settings, rawDispatch] = useReducer(reducer, props.initial);
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
@@ -108,12 +122,11 @@ export default function Planner(props: PlannerProps) {
     if ([...q.keys()].some((k) => k !== "utm_source")) {
       const r = fromQuery(q, base, countryByCode.get(base.country)?.regions ?? {});
       next = r.settings;
-      if (r.invalid.length)
-        push("Some settings in this link weren't valid, so defaults are used instead.", "warn");
+      if (r.invalid.length) push(p.invalidLink, "warn");
     } else {
       const last = loadLast();
       const lastOk = last && countryByCode.has(last.country);
-      if (mode === "home") {
+      if (mode === "home" && !props.locale) {
         if (lastOk && years.includes(last.year)) next = last;
         else if (lastOk) next = carryPreferences(defaultSettings(last.country, base.year), last);
         else {
@@ -148,7 +161,7 @@ export default function Planner(props: PlannerProps) {
           return m;
         });
       })
-      .catch(() => live && setLoadError("Couldn't load the holidays. Check your connection and try again."));
+      .catch(() => live && setLoadError(p.loadError));
     return () => {
       live = false;
     };
@@ -161,8 +174,9 @@ export default function Planner(props: PlannerProps) {
       settings,
       neededYears.map((y) => files.get(fileKey(settings.country, y))),
       today,
+      props.locale,
     );
-  }, [settings, files, today, missing.length]);
+  }, [settings, files, today, missing.length, props.locale]);
 
   const [result, setResult] = useState<{ input: PlanInput; plan: Plan }>(() => {
     const i = toPlanInput(
@@ -171,6 +185,7 @@ export default function Planner(props: PlannerProps) {
         props.files.find((f) => f.year === y && f.country === props.initial.country),
       ),
       props.today,
+      props.locale,
     );
     return { input: i, plan: planSync(i) };
   });
@@ -203,9 +218,10 @@ export default function Planner(props: PlannerProps) {
     prevDaysOff.current = result.plan.stats.daysOff;
     if (pendingDelta.current !== null) {
       pendingDelta.current = null;
-      if (delta > 0) push(`+${plural(delta, "day")} off`, "good");
-      else if (delta < 0) push(`${delta} ${delta === -1 ? "day" : "days"} off`, "info");
-      else push("Same days off, different shape", "info");
+      if (delta > 0) push(i18n.text(p.plusOff, { n: delta, word: i18n.plural(delta, p.day) }), "good");
+      else if (delta < 0)
+        push(i18n.text(p.minusOff, { n: delta, word: i18n.plural(Math.abs(delta), p.day) }), "info");
+      else push(p.sameOff, "info");
     }
     if (ready && userChanged.current && result.input.budget > 0) {
       const isNewBest = recordBest(`${settings.country}/${settings.year}`, result.plan.stats.multiplier);
@@ -218,7 +234,7 @@ export default function Planner(props: PlannerProps) {
             colors: ["#8BD12F", "#FFC83D", "#1A2030", "#7C6CF0"],
           }),
         );
-        push(`New best: ${result.plan.stats.multiplier.toFixed(1)}×`, "good");
+        push(i18n.text(p.newBest, { n: result.plan.stats.multiplier.toFixed(1) }), "good");
       }
     }
   }, [result]);
@@ -255,16 +271,33 @@ export default function Planner(props: PlannerProps) {
   const place =
     props.localizeRegions && settings.region
       ? regionCopy(settings.country, settings.region, sourcePlace).name
-      : sourcePlace;
+      : i18n.code === "en"
+        ? sourcePlace
+        : i18n.place(settings.country, sourcePlace);
   const yearLabel = leaveYearLabel(settings.year, settings.yearStart);
   const fileName = `leavemaxxing-${settings.country.toLowerCase()}-${settings.year}`;
   const origin = typeof window !== "undefined" ? window.location.origin : "https://leavemaxxing.com";
   const url = shareUrl(settings, origin);
   // biome-ignore lint/correctness/useExhaustiveDependencies: range is derived from the plan input
-  const card = useMemo(
-    () => ({ plan: result.plan, place, flag: country?.flag ?? "", yearLabel, range }),
-    [result.plan, place, country?.flag, yearLabel],
-  );
+  const card = useMemo(() => {
+    const stats = result.plan.stats;
+    const localized =
+      i18n.code === "en"
+        ? {}
+        : {
+            headline: `${i18n.text(i18n.plural(stats.leaveUsed, p.heroLeave), { n: stats.leaveUsed })} ${i18n.plural(stats.leaveUsed, p.heroBecome)}`,
+            subhead: i18n.text(p.heroOff, { n: stats.daysOff }),
+            months: i18n.monthsShort,
+            storyLines: [
+              i18n.text(p.breaksWith, {
+                n: stats.breaksWithLeave,
+                word: i18n.plural(stats.breaksWithLeave, p.breakDay),
+              }),
+              `${p.longestLabel} ${i18n.count(stats.longest, p.day)}`,
+            ],
+          };
+    return { plan: result.plan, place, flag: country?.flag ?? "", yearLabel, range, ...localized };
+  }, [result.plan, place, country?.flag, yearLabel, i18n, p]);
 
   const onDay = useCallback((day: DayNum, rect: DOMRect) => setMenu({ day, rect }), []);
   const onDayAction = (day: DayNum, action: DayAction) => {
@@ -274,12 +307,12 @@ export default function Planner(props: PlannerProps) {
   const menuKind = menu ? (kinds.get(menu.day) ?? null) : null;
   const editable = menu ? menu.day >= range.start && menu.day <= range.end && menu.day >= shown.today : false;
   const loading = input === null || input !== result.input;
-  const styleLabel = STYLES.find((s) => s.id === settings.style)?.label;
+  const styleLabel = styleName(settings.style);
 
   return (
     <div className="grid items-start gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
       <aside
-        aria-label="Plan settings"
+        aria-label={p.settingsAria}
         className="card hidden p-5 lg:sticky lg:top-4 lg:block lg:max-h-[calc(100dvh-32px)] lg:overflow-y-auto"
       >
         <SettingsPanel
@@ -308,11 +341,12 @@ export default function Planner(props: PlannerProps) {
               {place}, {yearLabel}
             </span>
             <span className="truncate text-sm text-muted">
-              {plural(settings.budget, "leave day")}, {styleLabel?.toLowerCase()}
+              {i18n.count(settings.budget, p.leaveDay)},{" "}
+              {i18n.code === "en" ? styleLabel.toLowerCase() : styleLabel}
             </span>
           </span>
           <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-lime px-3.5 py-2 text-sm font-bold text-lime-ink">
-            <SlidersHorizontal size={15} strokeWidth={2.4} /> Edit
+            <SlidersHorizontal size={15} strokeWidth={2.4} /> {p.edit}
           </span>
         </button>
 
@@ -336,14 +370,14 @@ export default function Planner(props: PlannerProps) {
           >
             {loadError}
             <button type="button" className="btn btn-soft" onClick={() => setRetry((r) => r + 1)}>
-              Try again
+              {p.tryAgain}
             </button>
           </div>
         )}
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Legend />
-          <span className="hidden text-xs text-muted sm:inline">Tap a day to change it</span>
+          <span className="hidden text-xs text-muted sm:inline">{p.tapDay}</span>
         </div>
 
         {ready ? (
@@ -367,13 +401,13 @@ export default function Planner(props: PlannerProps) {
       <button
         type="button"
         onClick={() => setDialog("settings")}
-        aria-label="Plan settings"
+        aria-label={p.settingsAria}
         className="fixed bottom-[max(20px,env(safe-area-inset-bottom))] right-[max(20px,env(safe-area-inset-right))] z-30 grid size-16 place-items-center rounded-full bg-lime text-lime-ink shadow-lift transition-transform duration-150 ease-[var(--ease-out)] active:scale-[0.94] lg:hidden"
       >
         <SlidersHorizontal size={26} />
       </button>
 
-      <Sheet open={dialog === "settings"} onClose={() => setDialog(null)} title="Plan settings">
+      <Sheet open={dialog === "settings"} onClose={() => setDialog(null)} title={p.settingsTitle}>
         <SettingsPanel
           settings={settings}
           dispatch={dispatch}
@@ -382,7 +416,7 @@ export default function Planner(props: PlannerProps) {
           localizeRegions={props.localizeRegions}
         />
         <button type="button" className="btn btn-primary" onClick={() => setDialog(null)}>
-          Show my plan
+          {p.showPlan}
         </button>
       </Sheet>
       <ShareDialog
@@ -415,12 +449,7 @@ export default function Planner(props: PlannerProps) {
               multiplier: result.plan.stats.multiplier,
             },
           });
-          push(
-            saved
-              ? "Saved. Find it under My plans."
-              : "Couldn't save: your browser's storage is off or full.",
-            saved ? "good" : "warn",
-          );
+          push(saved ? p.savedOk : p.savedFail, saved ? "good" : "warn");
         }}
       />
       <DayMenu

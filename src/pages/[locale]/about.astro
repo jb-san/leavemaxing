@@ -1,0 +1,62 @@
+---
+import { Mascot } from "~/components/Mascot";
+import { countries } from "~/data";
+import { locales } from "~/data/locales";
+import { SITE } from "~/data/site";
+import { fill, getCopy } from "~/i18n";
+import { aboutAlternates } from "~/i18n/routes";
+import Base from "~/layouts/Base.astro";
+import { shellAlternates } from "~/lib/hreflang";
+
+export function getStaticPaths() {
+  return Object.keys(locales).map((code) => ({ params: { locale: code.toLowerCase() } }));
+}
+
+const param = Astro.params.locale ?? "";
+const locale = Object.values(locales).find((item) => item.code.toLowerCase() === param);
+if (!locale) return Astro.redirect("/404");
+const copy = getCopy(locale.code).about;
+const canonical = `${SITE.url}/${param}/about/`;
+---
+
+<Base
+  title={copy.title}
+  description={copy.description}
+  locale={locale.code}
+  lang={locale.code}
+  canonical={canonical}
+  hreflangs={shellAlternates(aboutAlternates(SITE.url))}
+  image={`/og/l/${param}.png`}
+>
+  <article class="card mx-auto mt-2 max-w-3xl p-6 sm:p-10">
+    <div class="flex items-center gap-4">
+      <Mascot size={64} mood="wow" title="" />
+      <div>
+        <h1 class="text-3xl font-extrabold sm:text-4xl">{copy.h1}</h1>
+      </div>
+    </div>
+    <div class="prose-lm mt-6">
+      <p>{copy.lead}</p>
+      <h2>{copy.what}</h2>
+      <ol>
+        <li>{copy.li1}</li>
+        <li>{copy.li2}</li>
+        <li>{copy.li3}</li>
+        <li>{copy.li4}</li>
+      </ol>
+      <h2>{copy.styles}</h2>
+      <ul>
+        <li><strong>{copy.style1}</strong></li>
+        <li><strong>{copy.style2}</strong></li>
+        <li><strong>{copy.style3}</strong></li>
+      </ul>
+      <p>{copy.stylesNote}</p>
+      <h2>{copy.source}</h2>
+      <p>{fill(copy.sourceBody, { count: countries.length })}</p>
+      <h2>{copy.yours}</h2>
+      <p>
+        {copy.yoursBody} <a href="/privacy-policy/">{copy.privacyLink}</a>.
+      </p>
+    </div>
+  </article>
+</Base>

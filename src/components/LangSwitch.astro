@@ -1,0 +1,41 @@
+---
+import type { LangLink } from "~/i18n/switcher";
+
+interface Props {
+  links: LangLink[];
+  label: string;
+}
+
+const { links, label } = Astro.props;
+const current = links.find((link) => link.current) ?? links[0];
+---
+
+<details class="relative">
+  <summary
+    class="grid h-10 list-none place-items-center rounded-full bg-card px-3 font-display text-sm font-extrabold shadow-card [&::-webkit-details-marker]:hidden"
+    aria-label={current ? `${current.short}, ${label}` : label}
+  >
+    {current?.short}
+  </summary>
+  <nav
+    aria-label={label}
+    class="absolute right-0 top-12 z-40 flex max-h-[70dvh] w-56 flex-col gap-0.5 overflow-y-auto rounded-3xl bg-card p-2 shadow-lift"
+  >
+    {
+      links.map((link) => (
+        <a
+          href={link.href}
+          hreflang={link.code === "en" ? "en" : link.code}
+          aria-current={link.current ? "true" : undefined}
+          class:list={[
+            "rounded-2xl px-3 py-2 text-sm font-semibold",
+            link.current ? "bg-lime text-lime-ink" : "hover:bg-card-2",
+          ]}
+        >
+          <span class="mr-2 font-display text-xs font-extrabold text-muted">{link.short}</span>
+          {link.label}
+        </a>
+      ))
+    }
+  </nav>
+</details>
