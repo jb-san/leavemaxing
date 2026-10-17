@@ -1,0 +1,66 @@
+---
+import { Mascot } from "~/components/Mascot";
+import { countries } from "~/data";
+import Base from "~/layouts/Base.astro";
+---
+
+<Base title="How leavemaxxing plans your leave" description="How leavemaxxing finds the leave days that turn weekends and public holidays into the longest breaks, and where the holiday data comes from.">
+  <article class="card mx-auto mt-2 max-w-3xl p-6 sm:p-10">
+    <div class="flex items-center gap-4">
+      <Mascot size={64} mood="wow" title="" />
+      <div>
+        <p class="eyebrow">About</p>
+        <h1 class="text-3xl font-extrabold sm:text-4xl">How leavemaxxing plans your leave</h1>
+      </div>
+    </div>
+    <div class="prose-lm mt-6">
+      <p>
+        Most of your time off is already in the calendar: weekends and public holidays. leavemaxxing finds the few
+        workdays that join them into long breaks, so each leave day you spend buys as many days away as possible.
+      </p>
+
+      <h2>What happens when you plan</h2>
+      <ol>
+        <li>We load the public holidays for your country, and your region if you pick one.</li>
+        <li>
+          Every day of your leave year is marked as a day off (weekend, holiday, or a day off you added) or a workday you
+          could take.
+        </li>
+        <li>
+          The planner checks every way of spending your leave days and keeps the best one. It doesn't guess or take
+          shortcuts: for the style you choose, the plan it shows is the best possible one.
+        </li>
+        <li>
+          It keeps your plan spread across the year, so you don't end up with every break in spring and nothing after
+          summer.
+        </li>
+      </ol>
+
+      <h2>The three styles</h2>
+      <ul>
+        <li><strong>Long weekends</strong> favours lots of 3 to 5 day breaks. It usually gives the highest score.</li>
+        <li><strong>Balanced</strong> aims for week-long breaks while still using holidays well.</li>
+        <li><strong>One big trip</strong> piles your leave into as long a break as it can.</li>
+      </ul>
+      <p>
+        You can also set the shortest and longest break you want, favourite months, the days you work, and when your leave
+        year starts. Tap any day in the calendar to keep it as leave, block it, or mark it as a day off.
+      </p>
+
+      <h2>Where the holidays come from</h2>
+      <p>
+        Holidays for {countries.length} countries and their regions come from the open source
+        <a href="https://github.com/commenthol/date-holidays">date-holidays</a> project, licensed
+        <a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>. The site is rebuilt every week to pick up
+        changes. Governments sometimes add or move holidays at short notice, so always check the dates with your employer
+        before booking anything.
+      </p>
+
+      <h2>Your plans stay with you</h2>
+      <p>
+        There are no accounts. Plans are worked out in your browser, saved plans stay on your device, and a shared link
+        carries the whole plan in the address itself. Read the <a href="/privacy-policy/">privacy policy</a> for details.
+      </p>
+    </div>
+  </article>
+</Base>

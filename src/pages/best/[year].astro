@@ -1,0 +1,137 @@
+---
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { Mascot } from "~/components/Mascot";
+import Base from "~/layouts/Base.astro";
+
+interface Row {
+  code: string;
+  name: string;
+  flag: string;
+  holidays: number;
+  results: Record<number, { daysOff: number; multiplier: number; longest: number }>;
+}
+
+export function getStaticPaths() {
+  const thisYear = new Date().getFullYear();
+  return [thisYear, thisYear + 1].map((year) => ({ params: { year: String(year) } }));
+}
+
+const year = Number(Astro.params.year);
+const data = JSON.parse(readFileSync(join(process.cwd(), `src/data/generated/best-${year}.json`), "utf8")) as {
+  budgets: number[];
+  rows: Row[];
+};
+const DEFAULT = 20;
+const tables = data.budgets.map((budget) => ({
+  budget,
+  rows: [...data.rows]
+    .filter((r) => r.results[budget])
+    .sort((a, b) => (b.results[budget]?.daysOff ?? 0) - (a.results[budget]?.daysOff ?? 0) || a.name.localeCompare(b.name)),
+}));
+const top = tables.find((t) => t.budget === DEFAULT)?.rows[0];
+const other = year === new Date().getFullYear() ? year + 1 : year - 1;
+---
+
+<Base
+  title={`Where leave goes furthest in ${year}: every country ranked · leavemaxxing`}
+  description={`${data.rows.length} countries ranked by how many days off ${DEFAULT} leave days buy in ${year}, using each country's public holidays and the best possible plan.`}
+  wide
+>
+  <div class="flex flex-col gap-3 pb-6 pt-2 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <p class="eyebrow">Rankings</p>
+      <h1 class="text-[clamp(28px,4vw,44px)] font-extrabold leading-tight">Where leave goes furthest in {year}</h1>
+      <p class="mt-1 max-w-2xl text-muted">
+        Every country gets the same leave days and the balanced style, planned from 1 January. National holidays only, with
+        the country's normal weekend.
+      </p>
+    </div>
+    <a href={`/best/${other}/`} class="chip shrink-0 bg-card">See {other}</a>
+  </div>
+
+  {
+    top && (
+      <section class="mb-5 flex items-center gap-4 rounded-[var(--radius-hero)] bg-hero p-6 text-hero-ink">
+        <Mascot size={64} mood="starry" title="" />
+        <p class="font-display text-[clamp(22px,3vw,32px)] font-extrabold leading-tight">
+          {top.flag} {top.name} turns {DEFAULT} leave days into{" "}
+          <span class="text-lime">{top.results[DEFAULT]?.daysOff} days off</span> in {year}.
+        </p>
+      </section>
+    )
+  }
+
+  <section class="card p-5 sm:p-6" id="ranking">
+    <div class="flex flex-wrap items-center gap-2" role="tablist" aria-label="Leave days">
+      <span class="field-label mr-1">Leave days</span>
+      {
+        tables.map((t) => (
+          <button
+            type="button"
+            role="tab"
+            id={`tab-${t.budget}`}
+            aria-controls={`panel-${t.budget}`}
+            aria-selected={t.budget === DEFAULT ? "true" : "false"}
+            class="chip aria-selected:border-lime aria-selected:bg-lime aria-selected:text-lime-ink"
+            data-budget={t.budget}
+          >
+            {t.budget}
+          </button>
+        ))
+      }
+    </div>
+    {
+      tables.map((t) => (
+        <div role="tabpanel" id={`panel-${t.budget}`} aria-labelledby={`tab-${t.budget}`} hidden={t.budget !== DEFAULT} class="mt-5 overflow-x-auto" tabindex="0">
+          <table class="w-full min-w-[520px] text-left text-sm">
+            <thead class="text-xs uppercase tracking-wider text-muted">
+              <tr>
+                <th class="pb-3 pr-3 font-bold">#</th>
+                <th class="pb-3 pr-3 font-bold">Country</th>
+                <th class="pb-3 pr-3 text-right font-bold">Days off</th>
+                <th class="pb-3 pr-3 text-right font-bold">Per leave day</th>
+                <th class="pb-3 pr-3 text-right font-bold">Longest break</th>
+                <th class="pb-3 text-right font-bold">Public holidays</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-line tabular-nums">
+              {t.rows.map((r, i) => {
+                const res = r.results[t.budget];
+                return (
+                  <tr>
+                    <td class="py-2.5 pr-3 font-bold text-muted">{i + 1}</td>
+                    <td class="py-2.5 pr-3">
+                      <a class="font-semibold hover:underline" href={`/${r.code.toLowerCase()}/${year}/?d=${t.budget}`}>
+                        <span class="mr-1.5">{r.flag}</span>
+                        {r.name}
+                      </a>
+                    </td>
+                    <td class="py-2.5 pr-3 text-right font-bold">{res?.daysOff}</td>
+                    <td class="py-2.5 pr-3 text-right">{res?.multiplier.toFixed(2)}×</td>
+                    <td class="py-2.5 pr-3 text-right">{res?.longest}d</td>
+                    <td class="py-2.5 text-right">{r.holidays}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ))
+    }
+  </section>
+</Base>
+
+<script>
+  const tabs = document.querySelectorAll<HTMLButtonElement>('[role="tab"][data-budget]');
+  tabs.forEach((tab) =>
+    tab.addEventListener("click", () => {
+      tabs.forEach((t) => {
+        const on = t === tab;
+        t.setAttribute("aria-selected", String(on));
+        const panel = document.getElementById(t.getAttribute("aria-controls") ?? "");
+        if (panel) panel.hidden = !on;
+      });
+    }),
+  );
+</script>

@@ -1,0 +1,19 @@
+---
+import { Mascot } from "~/components/Mascot";
+import Base from "~/layouts/Base.astro";
+---
+
+<Base title="You're offline · leavemaxxing" noindex>
+  <section class="card mx-auto mt-6 flex max-w-xl flex-col items-center gap-4 p-10 text-center">
+    <Mascot size={96} mood="sleepy" title="" />
+    <h1 class="text-3xl font-extrabold">You're offline</h1>
+    <p class="text-muted">
+      This page hasn't been saved for offline use yet. Pages and countries you've opened before still work. Try one of
+      those, or reconnect.
+    </p>
+    <div class="flex flex-wrap justify-center gap-2">
+      <a href="/" class="btn btn-primary">Open the planner</a>
+      <a href="/plans/" class="btn btn-soft">My plans</a>
+    </div>
+  </section>
+</Base>

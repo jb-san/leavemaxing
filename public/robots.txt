@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /plans/
+Disallow: /offline/
+
+Sitemap: https://leavemaxxing.com/sitemap-index.xml

@@ -1,0 +1,18 @@
+---
+import Compare from "~/components/Compare";
+import { meta } from "~/data";
+import Base from "~/layouts/Base.astro";
+---
+
+<Base
+  title="Compare countries: where does your leave go furthest? · leavemaxxing"
+  description="Compare up to four countries or regions side by side. Same leave days, same style: see where you'd get the most time off."
+  wide
+>
+  <div class="flex flex-col gap-2 pb-6 pt-2">
+    <p class="eyebrow">Compare</p>
+    <h1 class="text-[clamp(28px,4vw,44px)] font-extrabold leading-tight">Where would your leave go furthest?</h1>
+    <p class="max-w-2xl text-muted">Pick up to four countries or regions. They all get the same leave days and style.</p>
+  </div>
+  <Compare client:load years={meta.years} />
+</Base>

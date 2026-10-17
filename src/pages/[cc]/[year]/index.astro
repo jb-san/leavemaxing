@@ -1,7 +1,7 @@
 ---
 import HolidayList from "~/components/HolidayList.astro";
 import Planner from "~/components/planner/Planner";
-import { countries, countryByCode, meta } from "~/data";
+import { countries, countryByCode, meta, ogYear } from "~/data";
 import { buildToday, readHolidayFile, serverPlan } from "~/data/server";
 import { SITE } from "~/data/site";
 import Base from "~/layouts/Base.astro";
@@ -47,7 +47,7 @@ const jsonLd = {
 };
 ---
 
-<Base title={title} description={description} image={`/og/${code.toLowerCase()}/${year}.png`} jsonLd={jsonLd} wide>
+<Base title={title} description={description} image={`/og/${code.toLowerCase()}/${ogYear(year)}.png`} jsonLd={jsonLd} wide>
   <div class="flex flex-col gap-2 pb-5 pt-2">
     <nav aria-label="Breadcrumb" class="text-sm font-semibold text-muted">
       <a href="/" class="hover:text-ink">Planner</a> /
@@ -60,7 +60,7 @@ const jsonLd = {
 
   <Planner client:load initial={settings} files={files} today={buildToday} mode="page" years={meta.years} />
 
-  <div class="mt-10 grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+  <div class="mt-10 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
     <HolidayList file={file} />
     <aside class="flex flex-col gap-5">
       {

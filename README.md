@@ -1,146 +1,58 @@
-# LeaveMaxing
+# leavemaxxing
 
-LeaveMaxing is a web application designed to help you maximize your time off by
-suggesting the best days to take leave based on public holidays and weekends. By
-selecting your country, the year, and the number of leave days you have, the app
-calculates optimal leave dates to create the longest possible consecutive free
-days, such as taking a Friday off when a holiday falls on a Thursday to enjoy a
-four-day weekend. It should try to find "bridge days" between public holidays
-and weekends to create the longest possible free days. for example if you have
-public holiday on a wednesday, it should suggest monday, tuesday, thursday and
-friday as good days to take leave.
+Turn your leave days into the most time off. Pick a country and how many leave days you have, and leavemaxxing finds the
+workdays that join weekends and public holidays into the longest breaks.
+
+Live at [leavemaxxing.com](https://leavemaxxing.com). Everything runs in the browser: no accounts, no backend.
 
 ## Features
 
-- **Year Selection**: Choose a year, defaulting to the current year, with
-  options up to 5 years in the future.
-- **Country Selection**: Pick your country from a dropdown of available
-  countries.
-- **Leave Days Input**: Enter the number of leave days you have available.
-- **Calendar Display**: View each month in a calendar component, with public
-  holidays highlighted in orange and suggested leave days in green.
-- **Smart Leave Suggestions**: Get recommendations for leave days that maximize
-  consecutive free days by connecting holidays with weekends or bridging gaps
-  between free days.
-- **Priority quarter**: be able to select a quarter of the year to focus on. it
-  does not garantie that all leave days will be in that quarter, but it will try
-  to.
+- **Exact planner** for 200+ countries and their regions, with three styles (long weekends, balanced, one big trip),
+  shortest/longest break, favourite months, custom work week and leave years that start in any month.
+- **Edit the plan**: tap a day to keep it as leave, block it, or mark it as a day off. The plan rebuilds around it.
+- **Share**: the URL holds the whole plan; share images are drawn in the browser.
+- **Calendar export**: `.ics` download and Google Calendar links.
+- **Saved plans** in local storage, **compare** up to four countries, **rankings** of where leave goes furthest.
+- **Offline**: a service worker keeps visited pages and holiday data available.
+- Light and dark mode, phone and desktop layouts.
 
-## How It Works
+## How it works
 
-The app fetches public holiday data for the selected year and country using the
-[Nager.Date API](https://date.nager.at/). It identifies free days (weekends and
-public holidays) and calculates which workdays, when taken as leave, result in
-the longest consecutive free day blocks. For example, if a holiday falls on a
-Thursday, it suggests taking Friday off to extend the break through the weekend.
-
-## Technical Stack
-
-- **[Deno](https://deno.com/)**: A modern runtime for JavaScript and TypeScript.
-- **[Fresh](https://fresh.deno.dev/)**: A web framework used to build the site,
-  exported as static HTML.
-- **[Cloudflare Pages](https://pages.cloudflare.com/)**: Hosting platform for
-  the static site.
-
-The application is fully client-side, with all logic and rendering handled in
-the browser. The site is pre-rendered to static HTML for optimal performance and
-deployed to Cloudflare Pages.
+- **Holiday data** comes from [`date-holidays`](https://github.com/commenthol/date-holidays) (CC BY 3.0) and is generated
+  at build time by `scripts/build-data.ts` into `public/data/{cc}/{year}.json`, for last year through 5 years ahead plus
+  one extra year so plans can cross New Year. Non-Saturday/Sunday weekends are listed in `src/lib/weekends.ts`.
+- **The planner** (`src/lib/planner/plan.ts`) is a dynamic programme over day numbers (no `Date` objects, so time zones
+  can't shift weekdays). State is (leave used, current break length, break has leave); each style is a value curve for a
+  break's length. Quarter pacing keeps plans spread over the year. It runs in a Web Worker in the browser.
+- **Pages** are static Astro pages with React islands: `/`, `/{cc}/`, `/{cc}/{year}/`, `/compare/`, `/best/{year}/`,
+  `/plans/`. Link preview images are rendered with satori at build time.
 
 ## Development
 
-### Prerequisites
-
-- [Deno](https://deno.com/) v2.x or later
-
-### Running Locally
+Requires Node 24+ and pnpm 10.
 
 ```bash
-# Start the development server
-deno task start
-
-# The app will be available at http://localhost:8000
+pnpm install
+pnpm dev          # generates holiday data, then starts Astro on http://localhost:4321
+pnpm test         # unit tests (Vitest)
+pnpm check        # astro check + Biome
+pnpm build        # static site in dist/
+pnpm e2e          # Playwright tests against the built site (run pnpm build first)
+pnpm icons        # regenerate favicons and app icons from the mascot
 ```
 
-### Building the Static Site
-
-```bash
-# Export the site to ./dist
-deno task export
-
-# Preview the static build locally
-cd dist
-python3 -m http.server 8080
-# Or use any static file server
-```
-
-### Code Quality
-
-```bash
-# Run all checks (format, lint, type-check)
-deno task check
-```
+Set `PUBLIC_RYBBIT_SITE_ID` (see `.env.example`) to enable analytics via the self-hosted Rybbit at
+`analytics.vril.tech`.
 
 ## Deployment
 
-The site automatically deploys to
-[Cloudflare Pages](https://pages.cloudflare.com/) via GitHub Actions:
+`.github/workflows/ci.yml` checks, tests and builds every push and pull request, then deploys `dist/` to the Cloudflare
+Pages project `leavemaxing` (production on `main`, previews on branches). A weekly scheduled run rebuilds the site so
+holiday data stays current and the year range rolls forward each January.
 
-- **Production**: Deploys to `leavemaxxing.com` on push to `main`
-- **Preview**: Deploys preview URLs for pull requests
+Repository settings needed:
 
-### Initial Cloudflare Pages Setup
+- Secrets `CLOUDFLARE_API_TOKEN` (Cloudflare Pages: Edit) and `CLOUDFLARE_ACCOUNT_ID`.
+- Variable `RYBBIT_SITE_ID` for analytics.
 
-If you're setting up deployment for the first time:
-
-1. **Create a Cloudflare Pages project**:
-   - Go to [Cloudflare Dashboard](https://dash.cloudflare.com/) → Pages
-   - Click "Create a project" → "Direct Upload"
-   - Name it `leavemaxing` (or update `wrangler.toml` and workflows if using a
-     different name)
-
-2. **Get your Cloudflare credentials**:
-   - Account ID: Found in Cloudflare Dashboard → Workers & Pages → Account ID
-   - API Token: Create at
-     [API Tokens](https://dash.cloudflare.com/profile/api-tokens)
-     - Use "Create Custom Token"
-     - Permissions: Account → Cloudflare Pages → Edit
-     - Copy the token (you won't see it again)
-
-3. **Add GitHub repository secrets**:
-   - Go to your GitHub repository → Settings → Secrets and variables → Actions
-   - Add `CLOUDFLARE_API_TOKEN` with your API token
-   - Add `CLOUDFLARE_ACCOUNT_ID` with your account ID
-
-4. **Configure custom domain** (optional):
-   - In Cloudflare Pages project settings → Custom domains
-   - Add `leavemaxxing.com` (or your domain)
-   - Follow DNS setup instructions
-
-### Troubleshooting Deployment
-
-If you see "Authentication failed (status: 400) [code: 9106]" in GitHub Actions:
-
-1. The `CLOUDFLARE_API_TOKEN` secret needs **Cloudflare Pages: Edit** permission
-2. To fix:
-   - Go to
-     [Cloudflare API Tokens](https://dash.cloudflare.com/profile/api-tokens)
-   - Create a new token with:
-     - **Permissions**: `Account → Cloudflare Pages → Edit`
-     - **Account Resources**: Include your account
-   - Update the `CLOUDFLARE_API_TOKEN` secret in GitHub repository settings
-
-### Manual Deployment
-
-To deploy manually using Wrangler CLI:
-
-```bash
-# Install Wrangler (if not already installed)
-npm install -g wrangler@3.90.0
-
-# Login to Cloudflare
-wrangler login
-
-# Build and deploy
-deno task export
-wrangler pages deploy dist --project-name=leavemaxing
-```
+`functions/_middleware.ts` redirects `www.leavemaxxing.com` to the apex domain.

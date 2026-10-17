@@ -35,7 +35,7 @@ const rows = file.holidays.map((h) => {
 const nationalCount = new Set(file.holidays.filter((h) => h.national !== false).map((h) => h.date)).size;
 ---
 
-<section aria-labelledby="holidays-title" class="card p-5 sm:p-7">
+<section aria-labelledby="holidays-title" class="card min-w-0 p-5 sm:p-7">
   <h2 id="holidays-title" class="text-2xl font-bold">
     Public holidays in {country?.name} {file.year}
   </h2>
@@ -43,7 +43,7 @@ const nationalCount = new Set(file.holidays.filter((h) => h.national !== false).
     {nationalCount} national public holidays{rows.some((r) => r.where) ? ", plus regional ones" : ""}. Holidays on a Tuesday or
     Thursday are the best bridge days.
   </p>
-  <div class="mt-5 overflow-x-auto">
+  <div class="mt-5 overflow-x-auto" tabindex="0" role="region" aria-label="Public holidays table">
     <table class="w-full min-w-[520px] text-left text-sm">
       <thead class="text-xs uppercase tracking-wider text-muted">
         <tr>

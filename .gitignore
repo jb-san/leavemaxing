@@ -20,3 +20,7 @@ playwright-report/
 
 .DS_Store
 .shot.mjs
+.interact.mjs
+.interact2.mjs
+.dbg.mjs
+.dbg2.mjs

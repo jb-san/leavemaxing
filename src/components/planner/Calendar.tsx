@@ -73,12 +73,19 @@ export function Calendar({ months, kinds, breaks, holidays, today, pop, sundayFi
     const i = Math.max(0, todayIndex);
     el.scrollTo({ left: i * el.clientWidth });
     setIndex(i);
+    target.current = i;
   }, [months[0]?.year, months[0]?.month]);
 
-  const go = (i: number) => {
+  // Where the carousel is heading, so quick repeated taps don't use a stale index.
+  const target = useRef(0);
+  const animatingUntil = useRef(0);
+  const go = (delta: number) => {
     const el = scroller.current;
     if (!el) return;
-    const clamped = Math.max(0, Math.min(months.length - 1, i));
+    const clamped = Math.max(0, Math.min(months.length - 1, target.current + delta));
+    target.current = clamped;
+    animatingUntil.current = Date.now() + 700;
+    setIndex(clamped);
     el.scrollTo({ left: clamped * el.clientWidth, behavior: "smooth" });
   };
 
@@ -97,17 +104,30 @@ export function Calendar({ months, kinds, breaks, holidays, today, pop, sundayFi
   };
 
   const current = months[index];
+  let currentLeave = 0;
+  if (current) {
+    const first = dayNum(current.year, current.month, 1);
+    for (let d = first; d < first + daysInMonth(current.year, current.month); d++) {
+      const k = kinds.get(d);
+      if (k === "leave" || k === "locked") currentLeave++;
+    }
+  }
   return (
     <section aria-label="Calendar" className="flex flex-col gap-3">
       <div className="flex items-center justify-between sm:hidden">
-        <h2 className="font-display text-xl font-bold" aria-live="polite">
+        <h2 className="flex items-center gap-2 font-display text-xl font-bold" aria-live="polite">
           {current ? `${MONTHS_LONG[current.month - 1]} ${current.year}` : ""}
+          {currentLeave > 0 && (
+            <span className="rounded-full bg-lime-soft px-2 py-0.5 font-sans text-xs font-bold">
+              {currentLeave} leave
+            </span>
+          )}
         </h2>
         <div className="flex gap-2">
           <button
             type="button"
             aria-label="Previous month"
-            onClick={() => go(index - 1)}
+            onClick={() => go(-1)}
             disabled={index === 0}
             className="grid size-10 place-items-center rounded-full border border-line bg-card disabled:opacity-40"
           >
@@ -116,7 +136,7 @@ export function Calendar({ months, kinds, breaks, holidays, today, pop, sundayFi
           <button
             type="button"
             aria-label="Next month"
-            onClick={() => go(index + 1)}
+            onClick={() => go(1)}
             disabled={index === months.length - 1}
             className="grid size-10 place-items-center rounded-full border border-line bg-card disabled:opacity-40"
           >
@@ -129,7 +149,16 @@ export function Calendar({ months, kinds, breaks, holidays, today, pop, sundayFi
         onKeyDown={onKeyDown}
         onScroll={(e) => {
           const el = e.currentTarget;
-          if (window.innerWidth < 640) setIndex(Math.round(el.scrollLeft / el.clientWidth));
+          if (window.innerWidth >= 640) return;
+          const i = Math.round(el.scrollLeft / el.clientWidth);
+          // Ignore positions passed during a programmatic smooth scroll.
+          if (
+            Date.now() > animatingUntil.current ||
+            Math.abs(el.scrollLeft - target.current * el.clientWidth) < 2
+          ) {
+            target.current = i;
+            setIndex(i);
+          }
         }}
         className="no-scrollbar -mx-1 flex snap-x snap-mandatory overflow-x-auto px-1 sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 xl:grid-cols-3"
       >
@@ -195,7 +224,7 @@ const MonthCard = memo(function MonthCard({
 
   return (
     <div className="card h-full px-3 pb-4 pt-4 sm:px-3.5" id={`m-${year}-${month}`}>
-      <h3 className="flex items-baseline justify-between px-1.5 pb-3 text-lg font-bold">
+      <h3 className="hidden items-baseline justify-between px-1.5 pb-3 text-lg font-bold sm:flex">
         <span>
           {MONTHS_LONG[month - 1]} <span className="text-muted">{year}</span>
         </span>
@@ -250,6 +279,22 @@ const MonthCard = memo(function MonthCard({
     </div>
   );
 });
+
+/** Lightweight stand-in rendered on the server; the real calendar mounts in the browser. */
+export function CalendarPlaceholder({ months }: { months: { year: number; month: number }[] }) {
+  return (
+    <div aria-hidden="true" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      {months.map((m, i) => (
+        <div key={`${m.year}-${m.month}`} className={cx("card h-[330px] p-4", i > 0 && "hidden sm:block")}>
+          <p className="px-1.5 font-display text-lg font-bold">
+            {MONTHS_LONG[m.month - 1]} <span className="text-muted">{m.year}</span>
+          </p>
+          <div className="mt-4 h-[250px] rounded-2xl bg-[radial-gradient(circle,var(--wkd)_13px,transparent_14px)] bg-[length:14.28%_50px] opacity-70" />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function Legend() {
   const items: [string, React.ReactNode, string][] = [

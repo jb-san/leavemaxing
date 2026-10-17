@@ -1,0 +1,13 @@
+---
+import { Mascot } from "~/components/Mascot";
+import Base from "~/layouts/Base.astro";
+---
+
+<Base title="Page not found · leavemaxxing" noindex>
+  <section class="card mx-auto mt-6 flex max-w-xl flex-col items-center gap-4 p-10 text-center">
+    <Mascot size={96} mood="puzzled" title="" />
+    <h1 class="text-3xl font-extrabold">This day doesn't exist</h1>
+    <p class="text-muted">We looked everywhere in the calendar. Let's get you back to planning.</p>
+    <a href="/" class="btn btn-primary">Open the planner</a>
+  </section>
+</Base>

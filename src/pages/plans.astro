@@ -1,0 +1,12 @@
+---
+import SavedPlans from "~/components/SavedPlans";
+import Base from "~/layouts/Base.astro";
+---
+
+<Base title="My plans · leavemaxxing" description="Your saved leave plans, stored in this browser." noindex>
+  <div class="flex flex-col gap-2 pb-6 pt-2">
+    <p class="eyebrow">Saved in this browser</p>
+    <h1 class="text-[clamp(28px,4vw,44px)] font-extrabold">My plans</h1>
+  </div>
+  <SavedPlans client:load />
+</Base>

@@ -27,8 +27,20 @@ export function filesFor(s: Settings): HolidayFile[] {
 
 export const buildToday = localToday();
 
+const plans = new Map<string, ReturnType<typeof computePlan>>();
+
 /** The plan the page ships with, before the visitor changes anything. */
 export function serverPlan(s: Settings) {
+  const key = JSON.stringify(s);
+  let p = plans.get(key);
+  if (!p) {
+    p = computePlan(s);
+    plans.set(key, p);
+  }
+  return p;
+}
+
+function computePlan(s: Settings) {
   const files = filesFor(s);
   const input = toPlanInput(
     s,

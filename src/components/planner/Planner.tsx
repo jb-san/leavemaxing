@@ -19,7 +19,7 @@ import { type Plan, type PlanInput, STYLES } from "~/lib/planner/types";
 import { defaultSettings, fromQuery, planPath, type Settings, shareUrl, toQuery } from "~/lib/settings";
 import { addPlan, loadLast, recordBest, saveLast } from "~/lib/storage";
 import { BreaksList } from "./BreaksList";
-import { Calendar, Legend } from "./Calendar";
+import { Calendar, CalendarPlaceholder, Legend } from "./Calendar";
 import { plural } from "./copy";
 import { DayMenu } from "./DayMenu";
 import { ExportDialog, SaveDialog, ShareDialog } from "./Dialogs";
@@ -327,16 +327,20 @@ export default function Planner(props: PlannerProps) {
           <span className="hidden text-xs text-muted sm:inline">Tap a day to change it</span>
         </div>
 
-        <Calendar
-          months={months}
-          kinds={kinds}
-          breaks={result.plan.breaks}
-          holidays={holidays}
-          today={shown.today}
-          pop={pop}
-          sundayFirst={SUNDAY_FIRST.has(settings.country)}
-          onDay={onDay}
-        />
+        {ready ? (
+          <Calendar
+            months={months}
+            kinds={kinds}
+            breaks={result.plan.breaks}
+            holidays={holidays}
+            today={shown.today}
+            pop={pop}
+            sundayFirst={SUNDAY_FIRST.has(settings.country)}
+            onDay={onDay}
+          />
+        ) : (
+          <CalendarPlaceholder months={months} />
+        )}
 
         <BreaksList plan={result.plan} today={today} />
       </div>

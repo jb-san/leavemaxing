@@ -50,48 +50,47 @@ export function HeroCard({
         className="pointer-events-none absolute -right-16 -top-20 size-72 rounded-full bg-[radial-gradient(circle,rgb(139_209_47/0.28),transparent_65%)]"
       />
       <div className="relative flex flex-col gap-5">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p className="flex items-center gap-2 text-sm font-semibold text-hero-muted">
-              <Mascot size={26} mood={mood} title="" blink />
-              <span className="truncate">
-                Your {yearLabel} in {place}
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 gap-y-2">
+          <p className="col-start-1 row-start-1 flex min-w-0 items-center gap-2 self-center text-sm font-semibold text-hero-muted">
+            <Mascot size={26} mood={mood} title="" blink />
+            <span className="truncate">
+              Your {yearLabel} in {place}
+            </span>
+            {loading && (
+              <span className="size-2 shrink-0 animate-pulse rounded-full bg-lime">
+                <span className="sr-only">Updating</span>
               </span>
-              {loading && (
-                <span className="size-2 animate-pulse rounded-full bg-lime">
-                  <span className="sr-only">Updating</span>
-                </span>
-              )}
-            </p>
-            <p
-              className="mt-2 font-display text-[clamp(28px,4.6vw,48px)] font-extrabold leading-[1.04] tracking-[-0.035em]"
-              aria-live="polite"
-            >
-              {stats.leaveUsed > 0 ? (
-                <>
-                  {plural(stats.leaveUsed, "day")} of leave →<br />
-                  <span className="text-lime">{stats.daysOff} days off</span>
-                </>
-              ) : (
-                <>
-                  Ready when you are.
-                  <br />
-                  <span className="text-lime">Add leave days.</span>
-                </>
-              )}
-            </p>
-            <p className="mt-2 max-w-[52ch] text-sm text-hero-muted">
-              {quip(stats.multiplier, stats.leaveUsed, stats.daysOff)}
-            </p>
-          </div>
+            )}
+          </p>
           <div
-            className="relative grid size-[76px] shrink-0 place-items-center rounded-full bg-lime text-lime-ink shadow-[0_0_0_8px_rgb(139_209_47/0.15)] sm:size-[96px]"
+            className="col-start-2 row-start-1 grid size-16 place-items-center rounded-full bg-lime text-lime-ink shadow-[0_0_0_6px_rgb(139_209_47/0.15)] sm:row-span-3 sm:size-24 sm:shadow-[0_0_0_8px_rgb(139_209_47/0.15)]"
             title="Days off per leave day"
           >
-            <span className="font-display text-2xl font-extrabold tracking-[-0.03em] sm:text-[30px]">
+            <span className="font-display text-xl font-extrabold tracking-[-0.03em] sm:text-[30px]">
               {stats.multiplier ? `${stats.multiplier.toFixed(1)}×` : "–"}
             </span>
           </div>
+          <p
+            className="col-span-2 font-display text-[clamp(28px,4.6vw,48px)] font-extrabold leading-[1.04] tracking-[-0.035em] sm:col-span-1"
+            aria-live="polite"
+          >
+            {stats.leaveUsed > 0 ? (
+              <>
+                <span className="whitespace-nowrap">{plural(stats.leaveUsed, "day")} of leave →</span>
+                <br />
+                <span className="text-lime">{stats.daysOff} days off</span>
+              </>
+            ) : (
+              <>
+                Ready when you are.
+                <br />
+                <span className="text-lime">Add leave days.</span>
+              </>
+            )}
+          </p>
+          <p className="col-span-2 max-w-[52ch] text-sm text-hero-muted sm:col-span-1">
+            {quip(stats.multiplier, stats.leaveUsed, stats.daysOff)}
+          </p>
         </div>
 
         <BudgetDots used={stats.leaveUsed} budget={budget} />
