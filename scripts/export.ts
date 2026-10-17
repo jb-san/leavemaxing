@@ -8,8 +8,8 @@ const PORT = 8001;
 
 const PAGES = [
   { path: "/", filename: "index.html" },
-  { path: "/about", filename: "about/index.html" },
-  { path: "/privacy-policy", filename: "privacy-policy/index.html" },
+  { path: "/about", filename: "about.html" },
+  { path: "/privacy-policy", filename: "privacy-policy.html" },
   { path: "/_404", filename: "404.html" },
 ];
 
@@ -124,7 +124,7 @@ async function copyFreshAssets() {
 
 function generateSitemap(): string {
   const urls = [
-    { loc: BASE_URL, priority: "1.0" },
+    { loc: `${BASE_URL}/`, priority: "1.0" },
     { loc: `${BASE_URL}/about`, priority: "0.8" },
     { loc: `${BASE_URL}/privacy-policy`, priority: "0.5" },
   ];
