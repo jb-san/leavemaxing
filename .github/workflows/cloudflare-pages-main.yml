@@ -47,7 +47,7 @@ jobs:
         run: deno task export
 
       - name: Install Wrangler
-        run: npm install -g wrangler
+        run: npm install -g wrangler@3.90.0
 
       - name: Deploy to Cloudflare Pages
         env:

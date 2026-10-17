@@ -59,7 +59,7 @@ jobs:
 
       - name: Install Wrangler
         if: steps.check-secrets.outputs.secrets_available == 'true'
-        run: npm install -g wrangler
+        run: npm install -g wrangler@3.90.0
 
       - name: Debug token format
         if: steps.check-secrets.outputs.secrets_available == 'true'
