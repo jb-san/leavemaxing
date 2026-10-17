@@ -21,6 +21,7 @@ import type { Plan, PlanInput, Style } from "~/lib/planner/types";
 import { regionCopy } from "~/lib/regionLabels";
 import { defaultSettings, fromQuery, planPath, type Settings, shareUrl, toQuery } from "~/lib/settings";
 import { addPlan, loadLast, recordBest, saveLast } from "~/lib/storage";
+import { SUNDAY_FIRST } from "~/lib/weekends";
 import { BreaksList } from "./BreaksList";
 import { Calendar, CalendarPlaceholder, Legend } from "./Calendar";
 import { DayMenu } from "./DayMenu";
@@ -29,24 +30,6 @@ import { HeroCard } from "./HeroCard";
 import { SettingsPanel } from "./SettingsPanel";
 import { type Action, carryPreferences, type DayAction, reducer } from "./state";
 import { Sheet, Toasts, useToasts } from "./ui";
-
-/** Countries where calendars usually start on Sunday. */
-const SUNDAY_FIRST = new Set([
-  "US",
-  "CA",
-  "MX",
-  "BR",
-  "JP",
-  "PH",
-  "IL",
-  "KR",
-  "TW",
-  "HK",
-  "ZA",
-  "AR",
-  "CO",
-  "PE",
-]);
 
 export interface PlannerProps {
   initial: Settings;
