@@ -48,9 +48,13 @@ jobs:
 
       - name: Deploy to Cloudflare Pages
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN_RAW: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID_RAW: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
+          # Sanitize secrets by removing whitespace/newlines/quotes
+          export CLOUDFLARE_API_TOKEN=$(echo "$CLOUDFLARE_API_TOKEN_RAW" | tr -d '[:space:]' | tr -d '"' | tr -d "'")
+          export CLOUDFLARE_ACCOUNT_ID=$(echo "$CLOUDFLARE_ACCOUNT_ID_RAW" | tr -d '[:space:]' | tr -d '"' | tr -d "'")
+
           deno run --allow-net --allow-read --allow-env scripts/cloudflare-pages-deploy.ts \
             "main" \
             "${{ github.sha }}"
