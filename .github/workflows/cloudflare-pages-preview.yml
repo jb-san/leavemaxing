@@ -61,11 +61,22 @@ jobs:
         if: steps.check-secrets.outputs.secrets_available == 'true'
         run: npm install -g wrangler
 
+      - name: Debug token format
+        if: steps.check-secrets.outputs.secrets_available == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          echo "Token length: ${#CLOUDFLARE_API_TOKEN}"
+          echo "Token starts with: ${CLOUDFLARE_API_TOKEN:0:10}..."
+          echo "Token ends with: ...${CLOUDFLARE_API_TOKEN: -10}"
+
       - name: Deploy to Cloudflare Pages
         if: steps.check-secrets.outputs.secrets_available == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
+          # Trim whitespace from token
+          export CLOUDFLARE_API_TOKEN="$(echo -n "$CLOUDFLARE_API_TOKEN" | tr -d '[:space:]')"
           wrangler pages deploy dist \
             --project-name=leavemaxing \
             --branch=${{ github.head_ref }} \
