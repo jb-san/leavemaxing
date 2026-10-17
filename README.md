@@ -36,10 +36,98 @@ Thursday, it suggests taking Friday off to extend the break through the weekend.
 
 ## Technical Stack
 
-- **[Deno](https://deno.com/)**: A modern web framework for building fast,
-  client-side websites.
-- **[Fresh](https://fresh.deno.dev/)**: Used with TypeScript for dynamic,
-  interactive components.
+- **[Deno](https://deno.com/)**: A modern runtime for JavaScript and TypeScript.
+- **[Fresh](https://fresh.deno.dev/)**: A web framework used to build the site,
+  exported as static HTML.
+- **[Cloudflare Pages](https://pages.cloudflare.com/)**: Hosting platform for
+  the static site.
 
 The application is fully client-side, with all logic and rendering handled in
-the browser.
+the browser. The site is pre-rendered to static HTML for optimal performance and
+deployed to Cloudflare Pages.
+
+## Development
+
+### Prerequisites
+
+- [Deno](https://deno.com/) v2.x or later
+
+### Running Locally
+
+```bash
+# Start the development server
+deno task start
+
+# The app will be available at http://localhost:8000
+```
+
+### Building the Static Site
+
+```bash
+# Export the site to ./dist
+deno task export
+
+# Preview the static build locally
+cd dist
+python3 -m http.server 8080
+# Or use any static file server
+```
+
+### Code Quality
+
+```bash
+# Run all checks (format, lint, type-check)
+deno task check
+```
+
+## Deployment
+
+The site automatically deploys to
+[Cloudflare Pages](https://pages.cloudflare.com/) via GitHub Actions:
+
+- **Production**: Deploys to `leavemaxing.com` on push to `main`
+- **Preview**: Deploys preview URLs for pull requests
+
+### Initial Cloudflare Pages Setup
+
+If you're setting up deployment for the first time:
+
+1. **Create a Cloudflare Pages project**:
+   - Go to [Cloudflare Dashboard](https://dash.cloudflare.com/) → Pages
+   - Click "Create a project" → "Direct Upload"
+   - Name it `leavemaxing` (or update `wrangler.toml` and workflows if using a
+     different name)
+
+2. **Get your Cloudflare credentials**:
+   - Account ID: Found in Cloudflare Dashboard → Workers & Pages → Account ID
+   - API Token: Create at
+     [API Tokens](https://dash.cloudflare.com/profile/api-tokens)
+     - Use "Create Custom Token"
+     - Permissions: Account → Cloudflare Pages → Edit
+     - Copy the token (you won't see it again)
+
+3. **Add GitHub repository secrets**:
+   - Go to your GitHub repository → Settings → Secrets and variables → Actions
+   - Add `CLOUDFLARE_API_TOKEN` with your API token
+   - Add `CLOUDFLARE_ACCOUNT_ID` with your account ID
+
+4. **Configure custom domain** (optional):
+   - In Cloudflare Pages project settings → Custom domains
+   - Add `leavemaxing.com` (or your domain)
+   - Follow DNS setup instructions
+
+### Manual Deployment
+
+To deploy manually using Wrangler CLI:
+
+```bash
+# Install Wrangler (if not already installed)
+npm install -g wrangler
+
+# Login to Cloudflare
+wrangler login
+
+# Build and deploy
+deno task export
+wrangler pages deploy dist --project-name=leavemaxing
+```

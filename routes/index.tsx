@@ -13,6 +13,7 @@ export default function Home() {
           name="description"
           content="Select your country and find the best days to take leave to maximize consecutive days off, including public holidays."
         />
+        <link rel="canonical" href="https://leavemaxing.com/" />
       </Head>
       <div class="flex flex-col min-h-screen">
         <main class="flex-grow">

@@ -12,7 +12,7 @@ export default function HeaderIsland() {
     const storedTheme = localStorage.getItem("theme");
     const initialTheme = storedTheme
       ? storedTheme
-      : (window.matchMedia("(prefers-color-scheme: dark)").matches
+      : (globalThis.matchMedia("(prefers-color-scheme: dark)").matches
         ? "dark"
         : "light");
     setTheme(initialTheme);
@@ -51,6 +51,7 @@ export default function HeaderIsland() {
           {/* Right side: Theme Toggle */}
           <div>
             <button
+              type="button"
               onClick={toggleTheme}
               aria-label={`Switch to ${
                 theme === "light" ? "dark" : "light"

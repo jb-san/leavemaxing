@@ -1,6 +1,22 @@
+// deno-lint-ignore-file react-no-danger
 import { type PageProps } from "$fresh/server.ts";
 import FooterIsland from "../islands/Footer.tsx";
 import HeaderIsland from "../islands/Header.tsx";
+
+const themeScript = {
+  __html: `
+    (function() {
+      try {
+        const theme = localStorage.getItem('theme');
+        if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      } catch (_) {}
+    })();
+  `,
+};
 
 export default function App({ Component }: PageProps) {
   return (
@@ -15,22 +31,7 @@ export default function App({ Component }: PageProps) {
         <title>LeaveMaxing - Optimize Your Vacation Days</title>
         <link rel="stylesheet" href="/styles.css" />
         {/* Inline script to apply theme from localStorage ASAP */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  const theme = localStorage.getItem('theme');
-                  if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                    document.documentElement.classList.add('dark');
-                  } else {
-                    document.documentElement.classList.remove('dark');
-                  }
-                } catch (_) {}
-              })();
-            `,
-          }}
-        />
+        <script dangerouslySetInnerHTML={themeScript} />
         {/* Plausible Analytics Script */}
         <script
           defer

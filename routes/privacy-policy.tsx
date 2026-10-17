@@ -9,7 +9,7 @@ export default function PrivacyPolicyPage() {
           name="description"
           content="Understand how LeaveMaxing handles your data and respects your privacy."
         />
-        {/* Add noindex for now until reviewed by legal? Consider removing later. */}
+        <link rel="canonical" href="https://leavemaxing.com/privacy-policy" />
       </Head>
       <div class="p-4 mx-auto max-w-screen-md">
         <h1 class="text-3xl font-bold mb-4">Privacy Policy</h1>

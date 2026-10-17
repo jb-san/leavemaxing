@@ -9,6 +9,7 @@ export default function AboutPage() {
           name="description"
           content="Learn how LeaveMaxing calculates the best leave suggestions by analyzing public holidays and weekends in your country."
         />
+        <link rel="canonical" href="https://leavemaxing.com/about" />
       </Head>
       <div class="p-4 mx-auto max-w-screen-md">
         <h1 class="text-3xl font-bold mb-4">How LeaveMaxing Works</h1>

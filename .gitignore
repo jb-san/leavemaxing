@@ -7,5 +7,7 @@
 
 # Fresh build directory
 _fresh/
+# Static export directory
+dist/
 # npm dependencies
 node_modules/
