@@ -75,11 +75,14 @@ export function CountryPicker({
         </span>
         <ChevronDown
           size={16}
-          className={cx("shrink-0 text-muted transition-transform", open && "rotate-180")}
+          className={cx(
+            "shrink-0 text-muted transition-transform duration-200 ease-[var(--ease-out)]",
+            open && "rotate-180",
+          )}
         />
       </button>
       {open && (
-        <div className="absolute inset-x-0 top-full z-30 mt-2 overflow-hidden rounded-3xl border border-line bg-card shadow-lift">
+        <div className="dropdown absolute inset-x-0 top-full z-30 mt-2 overflow-hidden rounded-3xl border border-line bg-card shadow-lift">
           <div className="flex items-center gap-2 border-b border-line px-3.5">
             <Search size={16} className="text-muted" />
             <input

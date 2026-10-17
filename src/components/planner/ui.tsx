@@ -5,7 +5,13 @@ export function cx(...parts: (string | false | null | undefined)[]): string {
   return parts.filter(Boolean).join(" ");
 }
 
-/** Modal built on <dialog>: a bottom sheet on phones, a centred card or anchored popover on wider screens. */
+/** How long a closing sheet stays rendered, so it can animate out (matches global.css). */
+const SHEET_EXIT_MS = 320;
+
+/**
+ * Modal built on <dialog>: a bottom sheet on phones, a centred card or anchored popover on wider screens.
+ * On phones the grabber and title row drag the sheet down to dismiss it.
+ */
 export function Sheet({
   open,
   onClose,
@@ -26,6 +32,17 @@ export function Sheet({
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
   const [style, setStyle] = useState<React.CSSProperties | undefined>();
+  // Keep the content rendered while the sheet animates out.
+  const [mounted, setMounted] = useState(open);
+
+  useEffect(() => {
+    if (open) {
+      setMounted(true);
+      return;
+    }
+    const t = setTimeout(() => setMounted(false), SHEET_EXIT_MS);
+    return () => clearTimeout(t);
+  }, [open]);
 
   useEffect(() => {
     const d = ref.current;
@@ -38,8 +55,18 @@ export function Sheet({
           window.innerWidth - width - 16,
         );
         const below = anchor.bottom + 8;
-        const top = below + 260 > window.innerHeight ? Math.max(16, anchor.top - 8 - 260) : below;
-        setStyle({ position: "fixed", margin: 0, top, left, width });
+        const flip = below + 260 > window.innerHeight;
+        const top = flip ? Math.max(16, anchor.top - 8 - 260) : below;
+        // Grow out of the tapped day.
+        const originX = anchor.left + anchor.width / 2 - left;
+        setStyle({
+          position: "fixed",
+          margin: 0,
+          top,
+          left,
+          width,
+          transformOrigin: `${originX}px ${flip ? "calc(100% + 8px)" : "-8px"}`,
+        });
       } else setStyle(undefined);
       d.showModal();
     }
@@ -53,34 +80,73 @@ export function Sheet({
     return () => d?.removeEventListener("close", handler);
   }, []);
 
+  const drag = useRef<{ id: number; y: number; t: number; dy: number } | null>(null);
+  const onGrabDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = ref.current;
+    if (!d || drag.current || window.innerWidth >= 640) return;
+    if ((e.target as HTMLElement).closest("button, a, input, select")) return;
+    drag.current = { id: e.pointerId, y: e.clientY, t: performance.now(), dy: 0 };
+    e.currentTarget.setPointerCapture(e.pointerId);
+    d.style.transition = "none";
+  };
+  const onGrabMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = ref.current;
+    const g = drag.current;
+    if (!d || !g || g.id !== e.pointerId) return;
+    const raw = e.clientY - g.y;
+    // Pulling up past the top meets rising resistance instead of a wall.
+    g.dy = raw >= 0 ? raw : -8 * Math.log1p(-raw / 8);
+    d.style.transform = `translateY(${g.dy}px)`;
+  };
+  const onGrabEnd = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = ref.current;
+    const g = drag.current;
+    if (!d || !g || g.id !== e.pointerId) return;
+    drag.current = null;
+    const velocity = g.dy / Math.max(1, performance.now() - g.t);
+    // Clear the drag styles and close in the same frame, so the exit continues from where the finger let go.
+    d.style.transition = "";
+    d.style.transform = "";
+    if (g.dy > d.offsetHeight * 0.3 || (g.dy > 12 && velocity > 0.11)) d.close();
+  };
+
   return (
     <dialog
       ref={ref}
       aria-labelledby={title ? titleId : undefined}
       className={cx("sheet", wide && "sm:!w-[min(720px,calc(100%-32px))]")}
+      data-anchored={style ? "" : undefined}
       style={style}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      {open && (
+      {(open || mounted) && (
         <div className="flex flex-col gap-4 p-5 pb-[max(20px,env(safe-area-inset-bottom))]">
-          <div className="mx-auto -mt-1 h-1.5 w-10 rounded-full bg-line sm:hidden" aria-hidden="true" />
-          {title && (
-            <div className="flex items-start justify-between gap-3">
-              <h2 id={titleId} className="font-display text-xl font-bold">
-                {title}
-              </h2>
-              <button
-                type="button"
-                onClick={onClose}
-                aria-label="Close"
-                className="-mr-1 -mt-1 grid size-9 shrink-0 place-items-center rounded-full text-muted hover:bg-card-2 hover:text-ink"
-              >
-                <X size={18} />
-              </button>
-            </div>
-          )}
+          <div
+            className="sheet-grab -mx-5 -mt-5 flex select-none flex-col gap-4 px-5 pt-5 max-sm:cursor-grab"
+            onPointerDown={onGrabDown}
+            onPointerMove={onGrabMove}
+            onPointerUp={onGrabEnd}
+            onPointerCancel={onGrabEnd}
+          >
+            <div className="mx-auto -mt-1 h-1.5 w-10 rounded-full bg-line sm:hidden" aria-hidden="true" />
+            {title && (
+              <div className="flex items-start justify-between gap-3">
+                <h2 id={titleId} className="font-display text-xl font-bold">
+                  {title}
+                </h2>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label="Close"
+                  className="-mr-1 -mt-1 grid size-9 shrink-0 place-items-center rounded-full text-muted transition-transform hover:bg-card-2 hover:text-ink active:scale-95"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            )}
+          </div>
           {children}
         </div>
       )}
@@ -139,6 +205,7 @@ export interface Toast {
   id: number;
   text: string;
   tone?: "good" | "info" | "warn";
+  leaving?: boolean;
 }
 
 export function Toasts({ toasts }: { toasts: Toast[] }) {
@@ -150,8 +217,9 @@ export function Toasts({ toasts }: { toasts: Toast[] }) {
       {toasts.map((t) => (
         <div
           key={t.id}
+          data-leaving={t.leaving ? "" : undefined}
           className={cx(
-            "pointer-events-auto rounded-full px-5 py-3 text-sm font-bold shadow-lift [animation:rise_.35s_var(--ease-spring)]",
+            "toast pointer-events-auto rounded-full px-5 py-3 text-sm font-bold shadow-lift",
             t.tone === "good" && "bg-lime text-lime-ink",
             t.tone === "warn" && "bg-sun text-sun-ink",
             (!t.tone || t.tone === "info") && "bg-ink text-card",
@@ -164,15 +232,29 @@ export function Toasts({ toasts }: { toasts: Toast[] }) {
   );
 }
 
+const TOAST_MS = 3200;
+const TOAST_EXIT_MS = 250;
+
 export function useToasts() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const idRef = useRef(0);
   const push = (text: string, tone: Toast["tone"] = "info") => {
     const id = ++idRef.current;
     setToasts((ts) => [...ts.slice(-2), { id, text, tone }]);
-    setTimeout(() => setToasts((ts) => ts.filter((t) => t.id !== id)), 3200);
+    // Mark it leaving first so it can sink out, then drop it.
+    setTimeout(() => setToasts((ts) => ts.map((t) => (t.id === id ? { ...t, leaving: true } : t))), TOAST_MS);
+    setTimeout(() => setToasts((ts) => ts.filter((t) => t.id !== id)), TOAST_MS + TOAST_EXIT_MS);
   };
   return { toasts, push };
+}
+
+/** A value that slides in when it changes. */
+export function Tick({ children }: { children: string | number }) {
+  return (
+    <span key={children} className="tick">
+      {children}
+    </span>
+  );
 }
 
 export function Stepper({
@@ -208,7 +290,7 @@ export function Stepper({
         disabled={value <= min}
         onClick={() => onChange(clamp(value - 1))}
         className={cx(
-          "grid place-items-center rounded-full bg-card text-lg font-semibold shadow-card transition-transform active:scale-90 disabled:opacity-40",
+          "grid place-items-center rounded-full bg-card text-lg font-semibold shadow-card transition-transform duration-150 ease-[var(--ease-out)] active:scale-[0.92] disabled:opacity-40",
           big ? "size-10" : "size-8",
         )}
       >
@@ -246,7 +328,7 @@ export function Stepper({
         disabled={value >= max}
         onClick={() => onChange(clamp(value + 1))}
         className={cx(
-          "grid place-items-center rounded-full bg-card text-lg font-semibold shadow-card transition-transform active:scale-90 disabled:opacity-40",
+          "grid place-items-center rounded-full bg-card text-lg font-semibold shadow-card transition-transform duration-150 ease-[var(--ease-out)] active:scale-[0.92] disabled:opacity-40",
           big ? "size-10" : "size-8",
         )}
       >

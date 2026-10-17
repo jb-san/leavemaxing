@@ -2,8 +2,8 @@ import { Bookmark, CalendarPlus, Share2, TriangleAlert } from "lucide-react";
 import { Mascot, moodFor } from "~/components/Mascot";
 import { type DayNum, formatRange, MONTHS_SHORT, parts } from "~/lib/dates";
 import type { Plan } from "~/lib/planner/types";
-import { countdown, plural, quip } from "./copy";
-import { cx } from "./ui";
+import { countdown, quip } from "./copy";
+import { cx, Tick } from "./ui";
 
 export function HeroCard({
   plan,
@@ -52,7 +52,9 @@ export function HeroCard({
       <div className="relative flex flex-col gap-5">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 gap-y-2">
           <p className="col-start-1 row-start-1 flex min-w-0 items-center gap-2 self-center text-sm font-semibold text-hero-muted">
-            <Mascot size={26} mood={mood} title="" blink />
+            <span key={mood} className="swap-pop">
+              <Mascot size={26} mood={mood} title="" blink />
+            </span>
             <span className="truncate">
               Your {yearLabel} in {place}
             </span>
@@ -67,7 +69,7 @@ export function HeroCard({
             title="Days off per leave day"
           >
             <span className="font-display text-xl font-extrabold tracking-[-0.03em] sm:text-[30px]">
-              {stats.multiplier ? `${stats.multiplier.toFixed(1)}×` : "–"}
+              <Tick>{stats.multiplier ? `${stats.multiplier.toFixed(1)}×` : "–"}</Tick>
             </span>
           </div>
           <p
@@ -76,9 +78,13 @@ export function HeroCard({
           >
             {stats.leaveUsed > 0 ? (
               <>
-                <span className="whitespace-nowrap">{plural(stats.leaveUsed, "day")} of leave →</span>
+                <span className="whitespace-nowrap">
+                  <Tick>{stats.leaveUsed}</Tick> {stats.leaveUsed === 1 ? "day" : "days"} of leave →
+                </span>
                 <br />
-                <span className="text-lime">{stats.daysOff} days off</span>
+                <span className="text-lime">
+                  <Tick>{stats.daysOff}</Tick> days off
+                </span>
               </>
             ) : (
               <>

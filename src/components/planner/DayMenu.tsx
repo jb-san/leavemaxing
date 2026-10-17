@@ -1,4 +1,5 @@
 import { Ban, Lock, Sparkles, Undo2 } from "lucide-react";
+import { useRef } from "react";
 import { type DayNum, formatShort, parts } from "~/lib/dates";
 import type { DayKind } from "~/lib/planner/types";
 import type { DayAction } from "./state";
@@ -43,12 +44,39 @@ export function DayMenu({
   onAction: (day: DayNum, action: DayAction) => void;
   onClose: () => void;
 }) {
-  if (day === null || kind === null)
+  // Keep showing the last day while the menu animates closed.
+  const last = useRef<{ day: DayNum; kind: DayKind; holidays: string[]; editable: boolean } | null>(null);
+  const open = day !== null && kind !== null;
+  if (open) last.current = { day, kind, holidays, editable };
+  const shown = last.current;
+  if (!shown)
     return (
       <Sheet open={false} onClose={onClose}>
         {null}
       </Sheet>
     );
+  return <DayMenuSheet {...shown} open={open} anchor={anchor} onAction={onAction} onClose={onClose} />;
+}
+
+function DayMenuSheet({
+  day,
+  kind,
+  holidays,
+  anchor,
+  editable,
+  open,
+  onAction,
+  onClose,
+}: {
+  day: DayNum;
+  kind: DayKind;
+  holidays: string[];
+  anchor: DOMRect | null;
+  editable: boolean;
+  open: boolean;
+  onAction: (day: DayNum, action: DayAction) => void;
+  onClose: () => void;
+}) {
   const p = parts(day);
 
   let note: string | null = null;
@@ -85,7 +113,7 @@ export function DayMenu({
   }
 
   return (
-    <Sheet open onClose={onClose} anchor={anchor} title={`${formatShort(day)} ${p.year}`}>
+    <Sheet open={open} onClose={onClose} anchor={anchor} title={`${formatShort(day)} ${p.year}`}>
       {note && <p className="-mt-2 text-sm text-muted">{note}</p>}
       {options.length > 0 && (
         <ul className="flex flex-col gap-1.5">
@@ -97,7 +125,7 @@ export function DayMenu({
                   onAction(day, o.action);
                   onClose();
                 }}
-                className="flex w-full items-center gap-3 rounded-2xl border border-line bg-card-2 px-3.5 py-3 text-left transition-colors hover:border-lime"
+                className="flex w-full items-center gap-3 rounded-2xl border border-line bg-card-2 px-3.5 py-3 text-left transition-[border-color,transform] duration-150 ease-[var(--ease-out)] hover:border-lime active:scale-[0.98]"
               >
                 <span className="grid size-9 shrink-0 place-items-center rounded-full bg-card text-ink shadow-card">
                   <o.Icon size={16} />

@@ -292,6 +292,29 @@ export default function Planner(props: PlannerProps) {
       </aside>
 
       <div className="flex min-w-0 flex-col gap-5">
+        <button
+          type="button"
+          onClick={() => setDialog("settings")}
+          className="card group flex items-center gap-3 border border-line p-4 text-left transition-[transform,border-color] duration-150 ease-[var(--ease-out)] hover:border-lime active:scale-[0.98] lg:hidden"
+        >
+          <span
+            aria-hidden="true"
+            className="grid size-11 shrink-0 place-items-center rounded-2xl bg-card-2 text-2xl leading-none"
+          >
+            {country?.flag ?? "🌍"}
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="eyebrow text-[11px]">Planning for</span>
+            <span className="truncate font-display text-lg font-bold leading-tight">{place}</span>
+            <span className="truncate text-sm font-semibold text-muted">
+              {yearLabel} · {plural(settings.budget, "day")} · {styleLabel}
+            </span>
+          </span>
+          <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-lime px-3.5 py-2 text-sm font-bold text-lime-ink">
+            <SlidersHorizontal size={15} strokeWidth={2.4} /> Edit
+          </span>
+        </button>
+
         <HeroCard
           plan={result.plan}
           budget={settings.budget}
@@ -304,24 +327,6 @@ export default function Planner(props: PlannerProps) {
           onExport={() => setDialog("export")}
           onSave={() => setDialog("save")}
         />
-
-        <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 lg:hidden">
-          {[
-            `${country?.flag ?? ""} ${place}`,
-            yearLabel,
-            plural(settings.budget, "day"),
-            styleLabel ?? "",
-          ].map((label) => (
-            <button
-              key={label}
-              type="button"
-              className="chip shrink-0 bg-card"
-              onClick={() => setDialog("settings")}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
 
         {loadError && (
           <div
@@ -362,7 +367,7 @@ export default function Planner(props: PlannerProps) {
         type="button"
         onClick={() => setDialog("settings")}
         aria-label="Plan settings"
-        className="fixed bottom-[max(20px,env(safe-area-inset-bottom))] right-[max(20px,env(safe-area-inset-right))] z-30 grid size-16 place-items-center rounded-full bg-lime text-lime-ink shadow-[0_12px_28px_-8px_rgb(139_209_47/0.8)] transition-transform active:scale-90 lg:hidden"
+        className="fixed bottom-[max(20px,env(safe-area-inset-bottom))] right-[max(20px,env(safe-area-inset-right))] z-30 grid size-16 place-items-center rounded-full bg-lime text-lime-ink shadow-[0_12px_28px_-8px_rgb(139_209_47/0.8)] transition-transform duration-150 ease-[var(--ease-out)] active:scale-[0.94] lg:hidden"
       >
         <SlidersHorizontal size={26} />
       </button>
