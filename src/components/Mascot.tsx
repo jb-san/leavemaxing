@@ -1,8 +1,97 @@
+import { createElement } from "react";
+
 export type Mood = "happy" | "sleepy" | "starry" | "wow" | "puzzled";
 
 const NAVY = "#1A2030";
 const LIME = "#8BD12F";
 const SUN = "#FFC83D";
+const PAPER = "#FBFDF7";
+const BLUSH = "#FF9DB0";
+
+/** One SVG element: tag plus attributes, so the React mark and the static markup share a drawing. */
+type Shape = [tag: string, attrs: Record<string, string | number>];
+/** Eyes are kept apart so the React mark can blink them. */
+interface Drawing {
+  eyes: Shape[];
+  rest: Shape[];
+}
+
+const ink = { stroke: NAVY, "stroke-linecap": "round", "stroke-linejoin": "round", fill: "none" };
+
+// A paper page with a lime header band and binder rings, outlined in navy so it keeps its
+// shape on light backgrounds and still reads as a bright page on dark ones.
+const BODY: Shape[] = [
+  ["rect", { x: 3, y: 7, width: 58, height: 54, rx: 17, fill: NAVY }],
+  ["rect", { x: 6.5, y: 10.5, width: 51, height: 47, rx: 13.5, fill: PAPER }],
+  ["path", { d: "M6.5 25V24A13.5 13.5 0 0 1 20 10.5H44A13.5 13.5 0 0 1 57.5 24V25Z", fill: LIME }],
+  ["rect", { x: 6.5, y: 24, width: 51, height: 3, fill: NAVY }],
+  ["rect", { x: 17.5, y: 4, width: 7, height: 13, rx: 3.5, fill: NAVY }],
+  ["rect", { x: 39.5, y: 4, width: 7, height: 13, rx: 3.5, fill: NAVY }],
+];
+
+const cheeks: Shape[] = [
+  ["ellipse", { cx: 16.5, cy: 46, rx: 3.6, ry: 2.4, fill: BLUSH }],
+  ["ellipse", { cx: 47.5, cy: 46, rx: 3.6, ry: 2.4, fill: BLUSH }],
+];
+
+function eye(cx: number, cy: number, r = 3.9): Shape[] {
+  return [
+    ["ellipse", { cx, cy, rx: r, ry: r * 1.15, fill: NAVY }],
+    ["circle", { cx: cx + r * 0.32, cy: cy - r * 0.42, r: r * 0.36, fill: "#FFFFFF" }],
+  ];
+}
+
+function star(cx: number, cy: number): Shape {
+  const points = Array.from({ length: 10 }, (_, i) => {
+    const r = i % 2 === 0 ? 6 : 2.7;
+    const a = (Math.PI / 5) * i - Math.PI / 2;
+    return `${(cx + r * Math.cos(a)).toFixed(2)},${(cy + r * Math.sin(a)).toFixed(2)}`;
+  }).join(" ");
+  return ["polygon", { points, fill: SUN, stroke: NAVY, "stroke-width": 1.6, "stroke-linejoin": "round" }];
+}
+
+const FACES: Record<Mood, Drawing> = {
+  happy: {
+    eyes: [...eye(24, 38.5), ...eye(40, 38.5)],
+    rest: [...cheeks, ["path", { d: "M25.5 45Q32 52.5 38.5 45", "stroke-width": 3.4, ...ink }]],
+  },
+  sleepy: {
+    eyes: [["path", { d: "M19.5 39Q24 42.5 28.5 39M35.5 39Q40 42.5 44.5 39", "stroke-width": 3, ...ink }]],
+    rest: [...cheeks, ["path", { d: "M29 48H35", "stroke-width": 3, ...ink }]],
+  },
+  starry: {
+    eyes: [star(24, 38.5), star(40, 38.5)],
+    rest: [
+      ...cheeks,
+      [
+        "path",
+        { d: "M25 45Q32 55 39 45Z", fill: NAVY, stroke: NAVY, "stroke-width": 2, "stroke-linejoin": "round" },
+      ],
+      ["ellipse", { cx: 32, cy: 49.6, rx: 3.2, ry: 1.6, fill: BLUSH }],
+    ],
+  },
+  wow: {
+    eyes: [...eye(24, 38, 4.4), ...eye(40, 38, 4.4)],
+    rest: [...cheeks, ["ellipse", { cx: 32, cy: 49, rx: 3.2, ry: 3.8, fill: NAVY }]],
+  },
+  puzzled: {
+    eyes: [...eye(24, 39.5), ...eye(40, 37.5)],
+    rest: [...cheeks, ["path", { d: "M25.5 48Q28.75 45 32 48T38.5 47", "stroke-width": 3, ...ink }]],
+  },
+};
+
+const camel = (name: string) => name.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
+
+function toReact([tag, attrs]: Shape, key: number) {
+  const props: Record<string, string | number> = { key };
+  for (const [k, v] of Object.entries(attrs)) props[camel(k)] = v;
+  return createElement(tag, props);
+}
+
+const toMarkup = ([tag, attrs]: Shape) =>
+  `<${tag} ${Object.entries(attrs)
+    .map(([k, v]) => `${k}="${v}"`)
+    .join(" ")}/>`;
 
 /** The leavemaxxing mark: a happy calendar page. Its face follows the plan's mood. */
 export function Mascot({
@@ -18,6 +107,7 @@ export function Mascot({
   className?: string;
   blink?: boolean;
 }) {
+  const face = FACES[mood];
   return (
     <svg
       width={size}
@@ -29,84 +119,11 @@ export function Mascot({
       className={className}
       style={{ flex: "none" }}
     >
-      <rect x="4" y="9" width="56" height="51" rx="17" fill={NAVY} />
-      <rect x="16" y="3" width="8" height="14" rx="4" fill={LIME} />
-      <rect x="40" y="3" width="8" height="14" rx="4" fill={LIME} />
-      <Face mood={mood} blink={blink} />
+      {BODY.map(toReact)}
+      <g className={blink ? "mascot-eyes" : undefined}>{face.eyes.map(toReact)}</g>
+      {face.rest.map(toReact)}
     </svg>
   );
-}
-
-function Face({ mood, blink }: { mood: Mood; blink: boolean }) {
-  const eyes = blink ? "mascot-eyes" : undefined;
-  switch (mood) {
-    case "sleepy":
-      return (
-        <>
-          <path
-            d="M18 31 Q23 35 28 31 M36 31 Q41 35 46 31"
-            stroke={SUN}
-            strokeWidth="3.5"
-            strokeLinecap="round"
-            fill="none"
-          />
-          <path d="M25 44 H39" stroke={LIME} strokeWidth="5" strokeLinecap="round" />
-        </>
-      );
-    case "starry":
-      return (
-        <>
-          <Star cx={23} cy={30} />
-          <Star cx={41} cy={30} />
-          <path d="M19 40 Q32 54 45 40 Z" fill={LIME} stroke={LIME} strokeWidth="3" strokeLinejoin="round" />
-        </>
-      );
-    case "wow":
-      return (
-        <>
-          <g className={eyes}>
-            <circle cx="23" cy="30" r="5" fill={SUN} />
-            <circle cx="41" cy="30" r="5" fill={SUN} />
-          </g>
-          <ellipse cx="32" cy="45" rx="5.5" ry="6" fill={LIME} />
-        </>
-      );
-    case "puzzled":
-      return (
-        <>
-          <g className={eyes}>
-            <circle cx="23" cy="31" r="4.2" fill={SUN} />
-            <circle cx="41" cy="29" r="4.2" fill={SUN} />
-          </g>
-          <path
-            d="M22 45 Q27 41 32 45 T42 44"
-            stroke={LIME}
-            strokeWidth="5"
-            strokeLinecap="round"
-            fill="none"
-          />
-        </>
-      );
-    default:
-      return (
-        <>
-          <g className={eyes}>
-            <circle cx="23" cy="31" r="4.2" fill={SUN} />
-            <circle cx="41" cy="31" r="4.2" fill={SUN} />
-          </g>
-          <path d="M20 41 Q32 52 44 41" stroke={LIME} strokeWidth="6" strokeLinecap="round" fill="none" />
-        </>
-      );
-  }
-}
-
-function Star({ cx, cy }: { cx: number; cy: number }) {
-  const pts = Array.from({ length: 10 }, (_, i) => {
-    const r = i % 2 === 0 ? 6.5 : 2.8;
-    const a = (Math.PI / 5) * i - Math.PI / 2;
-    return `${(cx + r * Math.cos(a)).toFixed(2)},${(cy + r * Math.sin(a)).toFixed(2)}`;
-  }).join(" ");
-  return <polygon points={pts} fill={SUN} />;
 }
 
 export function moodFor(multiplier: number, leaveUsed: number): Mood {
@@ -119,12 +136,7 @@ export function moodFor(multiplier: number, leaveUsed: number): Mood {
 
 /** Static SVG markup of the mark (for favicons and generated images). */
 export function mascotSvg(size = 64, mood: Mood = "happy"): string {
-  const face: Record<Mood, string> = {
-    happy: `<circle cx="23" cy="31" r="4.2" fill="${SUN}"/><circle cx="41" cy="31" r="4.2" fill="${SUN}"/><path d="M20 41 Q32 52 44 41" stroke="${LIME}" stroke-width="6" stroke-linecap="round" fill="none"/>`,
-    sleepy: `<path d="M18 31 Q23 35 28 31 M36 31 Q41 35 46 31" stroke="${SUN}" stroke-width="3.5" stroke-linecap="round" fill="none"/><path d="M25 44 H39" stroke="${LIME}" stroke-width="5" stroke-linecap="round"/>`,
-    starry: `<circle cx="23" cy="30" r="5" fill="${SUN}"/><circle cx="41" cy="30" r="5" fill="${SUN}"/><path d="M19 40 Q32 54 45 40 Z" fill="${LIME}" stroke="${LIME}" stroke-width="3" stroke-linejoin="round"/>`,
-    wow: `<circle cx="23" cy="30" r="5" fill="${SUN}"/><circle cx="41" cy="30" r="5" fill="${SUN}"/><ellipse cx="32" cy="45" rx="5.5" ry="6" fill="${LIME}"/>`,
-    puzzled: `<circle cx="23" cy="31" r="4.2" fill="${SUN}"/><circle cx="41" cy="29" r="4.2" fill="${SUN}"/><path d="M22 45 Q27 41 32 45 T42 44" stroke="${LIME}" stroke-width="5" stroke-linecap="round" fill="none"/>`,
-  };
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 64 64"><rect x="4" y="9" width="56" height="51" rx="17" fill="${NAVY}"/><rect x="16" y="3" width="8" height="14" rx="4" fill="${LIME}"/><rect x="40" y="3" width="8" height="14" rx="4" fill="${LIME}"/>${face[mood]}</svg>`;
+  const face = FACES[mood];
+  const shapes = [...BODY, ...face.eyes, ...face.rest].map(toMarkup).join("");
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 64 64">${shapes}</svg>`;
 }
