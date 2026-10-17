@@ -1,0 +1,27 @@
+---
+import { SITE } from "~/data/site";
+
+const year = new Date().getFullYear();
+---
+
+<footer class="mx-auto w-full max-w-[1280px] px-[max(16px,env(safe-area-inset-left))] pb-[max(24px,env(safe-area-inset-bottom))]">
+  <div class="card flex flex-col gap-4 p-6 text-sm text-muted md:flex-row md:items-center md:justify-between">
+    <div class="flex flex-col gap-1">
+      <p>
+        © {year} <a class="font-semibold text-ink hover:underline" href={SITE.author.url}>{SITE.author.name}</a>. Plan with
+        care: always check dates with your employer.
+      </p>
+      <p>
+        Holiday data from
+        <a class="underline" href="https://github.com/commenthol/date-holidays">date-holidays</a>, licensed
+        <a class="underline" href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.
+      </p>
+    </div>
+    <nav aria-label="Footer" class="flex flex-wrap items-center gap-x-5 gap-y-2 font-semibold">
+      <a href="/about/" class="hover:text-ink">About</a>
+      <a href="/privacy-policy/" class="hover:text-ink">Privacy</a>
+      <a href={SITE.links.github} class="hover:text-ink">GitHub</a>
+      <a href={SITE.links.linkedin} class="hover:text-ink">LinkedIn</a>
+    </nav>
+  </div>
+</footer>

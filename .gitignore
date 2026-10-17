@@ -1,15 +1,22 @@
-# dotenv environment variable files
+# env
 .env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
+.env.*
+!.env.example
 
-# Fresh build directory
-_fresh/
-# Static export directory
+# build output
 dist/
-# npm dependencies
+.astro/
+
+# generated holiday data (scripts/build-data.ts)
+public/data/
+src/data/generated/
+
+# dependencies
 node_modules/
-package-lock.json
-deno.lock
+
+# tests
+test-results/
+playwright-report/
+
+.DS_Store
+.shot.mjs

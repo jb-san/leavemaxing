@@ -1,0 +1,96 @@
+---
+import { Mascot } from "~/components/Mascot";
+import Planner from "~/components/planner/Planner";
+import { countryByCode, meta } from "~/data";
+import { buildToday, serverPlan } from "~/data/server";
+import { SITE } from "~/data/site";
+import Base from "~/layouts/Base.astro";
+import { defaultSettings } from "~/lib/settings";
+
+const year = new Date().getFullYear();
+const settings = defaultSettings("US", year);
+const { files } = serverPlan(settings);
+const popular = ["US", "GB", "DE", "FR", "ES", "IT", "NL", "IE", "MT", "AU", "CA", "IN", "BR", "JP", "SE", "PL"]
+  .map((c) => countryByCode.get(c))
+  .filter((c) => !!c);
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: "leavemaxxing",
+  url: SITE.url,
+  description: SITE.description,
+  applicationCategory: "LifestyleApplication",
+  operatingSystem: "Any",
+  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+};
+
+const steps = [
+  { title: "Pick your country", text: "Public holidays for 200+ countries and their regions, built right in." },
+  { title: "Say how many days you have", text: "The planner tries every option and finds the best plan for your style." },
+  { title: "Make it yours", text: "Tap days you've booked or can't take. The plan rebuilds around them." },
+  { title: "Take it with you", text: "Share a link, export to your calendar, or save it in this browser." },
+];
+---
+
+<Base title="leavemaxxing: turn your leave days into the most time off" description={SITE.description} jsonLd={jsonLd} wide>
+  <div class="flex flex-col gap-3 pb-6 pt-2 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <p class="eyebrow">Leave planner</p>
+      <h1 class="mt-1 text-[clamp(30px,4.6vw,52px)] font-extrabold leading-[1.02] tracking-[-0.035em]">
+        Same leave. <span class="text-lime-strong">Way more time off.</span>
+      </h1>
+    </div>
+    <p class="max-w-[42ch] text-muted">
+      We line your leave up with weekends and public holidays, so every day you take buys the most days away.
+    </p>
+  </div>
+
+  <Planner client:load initial={settings} files={files} today={buildToday} mode="home" years={meta.years} />
+
+  <section aria-labelledby="how" class="mt-14">
+    <h2 id="how" class="text-2xl font-bold">How it works</h2>
+    <ol class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {
+        steps.map((s, i) => (
+          <li class="card flex flex-col gap-2 p-5">
+            <span class="grid size-9 place-items-center rounded-full bg-lime font-display font-extrabold text-lime-ink">{i + 1}</span>
+            <h3 class="text-lg font-bold">{s.title}</h3>
+            <p class="text-sm text-muted">{s.text}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  <section aria-labelledby="countries" class="mt-14">
+    <div class="flex items-end justify-between gap-4">
+      <h2 id="countries" class="text-2xl font-bold">Popular countries</h2>
+      <a href={`/best/${year}/`} class="text-sm font-bold underline decoration-lime decoration-[3px] underline-offset-4">See where leave goes furthest</a>
+    </div>
+    <ul class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+      {
+        popular.map((c) => (
+          <li>
+            <a href={`/${c.code.toLowerCase()}/${year}/`} class="card flex items-center gap-2.5 px-4 py-3 text-sm font-bold transition-transform hover:-translate-y-0.5">
+              <span class="text-xl leading-none">{c.flag}</span>
+              <span class="truncate">{c.name}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section class="card mt-14 flex flex-col items-center gap-4 p-8 text-center sm:flex-row sm:text-left">
+    <Mascot size={72} mood="starry" title="" />
+    <div class="flex-1">
+      <h2 class="text-xl font-bold">No accounts. No tracking of your plans.</h2>
+      <p class="mt-1 text-sm text-muted">
+        Everything is worked out in your browser. Saved plans stay on your device, and the app works offline once you've
+        visited.
+      </p>
+    </div>
+    <a href="/about/" class="btn btn-soft">How we plan</a>
+  </section>
+</Base>

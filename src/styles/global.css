@@ -1,0 +1,468 @@
+@import "tailwindcss";
+@import "@fontsource-variable/bricolage-grotesque/wght.css";
+@import "@fontsource-variable/plus-jakarta-sans/wght.css";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* Sage page, white rounded cards, one navy hero per view. Lime = leave, sun = holidays. */
+:root {
+  --bg: #eef3ea;
+  --bg-2: #e2ecdb;
+  --card: #ffffff;
+  --card-2: #f5f8f2;
+  --ink: #1a2030;
+  --muted: #646f60;
+  --line: #dce4d6;
+  --wkd: #e6ebe2;
+  --lime: #8bd12f;
+  --lime-strong: #4f8a0e;
+  --lime-ink: #1c3300;
+  --lime-soft: #e2f4c8;
+  --sun: #ffc83d;
+  --sun-ink: #5c3f00;
+  --sun-soft: #fff0c4;
+  --red: #e5484f;
+  --red-soft: #fde2e3;
+  --violet: #7c6cf0;
+  --sky: #2f9bd6;
+  --hero: #1a2030;
+  --hero-ink: #f2f6ee;
+  --hero-muted: #a3acba;
+  --hero-line: #2f374a;
+  --shadow: 0 1px 0 rgb(26 32 48 / 0.04), 0 12px 32px -18px rgb(26 32 48 / 0.25);
+  --shadow-lg: 0 24px 60px -24px rgb(26 32 48 / 0.35);
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --bg: #10141b;
+  --bg-2: #141a12;
+  --card: #1a202b;
+  --card-2: #212836;
+  --ink: #eef2ea;
+  --muted: #95a0ad;
+  --line: #2a3242;
+  --wkd: #252d3a;
+  --lime: #9be03f;
+  --lime-strong: #9be03f;
+  --lime-ink: #142500;
+  --lime-soft: rgb(155 224 63 / 0.17);
+  --sun: #ffcf4d;
+  --sun-ink: #4a3300;
+  --sun-soft: rgb(255 207 77 / 0.16);
+  --red: #f2666e;
+  --red-soft: rgb(242 102 110 / 0.18);
+  --violet: #9d90fa;
+  --sky: #5bb8ea;
+  --hero: #222a39;
+  --hero-ink: #f2f6ee;
+  --hero-muted: #9aa3b2;
+  --hero-line: #343e52;
+  --shadow: 0 1px 0 rgb(0 0 0 / 0.2), 0 16px 36px -20px rgb(0 0 0 / 0.6);
+  --shadow-lg: 0 24px 60px -20px rgb(0 0 0 / 0.7);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-2: var(--bg-2);
+  --color-card: var(--card);
+  --color-card-2: var(--card-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-wkd: var(--wkd);
+  --color-lime: var(--lime);
+  --color-lime-strong: var(--lime-strong);
+  --color-lime-ink: var(--lime-ink);
+  --color-lime-soft: var(--lime-soft);
+  --color-sun: var(--sun);
+  --color-sun-ink: var(--sun-ink);
+  --color-sun-soft: var(--sun-soft);
+  --color-red: var(--red);
+  --color-red-soft: var(--red-soft);
+  --color-violet: var(--violet);
+  --color-sky: var(--sky);
+  --color-hero: var(--hero);
+  --color-hero-ink: var(--hero-ink);
+  --color-hero-muted: var(--hero-muted);
+  --color-hero-line: var(--hero-line);
+  --shadow-card: var(--shadow);
+  --shadow-lift: var(--shadow-lg);
+  --font-display: "Bricolage Grotesque Variable", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans Variable", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --radius-card: 28px;
+  --radius-hero: 32px;
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    background: radial-gradient(1200px 600px at 10% -10%, var(--bg-2), transparent 70%), var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+    min-height: 100dvh;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+  :focus-visible {
+    outline: 3px solid var(--lime);
+    outline-offset: 2px;
+    border-radius: 8px;
+  }
+  button {
+    cursor: pointer;
+  }
+  ::selection {
+    background: var(--lime);
+    color: var(--lime-ink);
+  }
+}
+
+@layer components {
+  .card {
+    background: var(--card);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow);
+  }
+  .eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .field-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--line);
+    background: var(--card-2);
+    border-radius: 999px;
+    padding: 7px 13px;
+    font-size: 13px;
+    font-weight: 600;
+    transition:
+      background-color 0.15s,
+      border-color 0.15s,
+      transform 0.15s;
+  }
+  .chip:hover {
+    border-color: color-mix(in oklab, var(--lime) 60%, var(--line));
+  }
+  .chip:active {
+    transform: scale(0.96);
+  }
+  .chip[aria-pressed="true"],
+  .chip[aria-checked="true"] {
+    background: var(--lime);
+    border-color: var(--lime);
+    color: var(--lime-ink);
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 999px;
+    padding: 11px 18px;
+    font-weight: 700;
+    font-size: 14px;
+    transition:
+      transform 0.15s var(--ease-spring),
+      background-color 0.15s,
+      filter 0.15s;
+  }
+  .btn:active {
+    transform: scale(0.96);
+  }
+  .btn-primary {
+    background: var(--lime);
+    color: var(--lime-ink);
+  }
+  .btn-primary:hover {
+    filter: brightness(1.05);
+  }
+  .btn-ghost {
+    background: rgb(255 255 255 / 0.08);
+    color: var(--hero-ink);
+    border: 1px solid var(--hero-line);
+  }
+  .btn-ghost:hover {
+    background: rgb(255 255 255 / 0.14);
+  }
+  .btn-soft {
+    background: var(--card-2);
+    border: 1px solid var(--line);
+    color: var(--ink);
+  }
+  .btn-soft:hover {
+    border-color: color-mix(in oklab, var(--lime) 60%, var(--line));
+  }
+  .input {
+    width: 100%;
+    background: var(--card-2);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 10px 14px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .input:focus-visible {
+    border-color: var(--lime);
+  }
+  .prose-lm {
+    max-width: 68ch;
+  }
+  .prose-lm p {
+    margin-block: 0.9em;
+  }
+  .prose-lm h2 {
+    font-size: 1.5rem;
+    font-weight: 750;
+    margin-top: 1.8em;
+  }
+  .prose-lm a {
+    color: var(--ink);
+    text-decoration: underline;
+    text-decoration-color: var(--lime);
+    text-decoration-thickness: 3px;
+    text-underline-offset: 3px;
+  }
+  .prose-lm ul,
+  .prose-lm ol {
+    padding-left: 1.3em;
+    margin-block: 0.9em;
+  }
+  .prose-lm ul {
+    list-style: disc;
+  }
+  .prose-lm ol {
+    list-style: decimal;
+  }
+  .prose-lm li {
+    margin-block: 0.35em;
+  }
+}
+
+/* Calendar cells: date on top, status circle below, break capsule behind the circles. */
+@layer components {
+  .cal {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    row-gap: 8px;
+  }
+  .cal-dow {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+  }
+  .day {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 0;
+    background: none;
+    border: 0;
+    color: inherit;
+    border-radius: 12px;
+  }
+  .day .n {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .day .mk {
+    position: relative;
+    z-index: 1;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    transition: transform 0.2s var(--ease-spring);
+  }
+  .day:hover .mk {
+    transform: scale(1.12);
+  }
+  .day .mk svg {
+    width: 15px;
+    height: 15px;
+  }
+  .day[data-k="work"] .mk {
+    border: 2px solid var(--line);
+    background: var(--card);
+  }
+  .day[data-k="weekend"] .mk {
+    background: var(--wkd);
+  }
+  .day[data-k="custom"] .mk {
+    background: color-mix(in oklab, var(--sky) 30%, var(--card));
+    color: var(--ink);
+  }
+  .day[data-k="holiday"] .mk {
+    background: var(--sun);
+    color: var(--sun-ink);
+  }
+  .day[data-k="leave"] .mk,
+  .day[data-k="locked"] .mk {
+    background: var(--lime);
+    color: var(--lime-ink);
+  }
+  .day[data-k="blocked"] .mk {
+    background: var(--red);
+    color: #fff;
+  }
+  .day:is([data-k="holiday"], [data-k="leave"], [data-k="locked"]) .n {
+    color: var(--ink);
+  }
+  .day[data-today] .n {
+    background: var(--ink);
+    color: var(--card);
+    border-radius: 6px;
+    padding: 1px 4px;
+    margin-top: -1px;
+  }
+  .day[data-past] {
+    opacity: 0.42;
+  }
+  .day[data-br]::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -3px;
+    height: 34px;
+    background: var(--lime-soft);
+  }
+  .day[data-br="free"]::before {
+    background: var(--sun-soft);
+  }
+  .day[data-s]::before {
+    left: 2px;
+    border-top-left-radius: 17px;
+    border-bottom-left-radius: 17px;
+  }
+  .day[data-e]::before {
+    right: 2px;
+    border-top-right-radius: 17px;
+    border-bottom-right-radius: 17px;
+  }
+  .day[data-pop] .mk {
+    animation: pop 0.5s var(--ease-spring) both;
+    animation-delay: calc(var(--i, 0) * 14ms);
+  }
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.35);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@keyframes blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.1);
+  }
+}
+
+.mascot-eyes {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: blink 5s infinite;
+}
+
+dialog.sheet {
+  margin: auto auto 0;
+  width: 100%;
+  max-width: 100%;
+  max-height: 88dvh;
+  border: 0;
+  border-radius: 28px 28px 0 0;
+  padding: 0;
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: var(--shadow-lg);
+}
+dialog.sheet[open] {
+  animation: sheet-up 0.35s var(--ease-spring);
+}
+@media (min-width: 640px) {
+  dialog.sheet {
+    margin: auto;
+    width: min(560px, calc(100% - 32px));
+    border-radius: 28px;
+  }
+}
+dialog.sheet::backdrop {
+  background: rgb(10 14 20 / 0.45);
+  backdrop-filter: blur(2px);
+}
+@keyframes sheet-up {
+  from {
+    transform: translateY(40px);
+    opacity: 0.4;
+  }
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

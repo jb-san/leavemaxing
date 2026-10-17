@@ -1,11 +1,59 @@
 {
-  "name": "leavemaxing",
-  "version": "1.0.0",
-  "description": "LeaveMaxing - Maximize Your Vacation Days",
+  "name": "leavemaxxing",
+  "version": "2.0.0",
+  "description": "leavemaxxing: turn your leave days into the most time off",
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "deno task start",
-    "build": "deno task export"
+    "data": "tsx scripts/build-data.ts",
+    "icons": "tsx scripts/build-icons.ts",
+    "predev": "pnpm data",
+    "dev": "astro dev",
+    "prebuild": "pnpm data",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check && biome check .",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "playwright test"
+  },
+  "dependencies": {
+    "@astrojs/react": "5.0.5",
+    "@astrojs/sitemap": "3.7.4",
+    "@fontsource-variable/bricolage-grotesque": "5.3.0",
+    "@fontsource-variable/plus-jakarta-sans": "5.3.0",
+    "@tailwindcss/vite": "4.3.3",
+    "astro": "7.4.0",
+    "canvas-confetti": "1.9.4",
+    "lucide-react": "1.59.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "tailwindcss": "4.3.3"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@axe-core/playwright": "^4.14.0",
+    "@biomejs/biome": "2.5.15",
+    "@fontsource/bricolage-grotesque": "5.3.0",
+    "@fontsource/plus-jakarta-sans": "5.3.0",
+    "@playwright/test": "1.64.1",
+    "@resvg/resvg-js": "2.6.2",
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "date-holidays": "3.37.0",
+    "satori": "0.62.0",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "vitest": "5.0.5"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp",
+      "@resvg/resvg-js"
+    ]
   }
 }

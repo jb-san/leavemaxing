@@ -1,0 +1,52 @@
+---
+import HolidayList from "~/components/HolidayList.astro";
+import Planner from "~/components/planner/Planner";
+import { countries, countryByCode, meta } from "~/data";
+import { buildToday, readHolidayFile, serverPlan } from "~/data/server";
+import Base from "~/layouts/Base.astro";
+import { defaultSettings } from "~/lib/settings";
+
+export function getStaticPaths() {
+  return countries.map((c) => ({ params: { cc: c.code.toLowerCase() } }));
+}
+
+const code = Astro.params.cc.toUpperCase();
+const country = countryByCode.get(code)!;
+const year = new Date().getFullYear();
+const settings = defaultSettings(code, year);
+const { plan, files } = serverPlan(settings);
+const file = readHolidayFile(code, year)!;
+const title = `Best days to take off in ${country.name}: leave planner`;
+const description = `Plan your leave around ${country.name}'s public holidays. Find the bridge days that turn ${settings.budget} leave days into ${plan.stats.daysOff} days off this year.`;
+---
+
+<Base title={title} description={description} image={`/og/${code.toLowerCase()}/${year}.png`} wide>
+  <div class="flex flex-col gap-2 pb-5 pt-2">
+    <nav aria-label="Breadcrumb" class="text-sm font-semibold text-muted">
+      <a href="/" class="hover:text-ink">Planner</a> / <span aria-current="page">{country.name}</span>
+    </nav>
+    <h1 class="text-[clamp(28px,4vw,44px)] font-extrabold leading-tight">
+      {country.flag} Leave planner for {country.name}
+    </h1>
+  </div>
+
+  <Planner client:load initial={settings} files={files} today={buildToday} mode="page" years={meta.years} />
+
+  <div class="mt-10 flex flex-col gap-5">
+    <HolidayList file={file} />
+    <section class="card p-5 sm:p-6">
+      <h2 class="text-xl font-bold">Plan another year in {country.name}</h2>
+      <ul class="mt-3 flex flex-wrap gap-2">
+        {
+          meta.years.map((y) => (
+            <li>
+              <a class="chip" href={`/${code.toLowerCase()}/${y}/`}>
+                {y}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+  </div>
+</Base>

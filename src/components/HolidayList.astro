@@ -1,0 +1,77 @@
+---
+import { countryByCode } from "~/data";
+import { fromIso, MONTHS_LONG, parts, WEEKDAYS_LONG, weekdayMon0 } from "~/lib/dates";
+import type { HolidayFile } from "~/lib/holidays";
+
+interface Props {
+  file: HolidayFile;
+}
+
+const { file } = Astro.props;
+const country = countryByCode.get(file.country);
+const regionName = (code: string) => country?.regions[code] ?? code;
+
+const BRIDGE: Record<number, string> = {
+  0: "Long weekend: Sat to Mon",
+  1: "Take Monday off for a 4-day weekend",
+  3: "Take Friday off for a 4-day weekend",
+  4: "Long weekend: Fri to Sun",
+  5: "Falls on a Saturday",
+  6: "Falls on a Sunday",
+};
+const rows = file.holidays.map((h) => {
+  const d = fromIso(h.date);
+  const p = parts(d);
+  const wd = weekdayMon0(d);
+  return {
+    ...h,
+    day: p.day,
+    month: MONTHS_LONG[p.month - 1],
+    weekday: WEEKDAYS_LONG[wd],
+    tip: BRIDGE[wd] ?? "Midweek: bridge it with 2 days",
+    where: h.regions ? h.regions.map(regionName).join(", ") : null,
+  };
+});
+const nationalCount = new Set(file.holidays.filter((h) => h.national !== false).map((h) => h.date)).size;
+---
+
+<section aria-labelledby="holidays-title" class="card p-5 sm:p-7">
+  <h2 id="holidays-title" class="text-2xl font-bold">
+    Public holidays in {country?.name} {file.year}
+  </h2>
+  <p class="mt-1 text-sm text-muted">
+    {nationalCount} national public holidays{rows.some((r) => r.where) ? ", plus regional ones" : ""}. Holidays on a Tuesday or
+    Thursday are the best bridge days.
+  </p>
+  <div class="mt-5 overflow-x-auto">
+    <table class="w-full min-w-[520px] text-left text-sm">
+      <thead class="text-xs uppercase tracking-wider text-muted">
+        <tr>
+          <th class="pb-3 pr-4 font-bold">Date</th>
+          <th class="pb-3 pr-4 font-bold">Holiday</th>
+          <th class="pb-3 font-bold">Leave tip</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-line">
+        {
+          rows.map((r) => (
+            <tr>
+              <td class="py-3 pr-4 align-top">
+                <span class="font-bold tabular-nums">
+                  {r.day} {r.month}
+                </span>
+                <span class="block text-xs text-muted">{r.weekday}</span>
+              </td>
+              <td class="py-3 pr-4 align-top">
+                <span class="font-semibold">{r.name}</span>
+                {r.local && <span class="block text-xs text-muted">{r.local}</span>}
+                {r.where && <span class="mt-1 block text-xs text-muted">Only in {r.where}</span>}
+              </td>
+              <td class="py-3 align-top text-muted">{r.tip}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

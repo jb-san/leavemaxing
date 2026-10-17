@@ -1,0 +1,105 @@
+---
+import HolidayList from "~/components/HolidayList.astro";
+import Planner from "~/components/planner/Planner";
+import { countries, countryByCode, meta } from "~/data";
+import { buildToday, readHolidayFile, serverPlan } from "~/data/server";
+import { SITE } from "~/data/site";
+import Base from "~/layouts/Base.astro";
+import { formatRange } from "~/lib/dates";
+import { defaultSettings } from "~/lib/settings";
+
+export function getStaticPaths() {
+  return countries.flatMap((c) => meta.years.map((year) => ({ params: { cc: c.code.toLowerCase(), year: String(year) } })));
+}
+
+const code = Astro.params.cc.toUpperCase();
+const year = Number(Astro.params.year);
+const country = countryByCode.get(code)!;
+const settings = defaultSettings(code, year);
+const { plan, files } = serverPlan(settings);
+const file = readHolidayFile(code, year)!;
+const { stats } = plan;
+const top = [...plan.breaks].filter((b) => b.leave > 0).sort((a, b) => b.length / b.leave - a.length / a.leave).slice(0, 3);
+
+const title = `${country.name} ${year}: turn ${settings.budget} leave days into ${stats.daysOff} days off`;
+const description = `The best days to take off in ${country.name} in ${year}. ${settings.budget} leave days around ${country.name}'s public holidays give ${stats.daysOff} days off (${stats.multiplier.toFixed(1)}×). Change the days, region and style to plan your own.`;
+const otherYears = meta.years.filter((y) => y !== year);
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      name: `leavemaxxing: ${country.name} ${year}`,
+      url: new URL(Astro.url.pathname, SITE.url).href,
+      applicationCategory: "LifestyleApplication",
+      operatingSystem: "Any",
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    },
+    {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "leavemaxxing", item: SITE.url },
+        { "@type": "ListItem", position: 2, name: country.name, item: `${SITE.url}/${code.toLowerCase()}/` },
+        { "@type": "ListItem", position: 3, name: String(year), item: new URL(Astro.url.pathname, SITE.url).href },
+      ],
+    },
+  ],
+};
+---
+
+<Base title={title} description={description} image={`/og/${code.toLowerCase()}/${year}.png`} jsonLd={jsonLd} wide>
+  <div class="flex flex-col gap-2 pb-5 pt-2">
+    <nav aria-label="Breadcrumb" class="text-sm font-semibold text-muted">
+      <a href="/" class="hover:text-ink">Planner</a> /
+      <a href={`/${code.toLowerCase()}/`} class="hover:text-ink">{country.name}</a> / <span aria-current="page">{year}</span>
+    </nav>
+    <h1 class="text-[clamp(28px,4vw,44px)] font-extrabold leading-tight">
+      {country.flag} Best days to take off in {country.name} {year}
+    </h1>
+  </div>
+
+  <Planner client:load initial={settings} files={files} today={buildToday} mode="page" years={meta.years} />
+
+  <div class="mt-10 grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+    <HolidayList file={file} />
+    <aside class="flex flex-col gap-5">
+      {
+        top.length > 0 && (
+          <section class="card p-5 sm:p-6">
+            <h2 class="text-xl font-bold">Best value breaks</h2>
+            <p class="mt-1 text-sm text-muted">With {settings.budget} days and the balanced style.</p>
+            <ol class="mt-4 flex flex-col gap-3">
+              {top.map((b) => (
+                <li class="flex items-center gap-3">
+                  <span class="grid h-11 w-14 shrink-0 place-items-center rounded-2xl bg-lime font-display text-lg font-extrabold text-lime-ink">
+                    {(b.length / b.leave).toFixed(1)}×
+                  </span>
+                  <span class="text-sm">
+                    <span class="block font-bold">{formatRange(b.start, b.end)}</span>
+                    <span class="text-muted">
+                      {b.leave} leave → {b.length} days off
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )
+      }
+      <section class="card p-5 sm:p-6">
+        <h2 class="text-xl font-bold">Other years</h2>
+        <ul class="mt-3 flex flex-wrap gap-2">
+          {
+            otherYears.map((y) => (
+              <li>
+                <a class="chip" href={`/${code.toLowerCase()}/${y}/`}>
+                  {y}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+    </aside>
+  </div>
+</Base>

@@ -1,0 +1,69 @@
+---
+import { Mascot } from "~/components/Mascot";
+import ThemeToggle from "~/components/ThemeToggle";
+import { meta } from "~/data";
+
+const thisYear = new Date().getFullYear();
+const bestYear = meta.years.includes(thisYear + 1) && new Date().getMonth() >= 9 ? thisYear + 1 : thisYear;
+const links = [
+  { href: "/", label: "Planner" },
+  { href: "/compare/", label: "Compare" },
+  { href: `/best/${bestYear}/`, label: "Best countries" },
+  { href: "/plans/", label: "My plans" },
+];
+const path = Astro.url.pathname;
+const isActive = (href: string) =>
+  href === "/" ? path === "/" || /^\/[a-z]{2}\//.test(path) : path.startsWith(href.split("/").slice(0, 2).join("/"));
+---
+
+<header class="mx-auto flex w-full max-w-[1280px] items-center justify-between gap-3 px-[max(16px,env(safe-area-inset-left))] pb-4 pt-[max(16px,env(safe-area-inset-top))]">
+  <a href="/" class="group flex items-center gap-2.5 rounded-2xl" aria-label="leavemaxxing home">
+    <Mascot size={38} className="transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-105" title="" />
+    <span class="font-display text-[22px] font-extrabold tracking-[-0.03em]">leavema<span class="text-lime-strong">xx</span>ing</span>
+  </a>
+
+  <nav aria-label="Main" class="hidden items-center gap-1 rounded-full bg-card p-1 shadow-card md:flex">
+    {
+      links.map((l) => (
+        <a
+          href={l.href}
+          aria-current={isActive(l.href) ? "page" : undefined}
+          class:list={[
+            "rounded-full px-4 py-2 text-sm font-semibold transition-colors",
+            isActive(l.href) ? "bg-ink text-card" : "text-muted hover:text-ink",
+          ]}
+        >
+          {l.label}
+        </a>
+      ))
+    }
+  </nav>
+
+  <div class="flex items-center gap-2">
+    <ThemeToggle client:idle />
+    <details class="relative md:hidden">
+      <summary
+        class="grid size-10 list-none place-items-center rounded-full bg-card shadow-card [&::-webkit-details-marker]:hidden"
+        aria-label="Menu"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"></path></svg>
+      </summary>
+      <nav aria-label="Main" class="absolute right-0 top-12 z-40 flex w-52 flex-col gap-1 rounded-3xl bg-card p-2 shadow-lift">
+        {
+          links.map((l) => (
+            <a
+              href={l.href}
+              aria-current={isActive(l.href) ? "page" : undefined}
+              class:list={[
+                "rounded-2xl px-4 py-2.5 font-semibold",
+                isActive(l.href) ? "bg-lime text-lime-ink" : "hover:bg-card-2",
+              ]}
+            >
+              {l.label}
+            </a>
+          ))
+        }
+      </nav>
+    </details>
+  </div>
+</header>

@@ -1,0 +1,83 @@
+---
+import "~/styles/global.css";
+import Footer from "~/components/Footer.astro";
+import Header from "~/components/Header.astro";
+import { SITE } from "~/data/site";
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Path of the OG image, e.g. /og/de/2027.png */
+  image?: string;
+  noindex?: boolean;
+  jsonLd?: Record<string, unknown>;
+  wide?: boolean;
+}
+
+const { title, description = SITE.description, image = "/og/default.png", noindex = false, jsonLd, wide = false } =
+  Astro.props;
+const canonical = new URL(Astro.url.pathname, SITE.url).href;
+const ogImage = new URL(image, SITE.url).href;
+---
+
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <meta name="theme-color" content="#eef3ea" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE.name} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    {jsonLd && <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+    <script is:inline>
+      (() => {
+        let pref = "system";
+        try {
+          pref = localStorage.getItem("lm:theme") || "system";
+        } catch {}
+        const dark = pref === "dark" || (pref !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+        if (dark) document.querySelector('meta[name="theme-color"]').setAttribute("content", "#10141b");
+      })();
+    </script>
+    {
+      SITE.rybbit.siteId && (
+        <script is:inline defer src={`${SITE.rybbit.host}/api/script.js`} data-site-id={SITE.rybbit.siteId} />
+      )
+    }
+  </head>
+  <body class="flex min-h-dvh flex-col">
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-ink focus:px-4 focus:py-2 focus:text-card"
+      >Skip to content</a
+    >
+    <Header />
+    <main id="main" class:list={["mx-auto w-full flex-1 px-[max(16px,env(safe-area-inset-left))] pb-16", wide ? "max-w-[1280px]" : "max-w-[1100px]"]}>
+      <slot />
+    </main>
+    <Footer />
+    <script>
+      if ("serviceWorker" in navigator && import.meta.env.PROD) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("/sw.js").catch(() => {});
+        });
+      }
+    </script>
+  </body>
+</html>
