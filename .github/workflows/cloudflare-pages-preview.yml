@@ -61,16 +61,26 @@ jobs:
         if: steps.check-secrets.outputs.secrets_available == 'true'
         run: npm install -g wrangler@latest
 
-      - name: Debug environment variables
+      - name: Verify Cloudflare API access
         if: steps.check-secrets.outputs.secrets_available == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          echo "CLOUDFLARE_API_TOKEN is set: $([[ -n "$CLOUDFLARE_API_TOKEN" ]] && echo "yes" || echo "no")"
-          echo "CLOUDFLARE_API_TOKEN length: ${#CLOUDFLARE_API_TOKEN}"
-          echo "CLOUDFLARE_ACCOUNT_ID is set: $([[ -n "$CLOUDFLARE_ACCOUNT_ID" ]] && echo "yes" || echo "no")"
-          echo "CLOUDFLARE_ACCOUNT_ID length: ${#CLOUDFLARE_ACCOUNT_ID}"
+          echo "Testing Cloudflare API access..."
+          response=$(curl -s -w "\n%{http_code}" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/leavemaxing")
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | head -n-1)
+
+          if [ "$http_code" = "200" ]; then
+            echo "✅ API access verified successfully"
+          else
+            echo "❌ API access failed with HTTP $http_code"
+            echo "$body" | jq . || echo "$body"
+            exit 1
+          fi
 
       - name: Deploy to Cloudflare Pages
         if: steps.check-secrets.outputs.secrets_available == 'true'
@@ -78,6 +88,9 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
+          # Ensure no conflicting auth env vars
+          unset CLOUDFLARE_API_KEY CLOUDFLARE_EMAIL
+
           wrangler pages deploy dist \
             --project-name=leavemaxing \
             --branch=${{ github.head_ref }} \
