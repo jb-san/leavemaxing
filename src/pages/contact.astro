@@ -1,11 +1,14 @@
 ---
+import { SITE } from "~/data/site";
+import { contactAlternates } from "~/i18n/routes";
 import Base from "~/layouts/Base.astro";
+import { shellAlternates } from "~/lib/hreflang";
 
 const title = "Contact · leavemaxxing";
 const description = "Have feedback, found an error, or want to suggest a feature? We'd love to hear from you.";
 ---
 
-<Base title={title} description={description}>
+<Base title={title} description={description} hreflangs={shellAlternates(contactAlternates(SITE.url))}>
   <div class="mx-auto max-w-3xl pb-10 pt-6">
     <h1 class="text-[clamp(32px,4vw,48px)] font-extrabold leading-tight">Contact</h1>
     <div class="prose mt-6 max-w-none">

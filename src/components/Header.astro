@@ -1,36 +1,70 @@
 ---
 import { Mascot } from "~/components/Mascot";
+import LangSwitch from "~/components/LangSwitch.astro";
 import ThemeToggle from "~/components/ThemeToggle";
 import { meta } from "~/data";
+import { getCopy } from "~/i18n";
+import { localizedBestYears, localeBestPath, localeHomePath } from "~/i18n/routes";
+import { switcherLinks } from "~/i18n/switcher";
+import type { Copy } from "~/i18n/types";
 
+interface Props {
+  locale?: string;
+  copy?: Copy;
+}
+
+const locale = Astro.props.locale && Astro.props.locale !== "en" ? Astro.props.locale : "en";
+const copy = Astro.props.copy ?? getCopy(locale);
+const c = copy.chrome;
 const thisYear = new Date().getFullYear();
 const bestYear = meta.years.includes(thisYear + 1) && new Date().getMonth() >= 9 ? thisYear + 1 : thisYear;
+const ranked = localizedBestYears();
+const bestHref =
+  locale === "en"
+    ? `/best/${bestYear}/`
+    : localeBestPath(locale, ranked.includes(bestYear) ? bestYear : (ranked[ranked.length - 1] ?? bestYear));
+const home = localeHomePath(locale);
 const links = [
-  { href: "/", label: "Planner" },
-  { href: "/compare/", label: "Compare" },
-  { href: `/best/${bestYear}/`, label: "Best countries" },
-  { href: "/plans/", label: "My plans" },
+  { href: home, label: c.navPlanner, id: "planner" },
+  { href: "/compare/", label: c.navCompare, id: "compare" },
+  { href: bestHref, label: c.navBest, id: "best" },
+  { href: "/plans/", label: c.navPlans, id: "plans" },
 ];
 const path = Astro.url.pathname;
-const isActive = (href: string) =>
-  href === "/" ? path === "/" || /^\/[a-z]{2}\//.test(path) : path.startsWith(href.split("/").slice(0, 2).join("/"));
+const isActive = (id: string) => {
+  if (id === "planner") {
+    if (path === home) return true;
+    if (locale === "en") return /^\/[a-z]{2}\//.test(path);
+    return path.startsWith(`/${locale.toLowerCase()}/`) && !/\/(best|about|contact)\//.test(path);
+  }
+  if (id === "compare") return path.startsWith("/compare");
+  if (id === "best") return path.includes("/best/");
+  return path.startsWith("/plans");
+};
+const languages = switcherLinks(path);
+const themeLabels = {
+  group: c.themeLabel,
+  light: c.themeLight,
+  system: c.themeSystem,
+  dark: c.themeDark,
+};
 ---
 
 <header class="mx-auto flex w-full max-w-[1280px] items-center justify-between gap-3 px-[max(16px,env(safe-area-inset-left))] pb-4 pt-[max(16px,env(safe-area-inset-top))]">
-  <a href="/" class="group flex items-center gap-2.5 rounded-2xl" aria-label="leavemaxxing home">
+  <a href={home} class="group flex items-center gap-2.5 rounded-2xl" aria-label={c.homeAria}>
     <Mascot size={38} className="transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-105" title="" />
     <span class="font-display text-[22px] font-extrabold tracking-[-0.03em]">leavema<span class="text-lime-strong">xx</span>ing</span>
   </a>
 
-  <nav aria-label="Main" class="hidden items-center gap-1 rounded-full bg-card p-1 shadow-card md:flex">
+  <nav aria-label={c.navMain} class="hidden items-center gap-1 rounded-full bg-card p-1 shadow-card md:flex">
     {
       links.map((l) => (
         <a
           href={l.href}
-          aria-current={isActive(l.href) ? "page" : undefined}
+          aria-current={isActive(l.id) ? "page" : undefined}
           class:list={[
             "rounded-full px-4 py-2 text-sm font-semibold transition-colors",
-            isActive(l.href) ? "bg-ink text-card" : "text-muted hover:text-ink",
+            isActive(l.id) ? "bg-ink text-card" : "text-muted hover:text-ink",
           ]}
         >
           {l.label}
@@ -40,23 +74,24 @@ const isActive = (href: string) =>
   </nav>
 
   <div class="flex items-center gap-2">
-    <ThemeToggle client:idle />
+    <LangSwitch links={languages} label={c.langLabel} />
+    <ThemeToggle client:idle labels={themeLabels} />
     <details class="relative md:hidden">
       <summary
         class="grid size-10 list-none place-items-center rounded-full bg-card shadow-card [&::-webkit-details-marker]:hidden"
-        aria-label="Menu"
+        aria-label={c.navMenu}
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"></path></svg>
       </summary>
-      <nav aria-label="Main" class="absolute right-0 top-12 z-40 flex w-52 flex-col gap-1 rounded-3xl bg-card p-2 shadow-lift">
+      <nav aria-label={c.navMain} class="absolute right-0 top-12 z-40 flex w-52 flex-col gap-1 rounded-3xl bg-card p-2 shadow-lift">
         {
           links.map((l) => (
             <a
               href={l.href}
-              aria-current={isActive(l.href) ? "page" : undefined}
+              aria-current={isActive(l.id) ? "page" : undefined}
               class:list={[
                 "rounded-2xl px-4 py-2.5 font-semibold",
-                isActive(l.href) ? "bg-lime text-lime-ink" : "hover:bg-card-2",
+                isActive(l.id) ? "bg-lime text-lime-ink" : "hover:bg-card-2",
               ]}
             >
               {l.label}

@@ -25,7 +25,11 @@ const OPTIONS: { id: Pref; label: string; Icon: typeof Sun }[] = [
   { id: "dark", label: "Dark", Icon: Moon },
 ];
 
-export default function ThemeToggle() {
+export default function ThemeToggle({
+  labels,
+}: {
+  labels?: { group: string; light: string; system: string; dark: string };
+}) {
   const [pref, setPref] = useState<Pref>("system");
 
   useEffect(() => {
@@ -51,25 +55,28 @@ export default function ThemeToggle() {
   return (
     <div
       role="radiogroup"
-      aria-label="Colour theme"
+      aria-label={labels?.group ?? "Colour theme"}
       className="flex items-center gap-0.5 rounded-full bg-card p-1 shadow-card"
     >
-      {OPTIONS.map(({ id, label, Icon }) => (
-        <button
-          key={id}
-          type="button"
-          role="radio"
-          aria-checked={pref === id}
-          aria-label={label}
-          title={label}
-          onClick={() => choose(id)}
-          className={`grid size-8 place-items-center rounded-full transition-colors ${
-            pref === id ? "bg-ink text-card" : "text-muted hover:text-ink"
-          }`}
-        >
-          <Icon size={16} strokeWidth={2.2} />
-        </button>
-      ))}
+      {OPTIONS.map(({ id, label, Icon }) => {
+        const text = labels?.[id] ?? label;
+        return (
+          <button
+            key={id}
+            type="button"
+            role="radio"
+            aria-checked={pref === id}
+            aria-label={text}
+            title={text}
+            onClick={() => choose(id)}
+            className={`grid size-8 place-items-center rounded-full transition-colors ${
+              pref === id ? "bg-ink text-card" : "text-muted hover:text-ink"
+            }`}
+          >
+            <Icon size={16} strokeWidth={2.2} />
+          </button>
+        );
+      })}
     </div>
   );
 }

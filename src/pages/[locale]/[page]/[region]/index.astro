@@ -7,11 +7,12 @@ import { publishedRegionCodes } from "~/lib/regionSets";
 import { locales, replaceTokens, getLocale, isRegionalCountry } from "~/data/locales";
 import { SITE } from "~/data/site";
 import Base from "~/layouts/Base.astro";
-import { formatRange } from "~/lib/dates";
+import { intlLocale } from "~/i18n";
+import { countryName, formatRangeLocale } from "~/i18n/format";
 import { regionalPageAlternates } from "~/lib/hreflang";
 import { regionCopy } from "~/lib/regionLabels";
 import { defaultSettings } from "~/lib/settings";
-import { calculateBridgePlans, formatBreak } from "~/lib/bridgeDays";
+import { calculateBridgePlans } from "~/lib/bridgeDays";
 import { toPlanInput, yearsNeeded } from "~/lib/planInput";
 import { plan } from "~/lib/planner/plan";
 
@@ -67,6 +68,9 @@ const country = countryByCode.get(locale.country);
 if (!country || !country.regional) {
   return Astro.redirect('/404');
 }
+const uiLocale = intlLocale(locale.code);
+const rangeText = (start: number, end: number) => formatRangeLocale(uiLocale, start, end);
+const countryLabel = countryName(locale.country, uiLocale, country.name);
 
 // Find region code from slug
 let regionCode: string | null = null;
@@ -192,15 +196,17 @@ const regionalHolidays = file.holidays.filter(h =>
   title={title} 
   description={description} 
   lang={locale.lang}
+  locale={locale.code}
   canonical={canonicalUrl}
   hreflangs={hreflangs}
   jsonLd={jsonLd}
+  image={`/og/l/${localeParam}.png`}
   wide
 >
   <div class="flex flex-col gap-2 pb-5 pt-2">
     <nav aria-label="Breadcrumb" class="text-sm font-semibold text-muted">
-      <a href="/" class="hover:text-ink">{locale.translations.home ?? "Planner"}</a> /
-      <a href={`/${locale.country.toLowerCase()}/`} class="hover:text-ink">{country.name}</a> / 
+      <a href={`/${localeParam}/`} class="hover:text-ink">{locale.translations.home ?? countryLabel}</a> /
+      <a href={`/${localeParam}/${slug}-${year}/`} class="hover:text-ink">{countryLabel}</a> / 
       <a href={`/${localeParam}/${page}/`} class="hover:text-ink">{locale.bridgeTerm} {year}</a> /
       <span aria-current="page">{regionFullName}</span>
     </nav>
@@ -226,7 +232,7 @@ const regionalHolidays = file.holidays.filter(h =>
   </div>
 
   <!-- Interactive Planner -->
-  <Planner client:load initial={settings} files={files} today={buildToday} mode="page" years={[year]} localizeRegions />
+  <Planner client:load initial={settings} files={files} today={buildToday} mode="page" years={[year]} localizeRegions locale={locale.code} />
 
   <div class="mt-10 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
     <!-- Main content -->
@@ -245,10 +251,9 @@ const regionalHolidays = file.holidays.filter(h =>
               </div>
               <div class="text-sm space-y-1">
                 {bridgePlan.breaks.slice(0, 3).map((br) => {
-                  const formatted = formatBreak(br);
                   return (
                     <div class="text-muted">
-                      {formatted.dates}: {br.leave} {locale.translations.leaveDays.toLowerCase()} → {br.length} {locale.translations.totalDays}
+                      {rangeText(br.start, br.end)}: {br.leave} {locale.translations.leaveDays.toLowerCase()} → {br.length} {locale.translations.totalDays}
                     </div>
                   );
                 })}
@@ -261,7 +266,7 @@ const regionalHolidays = file.holidays.filter(h =>
       <!-- Holidays List -->
       <section>
         <h2 class="text-2xl font-bold mb-4">{replaceTokens(locale.translations.holidaysHeading, { year })}</h2>
-        <HolidayList file={file} localizeRegions />
+        <HolidayList file={file} localizeRegions locale={locale.code} />
       </section>
 
       <!-- FAQ Section -->
@@ -285,7 +290,7 @@ const regionalHolidays = file.holidays.filter(h =>
           <section class="card p-5 sm:p-6">
             <h2 class="text-xl font-bold">{locale.translations.bestPlansHeading.replace(` ${year}`, '')}</h2>
             <p class="mt-1 text-sm text-muted">
-              {replaceTokens(locale.translations.withBudget ?? "Mit {budget} Tagen.", { budget: settings.budget })}
+              {locale.translations.withBudget ? replaceTokens(locale.translations.withBudget, { budget: settings.budget }) : ""}
             </p>
             <ol class="mt-4 flex flex-col gap-3">
               {top.map((b) => (
@@ -294,7 +299,7 @@ const regionalHolidays = file.holidays.filter(h =>
                     {(b.length / b.leave).toFixed(1)}×
                   </span>
                   <span class="text-sm">
-                    <span class="block font-bold">{formatRange(b.start, b.end)}</span>
+                    <span class="block font-bold">{rangeText(b.start, b.end)}</span>
                     <span class="text-muted">
                       {b.leave} {locale.translations.leaveDays.toLowerCase()} → {b.length} {locale.translations.totalDays}
                     </span>
@@ -338,9 +343,9 @@ const regionalHolidays = file.holidays.filter(h =>
       <section class="card p-5 sm:p-6">
         <h2 class="text-xl font-bold">{locale.translations.calculator}</h2>
         <p class="mt-2 text-sm text-muted mb-3">
-          {locale.translations.adjustHint ?? "Passe den Plan an deine Bedürfnisse an."}
+          {locale.translations.adjustHint ?? ""}
         </p>
-        <a href={`/${locale.country.toLowerCase()}/${year}/?r=${regionCode}`} class="chip inline-block">
+        <a href={`/${localeParam}/`} class="chip inline-block">
           {locale.translations.calculatorLink}
         </a>
       </section>

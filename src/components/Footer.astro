@@ -1,6 +1,17 @@
 ---
 import { SITE } from "~/data/site";
+import { getCopy } from "~/i18n";
+import { localeAboutPath, localeContactPath } from "~/i18n/routes";
+import type { Copy } from "~/i18n/types";
 
+interface Props {
+  locale?: string;
+  copy?: Copy;
+}
+
+const locale = Astro.props.locale && Astro.props.locale !== "en" ? Astro.props.locale : "en";
+const copy = Astro.props.copy ?? getCopy(locale);
+const c = copy.chrome;
 const year = new Date().getFullYear();
 ---
 
@@ -8,19 +19,18 @@ const year = new Date().getFullYear();
   <div class="card flex flex-col gap-4 p-6 text-sm text-muted md:flex-row md:items-center md:justify-between">
     <div class="flex flex-col gap-1">
       <p>
-        © {year}{" "}<a class="font-semibold text-ink hover:underline" href={SITE.author.url}>{SITE.author.name}</a>. Plan
-        with care: always check dates with your employer.
+        © {year}{" "}<a class="font-semibold text-ink hover:underline" href={SITE.author.url}>{SITE.author.name}</a>. {c.footerCare}
       </p>
       <p>
-        Holiday data from{" "}
-        <a class="underline" href="https://github.com/commenthol/date-holidays">date-holidays</a>, licensed{" "}
+        {c.footerDataFrom}{" "}
+        <a class="underline" href="https://github.com/commenthol/date-holidays">date-holidays</a>, {c.footerLicensed}{" "}
         <a class="underline" href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.
       </p>
     </div>
-    <nav aria-label="Footer" class="flex flex-wrap items-center gap-x-5 gap-y-2 font-semibold">
-      <a href="/about/" class="hover:text-ink">About</a>
-      <a href="/contact/" class="hover:text-ink">Contact</a>
-      <a href="/privacy-policy/" class="hover:text-ink">Privacy</a>
+    <nav aria-label={c.footerNav} class="flex flex-wrap items-center gap-x-5 gap-y-2 font-semibold">
+      <a href={localeAboutPath(locale)} class="hover:text-ink">{c.footerAbout}</a>
+      <a href={localeContactPath(locale)} class="hover:text-ink">{c.footerContact}</a>
+      <a href="/privacy-policy/" class="hover:text-ink">{c.footerPrivacy}</a>
       <a href={SITE.links.github} class="hover:text-ink">GitHub</a>
       <a href={SITE.links.linkedin} class="hover:text-ink">LinkedIn</a>
     </nav>

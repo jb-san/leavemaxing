@@ -13,6 +13,8 @@ export interface HolidayEntry {
   name: string;
   /** Name in the country's own language, when different. */
   local?: string;
+  /** Names by date-holidays language code, when different from English. */
+  names?: Record<string, string>;
   /** Regions where it applies. Absent = everywhere. */
   regions?: string[];
   /** false = only some regions observe it, so it's not in the national list. */
@@ -40,12 +42,49 @@ export function appliesTo(h: HolidayEntry, region: string | null): boolean {
   return !h.regions || h.regions.includes(region);
 }
 
-export function resolveHolidays(files: (HolidayFile | undefined)[], region: string | null): HolidayDay[] {
+/** date-holidays language codes to try for a UI locale, most specific first. */
+const HOLIDAY_LANGS: Record<string, string[]> = {
+  "de-DE": ["de"],
+  "de-AT": ["de-at", "de"],
+  "de-CH": ["de-ch", "de"],
+  "sv-SE": ["sv"],
+  "nb-NO": ["no", "nb"],
+  "da-DK": ["da"],
+  "fi-FI": ["fi"],
+  "pl-PL": ["pl"],
+  "nl-NL": ["nl"],
+  "nl-BE": ["nl"],
+  "fr-FR": ["fr"],
+  "fr-BE": ["fr"],
+  "fr-LU": ["fr"],
+  "es-ES": ["es"],
+  "it-IT": ["it"],
+  "pt-PT": ["pt"],
+  "cs-CZ": ["cz", "cs"],
+};
+
+/** Holiday name for a UI locale. English keeps the source name. */
+export function holidayName(h: HolidayEntry, locale?: string | null): string {
+  if (!locale || locale === "en") return h.name;
+  const keys = HOLIDAY_LANGS[locale] ?? [locale.toLowerCase()];
+  for (const key of keys) {
+    const name = h.names?.[key];
+    if (name) return name;
+  }
+  if (h.local && h.local !== h.name) return h.local;
+  return h.name;
+}
+
+export function resolveHolidays(
+  files: (HolidayFile | undefined)[],
+  region: string | null,
+  locale?: string | null,
+): HolidayDay[] {
   const out: HolidayDay[] = [];
   for (const file of files) {
     if (!file) continue;
     for (const h of file.holidays) {
-      if (appliesTo(h, region)) out.push({ day: fromIso(h.date), name: h.name });
+      if (appliesTo(h, region)) out.push({ day: fromIso(h.date), name: holidayName(h, locale) });
     }
   }
   return out;

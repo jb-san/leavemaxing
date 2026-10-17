@@ -2,7 +2,9 @@
 import "~/styles/global.css";
 import Footer from "~/components/Footer.astro";
 import Header from "~/components/Header.astro";
+import { locales } from "~/data/locales";
 import { SITE } from "~/data/site";
+import { getCopy, normalizeLocale } from "~/i18n";
 
 interface Props {
   title: string;
@@ -14,6 +16,8 @@ interface Props {
   wide?: boolean;
   /** Language code for <html lang=""> */
   lang?: string;
+  /** UI locale, for example de-DE. English pages omit it. */
+  locale?: string;
   /** Canonical URL override */
   canonical?: string;
   /** hreflang links for multilingual pages */
@@ -27,16 +31,20 @@ const {
   noindex = false, 
   jsonLd, 
   wide = false,
-  lang = "en",
+  lang,
+  locale,
   canonical: canonicalProp,
   hreflangs = []
 } = Astro.props;
+const localeCode = locale ? normalizeLocale(locale) : "en";
+const copy = getCopy(localeCode);
+const htmlLang = lang ?? locales[localeCode]?.lang ?? "en";
 const canonical = canonicalProp || new URL(Astro.url.pathname, SITE.url).href;
 const ogImage = new URL(image, SITE.url).href;
 ---
 
 <!doctype html>
-<html lang={lang} data-theme="light">
+<html lang={htmlLang} data-theme="light">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -83,13 +91,13 @@ const ogImage = new URL(image, SITE.url).href;
     <a
       href="#main"
       class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-ink focus:px-4 focus:py-2 focus:text-card"
-      >Skip to content</a
+      >{copy.chrome.skip}</a
     >
-    <Header />
+    <Header locale={localeCode} copy={copy} />
     <main id="main" class:list={["mx-auto w-full flex-1 px-[max(16px,env(safe-area-inset-left))] pb-16", wide ? "max-w-[1280px]" : "max-w-[1100px]"]}>
       <slot />
     </main>
-    <Footer />
+    <Footer locale={localeCode} copy={copy} />
     <script>
       // iOS Safari only applies :active (our press feedback) once the page listens for touches.
       document.addEventListener("touchstart", () => {}, { passive: true });
