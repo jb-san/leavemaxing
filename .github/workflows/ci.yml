@@ -40,7 +40,7 @@ jobs:
       contents: read
       deployments: write
     env:
-      PUBLIC_RYBBIT_SITE_ID: ${{ vars.RYBBIT_SITE_ID }}
+      PUBLIC_RYBBIT_SITE_ID: ${{ secrets.RYBBIT_SITE_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

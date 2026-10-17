@@ -53,6 +53,6 @@ holiday data stays current and the year range rolls forward each January.
 Repository settings needed:
 
 - Secrets `CLOUDFLARE_API_TOKEN` (Cloudflare Pages: Edit) and `CLOUDFLARE_ACCOUNT_ID`.
-- Variable `RYBBIT_SITE_ID` for analytics.
+- Secret `RYBBIT_SITE_ID` for analytics.
 
 `functions/_middleware.ts` redirects `www.leavemaxxing.com` to the apex domain.
