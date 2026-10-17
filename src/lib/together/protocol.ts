@@ -65,6 +65,8 @@ export const MEMBER_COLORS: readonly string[] = [
 
 const MAX_WINDOW_DAYS = 60;
 const MAX_NAME = 40;
+const MAX_GROUP_NAME = 60;
+const MAX_MONTHS = 24;
 const MAX_ALLOWANCE = 80;
 const B64URL = /^[A-Za-z0-9_-]*$/;
 const WINDOW_KEY = /^\d{4}-\d{2}-\d{2}\.\.\d{4}-\d{2}-\d{2}$/;
@@ -110,7 +112,8 @@ export function isEnvelope(v: unknown): v is Envelope {
     isRecord(v) &&
     (v.kind === "group" || v.kind === "member") &&
     typeof v.id === "string" &&
-    isInt(v.version) &&
+    Number.isSafeInteger(v.version) &&
+    (v.version as number) >= 0 &&
     typeof v.iv === "string" &&
     typeof v.data === "string"
   );
@@ -120,9 +123,22 @@ export function isGroupRecord(v: unknown): v is GroupRecord {
   return (
     isRecord(v) &&
     typeof v.name === "string" &&
+    v.name.trim().length >= 1 &&
+    v.name.trim().length <= MAX_GROUP_NAME &&
     typeof v.createdBy === "string" &&
     Array.isArray(v.months) &&
-    v.months.every((m) => isRecord(m) && isInt(m.year) && isInt(m.month) && m.month >= 1 && m.month <= 12) &&
+    v.months.length >= 1 &&
+    v.months.length <= MAX_MONTHS &&
+    v.months.every(
+      (m) =>
+        isRecord(m) &&
+        isInt(m.year) &&
+        m.year >= 2000 &&
+        m.year <= 2100 &&
+        isInt(m.month) &&
+        m.month >= 1 &&
+        m.month <= 12,
+    ) &&
     isInt(v.minLength) &&
     isInt(v.maxLength) &&
     v.minLength >= LIMITS.minLength &&
@@ -145,7 +161,7 @@ export function parseWindowKey(k: string): { start: number; end: number } | null
 export function sanitizeMember(v: unknown): MemberRecord | null {
   if (!isRecord(v)) return null;
   const { name, color, country, region, workWeek, allowance } = v;
-  if (typeof name !== "string" || typeof color !== "string") return null;
+  if (typeof name !== "string") return null;
   if (typeof country !== "string" || !/^[A-Za-z]{2}$/.test(country)) return null;
   if (!Array.isArray(workWeek) || workWeek.length !== 7 || !workWeek.every((d) => typeof d === "boolean")) {
     return null;
@@ -167,7 +183,7 @@ export function sanitizeMember(v: unknown): MemberRecord | null {
 
   return {
     name: name.slice(0, MAX_NAME),
-    color,
+    color: MEMBER_COLORS.find((c) => c === String(color).toLowerCase()) ?? (MEMBER_COLORS[0] as string),
     country,
     region: typeof region === "string" ? region : null,
     workWeek: workWeek as boolean[],

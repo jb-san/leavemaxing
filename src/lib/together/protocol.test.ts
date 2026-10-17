@@ -108,6 +108,10 @@ describe("isEnvelope", () => {
     expect(isEnvelope(env)).toBe(true);
     expect(isEnvelope({ ...env, kind: "other" })).toBe(false);
     expect(isEnvelope({ ...env, version: 1.5 })).toBe(false);
+    expect(isEnvelope({ ...env, version: -1 })).toBe(false);
+    expect(isEnvelope({ ...env, version: Number.MAX_SAFE_INTEGER + 1 })).toBe(false);
+    expect(isEnvelope({ ...env, version: 0 })).toBe(true);
+    expect(isEnvelope({ ...env, version: Number.MAX_SAFE_INTEGER })).toBe(true);
     expect(isEnvelope({ ...env, data: 1 })).toBe(false);
     expect(isEnvelope(null)).toBe(false);
   });
@@ -128,6 +132,16 @@ describe("isGroupRecord", () => {
     expect(isGroupRecord({ ...group, maxLength: 22 })).toBe(false);
     expect(isGroupRecord({ ...group, minLength: 9, maxLength: 3 })).toBe(false);
     expect(isGroupRecord({ ...group, name: 5 })).toBe(false);
+    expect(isGroupRecord({ ...group, name: "   " })).toBe(false);
+    expect(isGroupRecord({ ...group, name: "x".repeat(61) })).toBe(false);
+    expect(isGroupRecord({ ...group, name: "x".repeat(60) })).toBe(true);
+    expect(isGroupRecord({ ...group, months: [] })).toBe(false);
+    const many = (n: number) => Array.from({ length: n }, () => ({ year: 2027, month: 4 }));
+    expect(isGroupRecord({ ...group, months: many(24) })).toBe(true);
+    expect(isGroupRecord({ ...group, months: many(25) })).toBe(false);
+    expect(isGroupRecord({ ...group, months: [{ year: 1999, month: 4 }] })).toBe(false);
+    expect(isGroupRecord({ ...group, months: [{ year: 2101, month: 4 }] })).toBe(false);
+    expect(isGroupRecord({ ...group, months: [{ year: 2027, month: 0 }] })).toBe(false);
   });
 });
 
@@ -162,6 +176,14 @@ describe("sanitizeMember", () => {
     expect(sanitizeMember({ ...member, workWeek: Array(7).fill(1) })).toBeNull();
     expect(sanitizeMember({ ...member, name: 3 })).toBeNull();
     expect(sanitizeMember(null)).toBeNull();
+  });
+
+  it("falls back to a palette colour for anything else", () => {
+    const fallback = MEMBER_COLORS[0];
+    expect(sanitizeMember({ ...member, color: "url(https://x)" })?.color).toBe(fallback);
+    expect(sanitizeMember({ ...member, color: "red;" })?.color).toBe(fallback);
+    expect(sanitizeMember({ ...member, color: 5 })?.color).toBe(fallback);
+    expect(sanitizeMember({ ...member, color: "#0D9488" })?.color).toBe("#0d9488");
   });
 
   it("clamps allowance and cuts the name", () => {
