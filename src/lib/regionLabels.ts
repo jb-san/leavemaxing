@@ -49,6 +49,33 @@ export const SWISS_CANTONS: Record<string, SwissCanton> = {
   JU: { slug: "jura", name: "Jura", legacySlug: "canton-of-jura" },
 };
 
+/**
+ * Spanish names for autonomous communities and the two autonomous cities.
+ * date-holidays mixes English and local spellings ("Illes Balears", "Comunitat Valenciana");
+ * pages use the Spanish name people search for. Slugs are lowercase ASCII.
+ */
+export const SPANISH_COMMUNITIES: Record<string, { slug: string; name: string; inPhrase: string }> = {
+  AN: { slug: "andalucia", name: "Andalucía", inPhrase: "Andalucía" },
+  AR: { slug: "aragon", name: "Aragón", inPhrase: "Aragón" },
+  AS: { slug: "asturias", name: "Asturias", inPhrase: "Asturias" },
+  CB: { slug: "cantabria", name: "Cantabria", inPhrase: "Cantabria" },
+  CL: { slug: "castilla-y-leon", name: "Castilla y León", inPhrase: "Castilla y León" },
+  CM: { slug: "castilla-la-mancha", name: "Castilla-La Mancha", inPhrase: "Castilla-La Mancha" },
+  CN: { slug: "canarias", name: "Canarias", inPhrase: "Canarias" },
+  CT: { slug: "cataluna", name: "Cataluña", inPhrase: "Cataluña" },
+  CE: { slug: "ceuta", name: "Ceuta", inPhrase: "Ceuta" },
+  EX: { slug: "extremadura", name: "Extremadura", inPhrase: "Extremadura" },
+  GA: { slug: "galicia", name: "Galicia", inPhrase: "Galicia" },
+  IB: { slug: "baleares", name: "Islas Baleares", inPhrase: "las Islas Baleares" },
+  RI: { slug: "la-rioja", name: "La Rioja", inPhrase: "La Rioja" },
+  MD: { slug: "madrid", name: "Comunidad de Madrid", inPhrase: "Madrid" },
+  ML: { slug: "melilla", name: "Melilla", inPhrase: "Melilla" },
+  MC: { slug: "murcia", name: "Región de Murcia", inPhrase: "la Región de Murcia" },
+  NC: { slug: "navarra", name: "Navarra", inPhrase: "Navarra" },
+  PV: { slug: "pais-vasco", name: "País Vasco", inPhrase: "el País Vasco" },
+  VC: { slug: "valencia", name: "Comunidad Valenciana", inPhrase: "la Comunidad Valenciana" },
+};
+
 /** English source names from date-holidays, keyed by the numeric AT region code. */
 export const AUSTRIAN_STATES: Record<string, { slug: string; name: string }> = {
   "1": { slug: "burgenland", name: "Burgenland" },
@@ -97,6 +124,20 @@ export function regionCopy(country: string, code: string, sourceName: string): R
       titleRegion: ` Kanton ${name}`,
       descriptionRegion: ` im Kanton ${name}`,
       h1Region: name,
+    };
+  }
+
+  if (country === "ES") {
+    const community = SPANISH_COMMUNITIES[code];
+    const name = community?.name ?? sourceName;
+    const phrase = community?.inPhrase ?? name;
+    const slug = community?.slug ?? legacyRegionSlug(name);
+    return {
+      slug,
+      name,
+      titleRegion: ` en ${phrase}`,
+      descriptionRegion: ` en ${phrase}`,
+      h1Region: phrase,
     };
   }
 

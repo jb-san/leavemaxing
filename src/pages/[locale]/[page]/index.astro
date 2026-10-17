@@ -7,7 +7,9 @@ import { locales, replaceTokens, getLocale } from "~/data/locales";
 import { SITE } from "~/data/site";
 import Base from "~/layouts/Base.astro";
 import { formatRange } from "~/lib/dates";
-import { localizedPageAlternates } from "~/lib/hreflang";
+import { localizedPageAlternates, siblingLocaleAlternates } from "~/lib/hreflang";
+import { regionCopy } from "~/lib/regionLabels";
+import { publishedRegionCodes } from "~/lib/regionSets";
 import { defaultSettings } from "~/lib/settings";
 import { calculateBridgePlans, formatBreak } from "~/lib/bridgeDays";
 import { toPlanInput, yearsNeeded } from "~/lib/planInput";
@@ -110,11 +112,16 @@ const h1 = replaceTokens(locale.translations.h1, { year });
 const canonicalPath = `/${localeParam}/${page}/`;
 const canonicalUrl = new URL(canonicalPath, SITE.url).href;
 
+const englishUrl = `${SITE.url}/${locale.country.toLowerCase()}/${year}/`;
 const hreflangs = localizedPageAlternates(
   locale.code,
   canonicalUrl,
-  `${SITE.url}/${locale.country.toLowerCase()}/${year}/`,
+  englishUrl,
+  siblingLocaleAlternates(locale.code, year, SITE.url, Object.values(locales)),
 );
+const publishedRegions = country.regional
+  ? publishedRegionCodes(locale.country, Object.keys(country.regions), file)
+  : [];
 
 // JSON-LD structured data
 const jsonLd = {
@@ -163,7 +170,7 @@ const jsonLd = {
 >
   <div class="flex flex-col gap-2 pb-5 pt-2">
     <nav aria-label="Breadcrumb" class="text-sm font-semibold text-muted">
-      <a href="/" class="hover:text-ink">Planner</a> /
+      <a href="/" class="hover:text-ink">{locale.translations.home ?? "Planner"}</a> /
       <a href={`/${locale.country.toLowerCase()}/`} class="hover:text-ink">{country.name}</a> / 
       <span aria-current="page">{locale.bridgeTerm} {year}</span>
     </nav>
@@ -242,7 +249,9 @@ const jsonLd = {
         top.length > 0 && (
           <section class="card p-5 sm:p-6">
             <h2 class="text-xl font-bold">{locale.translations.bestPlansHeading.replace(` ${year}`, '')}</h2>
-            <p class="mt-1 text-sm text-muted">Mit {settings.budget} Tagen.</p>
+            <p class="mt-1 text-sm text-muted">
+              {replaceTokens(locale.translations.withBudget ?? "Mit {budget} Tagen.", { budget: settings.budget })}
+            </p>
             <ol class="mt-4 flex flex-col gap-3">
               {top.map((b) => (
                 <li class="flex items-center gap-3">
@@ -273,18 +282,27 @@ const jsonLd = {
           ))}
         </ul>
       </section>
-      {locale.translations.otherRegions && (
+      {locale.translations.otherRegions && publishedRegions.length > 0 && (
         <section class="card p-5 sm:p-6">
           <h2 class="text-xl font-bold">{locale.translations.otherRegions}</h2>
-          <p class="mt-2 text-sm text-muted">
-            Regionale Seiten folgen in Kürze.
-          </p>
+          <ul class="mt-3 flex flex-col gap-1 max-h-64 overflow-y-auto text-sm">
+            {publishedRegions.map((code) => {
+              const other = regionCopy(locale.country, code, country.regions[code] ?? code);
+              return (
+                <li>
+                  <a href={`/${localeParam}/${page}/${other.slug}/`} class="hover:text-lime-ink hover:underline">
+                    {other.name}
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
         </section>
       )}
       <section class="card p-5 sm:p-6">
         <h2 class="text-xl font-bold">{locale.translations.calculator}</h2>
         <p class="mt-2 text-sm text-muted mb-3">
-          Passe den Plan an deine Bedürfnisse an.
+          {locale.translations.adjustHint ?? "Passe den Plan an deine Bedürfnisse an."}
         </p>
         <a href={`/${locale.country.toLowerCase()}/${year}/`} class="chip inline-block">
           {locale.translations.calculatorLink}

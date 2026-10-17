@@ -31,6 +31,7 @@ export const SITEMAP_PRIORITY_COUNTRIES = new Set([
   "IT", // Italy
   "PT", // Portugal
   "CZ", // Czech Republic
+  "LU", // Luxembourg
 
   // Additional high-value markets
   "SG", // Singapore
