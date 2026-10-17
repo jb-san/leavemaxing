@@ -79,10 +79,12 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           echo "Starting deployment..."
-          echo "Token length before deploy: ${#CLOUDFLARE_API_TOKEN}"
-          echo "Account ID length before deploy: ${#CLOUDFLARE_ACCOUNT_ID}"
+          echo "Token length: ${#CLOUDFLARE_API_TOKEN}"
+          echo "Account ID length: ${#CLOUDFLARE_ACCOUNT_ID}"
+          echo "Wrangler version:"
+          npx wrangler@3.90.0 --version
 
-          wrangler pages deploy dist \
+          npx wrangler@3.90.0 pages deploy dist \
             --project-name=leavemaxing \
             --branch=${{ github.head_ref }} \
             --commit-hash=${{ github.sha }}
