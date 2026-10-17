@@ -4,7 +4,9 @@ import Planner from "~/components/planner/Planner";
 import { countryByCode, meta } from "~/data";
 import { buildToday, serverPlan } from "~/data/server";
 import { SITE } from "~/data/site";
+import { homeAlternates } from "~/i18n/routes";
 import Base from "~/layouts/Base.astro";
+import { shellAlternates } from "~/lib/hreflang";
 import { defaultSettings } from "~/lib/settings";
 
 const year = new Date().getFullYear();
@@ -58,7 +60,13 @@ const steps = [
 ]
 ---
 
-<Base title="leavemaxxing: turn your leave days into the most time off" description={SITE.description} jsonLd={jsonLd} wide>
+<Base
+  title="leavemaxxing: turn your leave days into the most time off"
+  description={SITE.description}
+  jsonLd={jsonLd}
+  wide
+  hreflangs={shellAlternates(homeAlternates(SITE.url))}
+>
   <div class="flex flex-col gap-3 pb-7 pt-3 sm:flex-row sm:items-end sm:justify-between">
     <h1 class="max-w-[16ch] text-[clamp(34px,5.4vw,64px)] font-extrabold leading-[0.95]">
       Get the most time off from your leave days

@@ -62,6 +62,21 @@ export function englishCountryAlternates(
  * (locale code, `en`, and x-default on the English page).
  * Otherwise they only self-reference and point x-default at the English country-year page.
  */
+/**
+ * Alternates for a translated shell (home, ranking, about, contact).
+ * Every language version lists the same set. `en` and `x-default` point at the English URL.
+ */
+export function shellAlternates(pages: Array<{ lang: string; url: string }>): HreflangLink[] {
+  const english = pages.find((page) => page.lang === "en")?.url;
+  if (!english) return pages.map((page) => ({ lang: page.lang, url: page.url }));
+  const localized = pages.filter((page) => page.lang !== "en").sort((a, b) => a.lang.localeCompare(b.lang));
+  return [
+    ...localized.map((page) => ({ lang: page.lang, url: page.url })),
+    { lang: "en", url: english },
+    { lang: "x-default", url: english },
+  ];
+}
+
 export function regionalPageAlternates(
   localeCode: string,
   selfUrl: string,

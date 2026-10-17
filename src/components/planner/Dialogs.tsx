@@ -1,7 +1,7 @@
 import { Check, Copy, Download, Image as ImageIcon, Share2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useI18n } from "~/i18n/context";
 import type { DayNum } from "~/lib/dates";
-import { formatRange } from "~/lib/dates";
 import { buildIcs, downloadFile, googleCalendarUrl } from "~/lib/ics";
 import type { Plan } from "~/lib/planner/types";
 import { CARD_SIZE, type CardData, type CardFormat, canvasToBlob, drawShareCard } from "~/lib/shareCard";
@@ -47,6 +47,8 @@ export function ShareDialog({
     };
   }, [open, card, format]);
 
+  const i18n = useI18n();
+  const p = i18n.m.planner;
   const shareImage = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -55,7 +57,7 @@ export function ShareDialog({
     const file = new File([blob], `${fileName}.png`, { type: "image/png" });
     if (navigator.canShare?.({ files: [file] })) {
       try {
-        await navigator.share({ files: [file], title: "My leavemaxxing plan", url });
+        await navigator.share({ files: [file], title: p.shareTitle, url });
         return;
       } catch {
         return;
@@ -67,7 +69,7 @@ export function ShareDialog({
   const shareLink = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({ title: "My leavemaxxing plan", url });
+        await navigator.share({ title: p.shareTitle, url });
       } catch {}
       return;
     }
@@ -79,10 +81,10 @@ export function ShareDialog({
 
   const { w, h } = CARD_SIZE[format];
   return (
-    <Sheet open={open} onClose={onClose} title="Share your plan" wide>
+    <Sheet open={open} onClose={onClose} title={p.shareHeading} wide>
       <div className="flex flex-col gap-2">
         <label htmlFor="share-url" className="field-label">
-          Link to this exact plan
+          {p.linkLabel}
         </label>
         <div className="flex gap-2">
           <input
@@ -105,14 +107,14 @@ export function ShareDialog({
             <span key={String(copied)} className="swap">
               {copied ? <Check size={16} /> : <Copy size={16} />}
             </span>{" "}
-            {copied ? "Copied" : "Copy"}
+            {copied ? p.copied : p.copy}
           </button>
         </div>
       </div>
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <span className="field-label">Image</span>
-          <div role="radiogroup" aria-label="Image size" className="flex gap-1.5">
+          <span className="field-label">{p.image}</span>
+          <div role="radiogroup" aria-label={p.imageSize} className="flex gap-1.5">
             {(["wide", "story"] as const).map((f) => (
               <button
                 key={f}
@@ -122,7 +124,7 @@ export function ShareDialog({
                 onClick={() => setFormat(f)}
                 className="chip py-1 text-xs"
               >
-                {f === "wide" ? "Wide" : "Story"}
+                {f === "wide" ? p.wide : p.story}
               </button>
             ))}
           </div>
@@ -131,7 +133,7 @@ export function ShareDialog({
           {preview ? (
             <img
               src={preview}
-              alt="Preview of what you will share"
+              alt={p.previewAlt}
               width={w}
               height={h}
               className={cx(
@@ -148,10 +150,10 @@ export function ShareDialog({
       </div>
       <div className="flex flex-wrap gap-2.5">
         <button type="button" className="btn btn-primary" onClick={shareImage}>
-          <Download size={16} /> Save or share image
+          <Download size={16} /> {p.saveImage}
         </button>
         <button type="button" className="btn btn-soft" onClick={shareLink}>
-          <Share2 size={16} /> Share link
+          <Share2 size={16} /> {p.shareLink}
         </button>
       </div>
     </Sheet>
@@ -171,15 +173,14 @@ export function ExportDialog({
   calendarName: string;
   fileName: string;
 }) {
+  const i18n = useI18n();
+  const p = i18n.m.planner;
   const [days, setDays] = useState(false);
   const leaveDays: DayNum[] = [...plan.suggested, ...plan.locked];
   const breaks = plan.breaks.filter((b) => b.leave > 0);
   return (
-    <Sheet open={open} onClose={onClose} title="Add to your calendar">
-      <p className="-mt-2 text-sm text-muted">
-        Download a calendar file with one all-day event per break. It works with Google Calendar, Apple
-        Calendar and Outlook.
-      </p>
+    <Sheet open={open} onClose={onClose} title={p.calendarTitle}>
+      <p className="-mt-2 text-sm text-muted">{p.calendarHelp}</p>
       <label className="flex items-center gap-3 rounded-2xl border border-line bg-card-2 px-4 py-3 text-sm font-semibold">
         <input
           type="checkbox"
@@ -188,7 +189,7 @@ export function ExportDialog({
           onChange={(e) => setDays(e.target.checked)}
           className="size-4 accent-[var(--lime-strong)]"
         />
-        Also add each leave day as its own event
+        {p.alsoEachDay}
       </label>
       <button
         type="button"
@@ -203,11 +204,11 @@ export function ExportDialog({
           onClose();
         }}
       >
-        <Download size={16} /> Download .ics file
+        <Download size={16} /> {p.downloadIcs}
       </button>
       {breaks.length > 0 && (
         <div className="flex flex-col gap-2">
-          <span className="field-label">Or add breaks to Google Calendar one by one</span>
+          <span className="field-label">{p.orGoogle}</span>
           <ul className="flex flex-wrap gap-2">
             {breaks.map((b) => (
               <li key={b.start}>
@@ -217,7 +218,7 @@ export function ExportDialog({
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  {formatRange(b.start, b.end)}
+                  {i18n.formatRange(b.start, b.end)}
                 </a>
               </li>
             ))}
@@ -239,12 +240,13 @@ export function SaveDialog({
   defaultName: string;
   onSave: (name: string) => void;
 }) {
+  const p = useI18n().m.planner;
   const [name, setName] = useState(defaultName);
   useEffect(() => {
     if (open) setName(defaultName);
   }, [open, defaultName]);
   return (
-    <Sheet open={open} onClose={onClose} title="Save this plan">
+    <Sheet open={open} onClose={onClose} title={p.saveTitle}>
       <form
         className="flex flex-col gap-4"
         onSubmit={(e) => {
@@ -253,12 +255,10 @@ export function SaveDialog({
           onClose();
         }}
       >
-        <p className="-mt-2 text-sm text-muted">
-          Saved plans stay in this browser. Nothing is uploaded. Find them under My plans.
-        </p>
+        <p className="-mt-2 text-sm text-muted">{p.saveHelp}</p>
         <div className="flex flex-col gap-2">
           <label htmlFor="plan-name" className="field-label">
-            Name
+            {p.nameLabel}
           </label>
           <input
             id="plan-name"
@@ -269,7 +269,7 @@ export function SaveDialog({
           />
         </div>
         <button type="submit" className="btn btn-primary self-start">
-          Save plan
+          {p.savePlan}
         </button>
       </form>
     </Sheet>

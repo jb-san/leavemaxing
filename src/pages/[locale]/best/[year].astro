@@ -1,0 +1,188 @@
+---
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { Mascot } from "~/components/Mascot";
+import { locales } from "~/data/locales";
+import { SITE } from "~/data/site";
+import { getCopy, intlLocale } from "~/i18n";
+import { countryName } from "~/i18n/format";
+import { bestAlternates, localizedBestYears } from "~/i18n/routes";
+import Base from "~/layouts/Base.astro";
+import { shellAlternates } from "~/lib/hreflang";
+
+interface Row {
+  code: string;
+  name: string;
+  flag: string;
+  holidays: number;
+  results: Record<number, { daysOff: number; multiplier: number; longest: number }>;
+}
+
+export function getStaticPaths() {
+  const paths: Array<{ params: { locale: string; year: string } }> = [];
+  for (const code of Object.keys(locales)) {
+    for (const year of localizedBestYears()) {
+      paths.push({ params: { locale: code.toLowerCase(), year: String(year) } });
+    }
+  }
+  return paths;
+}
+
+const param = Astro.params.locale ?? "";
+const locale = Object.values(locales).find((item) => item.code.toLowerCase() === param);
+if (!locale) return Astro.redirect("/404");
+const year = Number(Astro.params.year);
+const copy = getCopy(locale.code);
+const b = copy.best;
+const data = JSON.parse(readFileSync(join(process.cwd(), `src/data/generated/best-${year}.json`), "utf8")) as {
+  budgets: number[];
+  rows: Row[];
+};
+const DEFAULT = 20;
+const ui = intlLocale(locale.code);
+const tables = data.budgets.map((budget) => ({
+  budget,
+  rows: [...data.rows]
+    .filter((r) => r.results[budget])
+    .sort(
+      (a, c) =>
+        (c.results[budget]?.daysOff ?? 0) - (a.results[budget]?.daysOff ?? 0) ||
+        countryName(a.code, ui, a.name).localeCompare(countryName(c.code, ui, c.name), ui),
+    ),
+}));
+const top = tables.find((t) => t.budget === DEFAULT)?.rows[0];
+const other = localizedBestYears().find((item) => item !== year);
+const title = b.title.replaceAll("{year}", String(year));
+const description = b.description
+  .replaceAll("{year}", String(year))
+  .replaceAll("{count}", String(data.rows.length))
+  .replaceAll("{days}", String(DEFAULT));
+const canonical = `${SITE.url}/${param}/best/${year}/`;
+const hreflangs = shellAlternates(bestAlternates(SITE.url, year));
+
+const text = (template: string, tokens: Record<string, string | number>) => {
+  let out = template;
+  for (const [key, value] of Object.entries(tokens)) out = out.replaceAll(`{${key}}`, String(value));
+  return out;
+};
+---
+
+<Base
+  title={title}
+  description={description}
+  wide
+  locale={locale.code}
+  lang={locale.code}
+  canonical={canonical}
+  hreflangs={hreflangs}
+  image={`/og/l/${param}.png`}
+>
+  <div class="flex flex-col gap-3 pb-6 pt-2 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <h1 class="text-[clamp(28px,4vw,44px)] font-extrabold leading-tight">{text(b.h1, { year })}</h1>
+      <p class="mt-1 max-w-2xl text-muted">{b.intro}</p>
+    </div>
+    {other && <a href={`/${param}/best/${other}/`} class="chip shrink-0 bg-card">{text(b.seeYear, { year: other })}</a>}
+  </div>
+
+  {
+    top && (
+      <section class="mb-5 flex items-center gap-4 rounded-[var(--radius-hero)] bg-hero p-6 text-hero-ink">
+        <Mascot size={64} mood="starry" title="" />
+        <p class="font-display text-[clamp(22px,3vw,32px)] font-extrabold leading-tight">
+          {text(b.hero, {
+            flag: top.flag,
+            name: countryName(top.code, ui, top.name),
+            days: DEFAULT,
+            off: top.results[DEFAULT]?.daysOff ?? 0,
+            year,
+          })}
+        </p>
+      </section>
+    )
+  }
+
+  <section class="card p-5 sm:p-6" id="ranking">
+    <div class="flex flex-wrap items-center gap-2" role="tablist" aria-label={b.leaveDays}>
+      <span class="field-label mr-1">{b.leaveDays}</span>
+      {
+        tables.map((t) => (
+          <button
+            type="button"
+            role="tab"
+            id={`tab-${t.budget}`}
+            aria-controls={`panel-${t.budget}`}
+            aria-selected={t.budget === DEFAULT ? "true" : "false"}
+            class="chip aria-selected:border-lime aria-selected:bg-lime aria-selected:text-lime-ink"
+            data-budget={t.budget}
+          >
+            {t.budget}
+          </button>
+        ))
+      }
+    </div>
+    {
+      tables.map((t) => (
+        <div
+          role="tabpanel"
+          id={`panel-${t.budget}`}
+          aria-labelledby={`tab-${t.budget}`}
+          hidden={t.budget !== DEFAULT}
+          class="mt-5 overflow-x-auto"
+          tabindex="0"
+        >
+          <table class="w-full min-w-[520px] text-left text-sm">
+            <thead class="text-xs uppercase tracking-wider text-muted">
+              <tr>
+                <th class="pb-3 pr-3 font-bold">#</th>
+                <th class="pb-3 pr-3 font-bold">{b.country}</th>
+                <th class="pb-3 pr-3 text-right font-bold">{b.daysOff}</th>
+                <th class="pb-3 pr-3 text-right font-bold">{b.perDay}</th>
+                <th class="pb-3 pr-3 text-right font-bold">{b.longest}</th>
+                <th class="pb-3 text-right font-bold">{b.holidays}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-line tabular-nums">
+              {t.rows.map((r, i) => {
+                const res = r.results[t.budget];
+                const href =
+                  r.code === locale.country
+                    ? `/${param}/${locale.slug}-${year}/?d=${t.budget}`
+                    : `/${r.code.toLowerCase()}/${year}/?d=${t.budget}`;
+                return (
+                  <tr>
+                    <td class="py-2.5 pr-3 font-bold text-muted">{i + 1}</td>
+                    <td class="py-2.5 pr-3">
+                      <a class="font-semibold hover:underline" href={href}>
+                        <span class="mr-1.5">{r.flag}</span>
+                        {countryName(r.code, ui, r.name)}
+                      </a>
+                    </td>
+                    <td class="py-2.5 pr-3 text-right font-bold">{res?.daysOff}</td>
+                    <td class="py-2.5 pr-3 text-right">{res?.multiplier.toFixed(2)}×</td>
+                    <td class="py-2.5 pr-3 text-right">{res?.longest}d</td>
+                    <td class="py-2.5 text-right">{r.holidays}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ))
+    }
+  </section>
+</Base>
+
+<script>
+  const tabs = document.querySelectorAll<HTMLButtonElement>('[role="tab"][data-budget]');
+  tabs.forEach((tab) =>
+    tab.addEventListener("click", () => {
+      tabs.forEach((t) => {
+        const on = t === tab;
+        t.setAttribute("aria-selected", String(on));
+        const panel = document.getElementById(t.getAttribute("aria-controls") ?? "");
+        if (panel) panel.hidden = !on;
+      });
+    }),
+  );
+</script>

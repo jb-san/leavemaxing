@@ -2,7 +2,10 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Mascot } from "~/components/Mascot";
+import { SITE } from "~/data/site";
+import { bestAlternates } from "~/i18n/routes";
 import Base from "~/layouts/Base.astro";
+import { shellAlternates } from "~/lib/hreflang";
 
 interface Row {
   code: string;
@@ -37,6 +40,7 @@ const other = year === new Date().getFullYear() ? year + 1 : year - 1;
   title={`Where leave goes furthest in ${year}: every country ranked · leavemaxxing`}
   description={`${data.rows.length} countries ranked by how many days off ${DEFAULT} leave days buy in ${year}, using each country's public holidays and the best possible plan.`}
   wide
+  hreflangs={shellAlternates(bestAlternates(SITE.url, year))}
 >
   <div class="flex flex-col gap-3 pb-6 pt-2 sm:flex-row sm:items-end sm:justify-between">
     <div>

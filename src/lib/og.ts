@@ -19,6 +19,12 @@ function loadFonts() {
       style: "normal",
     },
     {
+      name: "Display",
+      data: font("@fontsource/archivo-narrow", "archivo-narrow-latin-ext-700-normal.woff"),
+      weight: 700,
+      style: "normal",
+    },
+    {
       name: "Body",
       data: font("@fontsource/archivo", "archivo-latin-500-normal.woff"),
       weight: 500,
@@ -26,7 +32,19 @@ function loadFonts() {
     },
     {
       name: "Body",
+      data: font("@fontsource/archivo", "archivo-latin-ext-500-normal.woff"),
+      weight: 500,
+      style: "normal",
+    },
+    {
+      name: "Body",
       data: font("@fontsource/archivo", "archivo-latin-700-normal.woff"),
+      weight: 700,
+      style: "normal",
+    },
+    {
+      name: "Body",
+      data: font("@fontsource/archivo", "archivo-latin-ext-700-normal.woff"),
       weight: 700,
       style: "normal",
     },

@@ -1,8 +1,9 @@
 import { ChevronDown, Info } from "lucide-react";
 import type { Dispatch } from "react";
 import { countries, countryByCode } from "~/data";
-import { leaveYearLabel, MONTHS_LONG, MONTHS_SHORT, WEEKDAYS_SHORT } from "~/lib/dates";
-import { STYLES } from "~/lib/planner/types";
+import { useI18n } from "~/i18n/context";
+import { leaveYearLabel } from "~/lib/dates";
+import type { Style } from "~/lib/planner/types";
 import { regionCopy } from "~/lib/regionLabels";
 import { MAX_BUDGET, type Settings } from "~/lib/settings";
 import { CountryPicker } from "./CountryPicker";
@@ -22,6 +23,13 @@ export function SettingsPanel({
   idPrefix: string;
   localizeRegions?: boolean;
 }) {
+  const i18n = useI18n();
+  const p = i18n.m.planner;
+  const styles: { id: Style; label: string; hint: string }[] = [
+    { id: "weekends", label: p.styleWeekends, hint: p.styleWeekendsHint },
+    { id: "balanced", label: p.styleBalanced, hint: p.styleBalancedHint },
+    { id: "long", label: p.styleLong, hint: p.styleLongHint },
+  ];
   const set = (patch: Partial<Settings>) => dispatch({ type: "set", patch });
   const country = countryByCode.get(s.country);
   const regions = Object.entries(country?.regions ?? {}).sort((a, b) => a[1].localeCompare(b[1]));
@@ -31,7 +39,7 @@ export function SettingsPanel({
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-2">
-        <span className="field-label">Where you work</span>
+        <span className="field-label">{p.where}</span>
         <CountryPicker
           countries={countries}
           value={s.country}
@@ -40,7 +48,7 @@ export function SettingsPanel({
         {regions.length > 0 && (
           <select
             id={id("region")}
-            aria-label="Region"
+            aria-label={p.region}
             value={s.region ?? ""}
             onChange={(e) => set({ region: e.target.value || null })}
             className="input appearance-none pr-10 bg-[length:16px] bg-[right_14px_center] bg-no-repeat"
@@ -49,7 +57,7 @@ export function SettingsPanel({
                 "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23889' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")",
             }}
           >
-            <option value="">Whole country (national holidays)</option>
+            <option value="">{p.wholeCountry}</option>
             {regions.map(([code, name]) => (
               <option key={code} value={code}>
                 {localizeRegions ? regionCopy(s.country, code, name).name : name}
@@ -60,14 +68,14 @@ export function SettingsPanel({
         {country?.regional && !s.region && (
           <p className="flex gap-2 text-xs text-muted">
             <Info size={14} className="mt-0.5 shrink-0" />
-            Some holidays here only apply in certain regions. Pick yours for an exact plan.
+            {p.regionalHint}
           </p>
         )}
       </div>
 
       <div className="flex flex-col gap-2">
         <span className="field-label" id={id("year-label")}>
-          Year
+          {p.year}
         </span>
         <div role="radiogroup" aria-labelledby={id("year-label")} className="flex flex-wrap gap-1.5">
           {years.map((y) => (
@@ -87,7 +95,7 @@ export function SettingsPanel({
 
       <div className="flex flex-col gap-2">
         <label className="field-label" htmlFor={id("budget")}>
-          Leave days you have
+          {p.leaveYouHave}
         </label>
         <Stepper
           id={id("budget")}
@@ -95,17 +103,17 @@ export function SettingsPanel({
           onChange={(n) => set({ budget: n })}
           min={0}
           max={MAX_BUDGET}
-          label="leave days"
+          label={p.leaveUnit}
           big
         />
       </div>
 
       <div className="flex flex-col gap-2">
         <span className="field-label" id={id("style-label")}>
-          Style
+          {p.style}
         </span>
         <div role="radiogroup" aria-labelledby={id("style-label")} className="flex flex-wrap gap-1.5">
-          {STYLES.map((st) => (
+          {styles.map((st) => (
             <button
               key={st.id}
               type="button"
@@ -119,12 +127,12 @@ export function SettingsPanel({
             </button>
           ))}
         </div>
-        <p className="text-xs text-muted">{STYLES.find((x) => x.id === s.style)?.hint}.</p>
+        <p className="text-xs text-muted">{styles.find((x) => x.id === s.style)?.hint}.</p>
       </div>
 
       <details className="smooth-details group rounded-3xl border border-line bg-card-2/60 transition-colors open:bg-transparent">
         <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-bold [&::-webkit-details-marker]:hidden">
-          Fine-tune
+          {p.fineTune}
           <ChevronDown
             size={16}
             className="text-muted transition-transform duration-200 ease-[var(--ease-out)] group-open:rotate-180"
@@ -134,15 +142,15 @@ export function SettingsPanel({
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-2">
               <label className="field-label" htmlFor={id("min")}>
-                Shortest break
+                {p.shortest}
               </label>
               <Stepper
                 id={id("min")}
                 value={s.minBreak}
                 min={1}
                 max={30}
-                label="days in the shortest break"
-                format={(n) => `${n}d`}
+                label={i18n.code === "en" ? "days in the shortest break" : p.shortest}
+                format={(n) => (i18n.code === "en" ? `${n}d` : i18n.text(p.nDays, { n }))}
                 onChange={(n) =>
                   set({ minBreak: n, maxBreak: s.maxBreak !== null && s.maxBreak < n ? n : s.maxBreak })
                 }
@@ -150,7 +158,7 @@ export function SettingsPanel({
             </div>
             <div className="flex flex-col gap-2">
               <label className="field-label" htmlFor={id("max")}>
-                Longest break
+                {p.longestBreak}
               </label>
               <select
                 id={id("max")}
@@ -158,13 +166,13 @@ export function SettingsPanel({
                 onChange={(e) => set({ maxBreak: e.target.value ? Number(e.target.value) : null })}
                 className="input h-full"
               >
-                <option value="">No limit</option>
+                <option value="">{p.noLimit}</option>
                 {Array.from(
                   { length: 30 - Math.max(2, s.minBreak) + 1 },
                   (_, i) => Math.max(2, s.minBreak) + i,
                 ).map((n) => (
                   <option key={n} value={n}>
-                    {n} days
+                    {i18n.text(p.nDays, { n })}
                   </option>
                 ))}
               </select>
@@ -172,9 +180,9 @@ export function SettingsPanel({
           </div>
 
           <fieldset className="flex flex-col gap-2">
-            <legend className="field-label mb-2">Favourite months</legend>
+            <legend className="field-label mb-2">{p.favouriteMonths}</legend>
             <div className="grid grid-cols-6 gap-1.5">
-              {MONTHS_SHORT.map((m, i) => {
+              {i18n.monthsShort.map((m, i) => {
                 const month = i + 1;
                 const on = s.months.includes(month);
                 return (
@@ -182,7 +190,7 @@ export function SettingsPanel({
                     key={m}
                     type="button"
                     aria-pressed={on}
-                    aria-label={MONTHS_LONG[i]}
+                    aria-label={i18n.monthsLong[i]}
                     onClick={() =>
                       set({ months: on ? s.months.filter((x) => x !== month) : [...s.months, month] })
                     }
@@ -193,13 +201,13 @@ export function SettingsPanel({
                 );
               })}
             </div>
-            <p className="text-xs text-muted">The planner leans towards breaks in these months.</p>
+            <p className="text-xs text-muted">{p.monthsHint}</p>
           </fieldset>
 
           <fieldset className="flex flex-col gap-2">
-            <legend className="field-label mb-2">Days you work</legend>
+            <legend className="field-label mb-2">{p.workDays}</legend>
             <div className="grid grid-cols-7 gap-1.5">
-              {WEEKDAYS_SHORT.map((d, i) => (
+              {i18n.weekdaysShort.map((d, i) => (
                 <button
                   key={d}
                   type="button"
@@ -215,7 +223,7 @@ export function SettingsPanel({
 
           <div className="flex flex-col gap-2">
             <label className="field-label" htmlFor={id("ys")}>
-              Leave year starts in
+              {p.yearStarts}
             </label>
             <select
               id={id("ys")}
@@ -223,7 +231,7 @@ export function SettingsPanel({
               onChange={(e) => set({ yearStart: Number(e.target.value) })}
               className="input"
             >
-              {MONTHS_LONG.map((m, i) => (
+              {i18n.monthsLong.map((m, i) => (
                 <option key={m} value={i + 1}>
                   {m}
                 </option>
@@ -232,22 +240,25 @@ export function SettingsPanel({
           </div>
 
           <div className="flex flex-col gap-2">
-            <span className="field-label">Your days</span>
-            <p className="text-xs text-muted">
-              Tap any day in the calendar to keep it as leave, block it, or mark it as a day off (like a
-              company shutdown).
-            </p>
+            <span className="field-label">{p.yourDays}</span>
+            <p className="text-xs text-muted">{p.yourDaysHint}</p>
             {edits > 0 && (
               <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
-                {s.locked.length > 0 && <span className="chip py-1">🔒 {s.locked.length} kept</span>}
-                {s.blocked.length > 0 && <span className="chip py-1">✕ {s.blocked.length} blocked</span>}
-                {s.customOff.length > 0 && <span className="chip py-1">★ {s.customOff.length} days off</span>}
+                {s.locked.length > 0 && (
+                  <span className="chip py-1">🔒 {i18n.text(p.kept, { n: s.locked.length })}</span>
+                )}
+                {s.blocked.length > 0 && (
+                  <span className="chip py-1">✕ {i18n.text(p.blockedCount, { n: s.blocked.length })}</span>
+                )}
+                {s.customOff.length > 0 && (
+                  <span className="chip py-1">★ {i18n.text(p.daysOffCount, { n: s.customOff.length })}</span>
+                )}
                 <button
                   type="button"
                   onClick={() => dispatch({ type: "resetDays" })}
                   className={cx("ml-auto text-muted underline hover:text-ink")}
                 >
-                  Clear all
+                  {p.clearAll}
                 </button>
               </div>
             )}

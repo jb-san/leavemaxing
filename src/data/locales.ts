@@ -129,6 +129,9 @@ export const locales: Record<string, LocaleConfig> = {
       calculatorLink: "Zum Brückentage-Rechner",
       publicHolidays: "Gesetzliche Feiertage",
       regionalHolidays: "Regionale Feiertage",
+      home: "Planer",
+      withBudget: "Mit {budget} Urlaubstagen.",
+      adjustHint: "Passe die Tage an deinen Vertrag an.",
     },
   },
 
@@ -184,6 +187,9 @@ export const locales: Record<string, LocaleConfig> = {
       calculatorLink: "Zum Fenstertage-Rechner",
       publicHolidays: "Gesetzliche Feiertage",
       regionalHolidays: "Regionale Feiertage",
+      home: "Planer",
+      withBudget: "Mit {budget} Urlaubstagen.",
+      adjustHint: "Passe die Tage an deinen Vertrag an.",
     },
   },
 
@@ -244,6 +250,9 @@ export const locales: Record<string, LocaleConfig> = {
       calculatorLink: "Till semesterplaneraren",
       publicHolidays: "Helgdagar",
       regionalHolidays: "Regionala helgdagar",
+      home: "Planerare",
+      withBudget: "Med {budget} semesterdagar.",
+      adjustHint: "Justera dagarna efter ditt avtal.",
     },
   },
 
@@ -294,6 +303,9 @@ export const locales: Record<string, LocaleConfig> = {
       calculatorLink: "Til ferieplanneren",
       publicHolidays: "Helligdager",
       regionalHolidays: "Regionale helligdager",
+      home: "Planlegger",
+      withBudget: "Med {budget} feriedager.",
+      adjustHint: "Tilpass dagene til avtalen din.",
     },
   },
 
@@ -344,6 +356,9 @@ export const locales: Record<string, LocaleConfig> = {
       calculatorLink: "Til ferieplanlæggeren",
       publicHolidays: "Helligdage",
       regionalHolidays: "Regionale helligdage",
+      home: "Planlægger",
+      withBudget: "Med {budget} feriedage.",
+      adjustHint: "Tilpas dagene til din aftale.",
     },
   },
 
@@ -394,6 +409,9 @@ export const locales: Record<string, LocaleConfig> = {
       calculatorLink: "Lomasuunnittelijaan",
       publicHolidays: "Juhlapäivät",
       regionalHolidays: "Alueelliset juhlapäivät",
+      home: "Suunnittelija",
+      withBudget: "{budget} lomapäivällä.",
+      adjustHint: "Säädä päivät sopimuksesi mukaan.",
     },
   },
 
@@ -449,6 +467,9 @@ export const locales: Record<string, LocaleConfig> = {
       calculatorLink: "Do planera urlopów",
       publicHolidays: "Święta państwowe",
       regionalHolidays: "Święta regionalne",
+      home: "Planer",
+      withBudget: "Przy {budget} dniach urlopu.",
+      adjustHint: "Dopasuj dni do swojej umowy.",
     },
   },
 
@@ -504,6 +525,9 @@ export const locales: Record<string, LocaleConfig> = {
       calculatorLink: "Naar de vakantieplanner",
       publicHolidays: "Feestdagen",
       regionalHolidays: "Regionale feestdagen",
+      home: "Vakantieplanner",
+      withBudget: "Met {budget} vakantiedagen.",
+      adjustHint: "Pas de dagen aan je contract aan.",
     },
   },
 
@@ -554,6 +578,9 @@ export const locales: Record<string, LocaleConfig> = {
       calculatorLink: "Zum Brückentage-Rechner",
       publicHolidays: "Gesetzliche Feiertage",
       regionalHolidays: "Kantonale Feiertage",
+      home: "Planer",
+      withBudget: "Mit {budget} Ferientagen.",
+      adjustHint: "Pass die Tage an deinen Vertrag an.",
     },
   },
 
@@ -929,7 +956,7 @@ export const locales: Record<string, LocaleConfig> = {
       calculatorLink: "Apri il pianificatore",
       publicHolidays: "Festività nazionali",
       regionalHolidays: "Festività locali",
-      home: "Home",
+      home: "Pianificatore",
       withBudget: "Con {budget} giorni.",
       adjustHint: "Adatta il piano ai giorni del tuo contratto.",
       extraRegional: "In {region} si aggiungono {count} festività rispetto al calendario nazionale.",

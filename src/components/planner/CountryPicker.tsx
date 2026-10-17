@@ -1,5 +1,6 @@
 import { ChevronDown, Search } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useI18n } from "~/i18n/context";
 import type { CountryInfo } from "~/lib/holidays";
 import { cx } from "./ui";
 
@@ -9,7 +10,7 @@ export function CountryPicker({
   countries,
   value,
   onChange,
-  label = "Country",
+  label,
   exclude = [],
 }: {
   countries: CountryInfo[];
@@ -25,6 +26,9 @@ export function CountryPicker({
   const listRef = useRef<HTMLUListElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const id = useId();
+  const i18n = useI18n();
+  const field = label ?? i18n.m.planner.country;
+  const nameOf = (c: CountryInfo) => (i18n.code === "en" ? c.name : i18n.place(c.code, c.name));
   const current = countries.find((c) => c.code === value);
 
   const results = useMemo(() => {
@@ -32,9 +36,16 @@ export function CountryPicker({
     const list = countries.filter((c) => !exclude.includes(c.code));
     if (!q) return list;
     return list
-      .filter((c) => normalise(c.name).includes(q) || c.code.toLowerCase() === q)
-      .sort((a, b) => Number(!normalise(a.name).startsWith(q)) - Number(!normalise(b.name).startsWith(q)));
-  }, [countries, query, exclude]);
+      .filter((c) => {
+        const local = i18n.code === "en" ? c.name : i18n.place(c.code, c.name);
+        return normalise(c.name).includes(q) || normalise(local).includes(q) || c.code.toLowerCase() === q;
+      })
+      .sort((a, b) => {
+        const an = i18n.code === "en" ? a.name : i18n.place(a.code, a.name);
+        const bn = i18n.code === "en" ? b.name : i18n.place(b.code, b.name);
+        return Number(!normalise(an).startsWith(q)) - Number(!normalise(bn).startsWith(q));
+      });
+  }, [countries, query, exclude, i18n]);
 
   useEffect(() => {
     if (!open) return;
@@ -62,7 +73,7 @@ export function CountryPicker({
         type="button"
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label={`${label}: ${current?.name ?? "choose"}`}
+        aria-label={`${field}: ${current ? nameOf(current) : i18n.m.planner.chooseCountry}`}
         onClick={() => {
           setOpen((o) => !o);
           setActive(0);
@@ -71,7 +82,7 @@ export function CountryPicker({
       >
         <span className="flex min-w-0 items-center gap-2.5">
           <span className="text-lg leading-none">{current?.flag ?? "🌍"}</span>
-          <span className="truncate">{current?.name ?? `Choose a ${label.toLowerCase()}`}</span>
+          <span className="truncate">{current ? nameOf(current) : i18n.m.planner.chooseCountry}</span>
         </span>
         <ChevronDown
           size={16}
@@ -91,8 +102,8 @@ export function CountryPicker({
               aria-expanded="true"
               aria-controls={`${id}-list`}
               aria-activedescendant={results[active] ? `${id}-${results[active].code}` : undefined}
-              aria-label={`Search ${label.toLowerCase()}`}
-              placeholder="Search countries"
+              aria-label={i18n.m.planner.searchCountries}
+              placeholder={i18n.m.planner.searchCountries}
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
@@ -121,11 +132,13 @@ export function CountryPicker({
             ref={listRef}
             id={`${id}-list`}
             role="listbox"
-            aria-label={label}
+            aria-label={field}
             className="max-h-72 overflow-y-auto p-1.5"
           >
             {results.length === 0 && (
-              <li className="px-3 py-4 text-sm text-muted">No country matches “{query}”.</li>
+              <li className="px-3 py-4 text-sm text-muted">
+                {i18n.text(i18n.m.planner.noCountry, { query })}
+              </li>
             )}
             {results.map((c, i) => (
               <li
@@ -143,7 +156,7 @@ export function CountryPicker({
                 )}
               >
                 <span className="text-lg leading-none">{c.flag}</span>
-                {c.name}
+                {nameOf(c)}
               </li>
             ))}
           </ul>

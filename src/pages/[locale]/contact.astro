@@ -1,0 +1,87 @@
+---
+import { locales } from "~/data/locales";
+import { SITE } from "~/data/site";
+import { getCopy } from "~/i18n";
+import { contactAlternates } from "~/i18n/routes";
+import Base from "~/layouts/Base.astro";
+import { shellAlternates } from "~/lib/hreflang";
+
+export function getStaticPaths() {
+  return Object.keys(locales).map((code) => ({ params: { locale: code.toLowerCase() } }));
+}
+
+const param = Astro.params.locale ?? "";
+const locale = Object.values(locales).find((item) => item.code.toLowerCase() === param);
+if (!locale) return Astro.redirect("/404");
+const copy = getCopy(locale.code).contact;
+const canonical = `${SITE.url}/${param}/contact/`;
+---
+
+<Base
+  title={copy.title}
+  description={copy.description}
+  locale={locale.code}
+  lang={locale.code}
+  canonical={canonical}
+  hreflangs={shellAlternates(contactAlternates(SITE.url))}
+  image={`/og/l/${param}.png`}
+>
+  <div class="mx-auto max-w-3xl pb-10 pt-6">
+    <h1 class="text-[clamp(32px,4vw,48px)] font-extrabold leading-tight">{copy.h1}</h1>
+    <div class="prose mt-6 max-w-none">
+      <p class="text-lg text-muted">{copy.lead}</p>
+      <h2>{copy.issue}</h2>
+      <p>{copy.issueBody}</p>
+      <p>
+        <a
+          href="https://github.com/jb-san/leavemaxing/issues"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-2 rounded-lg bg-card px-4 py-2 font-semibold text-ink no-underline hover:bg-line"
+        >
+          {copy.github}
+        </a>
+      </p>
+      <p class="text-sm text-muted">{copy.include}</p>
+      <ul class="text-sm">
+        <li>{copy.li1}</li>
+        <li>{copy.li2}</li>
+        <li>{copy.li3}</li>
+      </ul>
+      <h2>{copy.data}</h2>
+      <p>
+        {copy.dataBody}{" "}
+        <a href="https://github.com/commenthol/date-holidays" target="_blank" rel="noopener">date-holidays</a>.
+      </p>
+      <ul class="text-sm">
+        <li>{copy.dataLi1}</li>
+        <li>{copy.dataLi2}</li>
+        <li>{copy.dataLi3}</li>
+      </ul>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .prose h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+  }
+  .prose p {
+    margin-bottom: 1rem;
+  }
+  .prose ul {
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+    list-style-type: disc;
+  }
+  .prose li {
+    margin-bottom: 0.5rem;
+  }
+  .prose a {
+    color: var(--ink);
+    text-decoration: underline;
+  }
+</style>
