@@ -35,6 +35,7 @@ const NAMES: Record<string, { label: string; short: string }> = {
   "it-IT": { label: "Italiano", short: "IT" },
   "pt-PT": { label: "Português", short: "PT" },
   "cs-CZ": { label: "Čeština", short: "CS" },
+  "uk-UA": { label: "Українська", short: "UK" },
 };
 
 const CODES = ["en", ...Object.keys(locales)];

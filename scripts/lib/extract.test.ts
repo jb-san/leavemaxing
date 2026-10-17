@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { holidayName } from "../../src/lib/holidays";
-import { extractCountryYear, listRegions } from "./extract";
+import { extractCountryYear, listCountries, listRegions } from "./extract";
 
 describe("native holiday names", () => {
   it("stores German, Swedish, French, Spanish and Polish names", () => {
@@ -24,5 +24,21 @@ describe("native holiday names", () => {
 
     const pl = extractCountryYear("PL", 2027, []);
     expect(pl.holidays.some((holiday) => holiday.names?.pl === "Dzień Bożego Ciała")).toBe(true);
+  });
+
+  it("keeps Ukraine's statutory holidays, including ones martial law can suspend, in Ukrainian", () => {
+    expect(listCountries().UA).toBeTruthy();
+    const ua = extractCountryYear("UA", 2027, []);
+    const names = ua.holidays.map((holiday) => holiday.names?.uk ?? "");
+    expect(names).toContain("Великдень");
+    expect(names).toContain("Новий Рік");
+    expect(names).toContain("Міжнародний жіночий день");
+    expect(names.some((name) => name.includes("замінити день"))).toBe(false);
+    expect(names).toContain("Великдень (перенесений вихідний)");
+    const easter = ua.holidays.find((holiday) => holiday.names?.uk === "Великдень");
+    expect(holidayName(easter ?? { date: "", name: "" }, "uk-UA")).toBe("Великдень");
+    expect(ua.holidays.some((holiday) => holiday.date === "2027-01-01")).toBe(true);
+    expect(ua.holidays.some((holiday) => holiday.date === "2027-03-08")).toBe(true);
+    expect(ua.holidays.some((holiday) => holiday.date === "2027-06-28")).toBe(true);
   });
 });

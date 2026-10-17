@@ -48,6 +48,19 @@ function loadFonts() {
       weight: 700,
       style: "normal",
     },
+    // Archivo has no Cyrillic. Satori uses the next face that contains the glyph.
+    {
+      name: "Noto Sans",
+      data: font("@fontsource/noto-sans", "noto-sans-cyrillic-500-normal.woff"),
+      weight: 500,
+      style: "normal",
+    },
+    {
+      name: "Noto Sans",
+      data: font("@fontsource/noto-sans", "noto-sans-cyrillic-700-normal.woff"),
+      weight: 700,
+      style: "normal",
+    },
   ];
   return fonts;
 }

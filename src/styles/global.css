@@ -1,6 +1,44 @@
 @import "tailwindcss";
 @import "@fontsource-variable/archivo/wdth.css";
 
+/* Cyrillic only, so Latin pages keep Archivo and do not download this face. */
+@font-face {
+  font-family: "Noto Sans";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../../node_modules/@fontsource/noto-sans/files/noto-sans-cyrillic-400-normal.woff2")
+    format("woff2");
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: "Noto Sans";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../../node_modules/@fontsource/noto-sans/files/noto-sans-cyrillic-600-normal.woff2")
+    format("woff2");
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: "Noto Sans";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../../node_modules/@fontsource/noto-sans/files/noto-sans-cyrillic-700-normal.woff2")
+    format("woff2");
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: "Noto Sans";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("../../node_modules/@fontsource/noto-sans/files/noto-sans-cyrillic-800-normal.woff2")
+    format("woff2");
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 /*
@@ -91,9 +129,9 @@
   --color-hero-line: var(--hero-line);
   --shadow-card: var(--shadow);
   --shadow-lift: var(--shadow-lg);
-  /* One family. Condensed heavy for dates and headings, like the numerals on a wall calendar. */
-  --font-display: "Archivo Variable", "Arial Narrow", system-ui, sans-serif;
-  --font-sans: "Archivo Variable", "Helvetica Neue", system-ui, sans-serif;
+  /* One family for Latin. Noto Sans is only the Cyrillic fallback; Archivo still draws every Latin glyph. */
+  --font-display: "Archivo Variable", "Noto Sans", "Arial Narrow", system-ui, sans-serif;
+  --font-sans: "Archivo Variable", "Noto Sans", "Helvetica Neue", system-ui, sans-serif;
   --radius-card: 20px;
   --radius-hero: 28px;
   /* Playful overshoot, for small delight moments only (day pops, mascot). */

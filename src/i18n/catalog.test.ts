@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { locales } from "~/data/locales";
-import { shouldIndexPage } from "~/data/sitemap-config";
-import { shellAlternates } from "~/lib/hreflang";
+import { shouldIndexCountry, shouldIndexPage } from "~/data/sitemap-config";
+import { englishCountryAlternates, localizedPageAlternates, shellAlternates } from "~/lib/hreflang";
 import { catalogs, en } from "./index";
 import {
   aboutAlternates,
@@ -10,7 +10,7 @@ import {
   homeAlternates,
   localizedBestYears,
 } from "./routes";
-import { equivalentPath } from "./switcher";
+import { equivalentPath, switcherLinks } from "./switcher";
 
 function leaves(value: unknown, prefix = ""): string[] {
   if (value && typeof value === "object") {
@@ -98,6 +98,43 @@ describe("home and ranking hreflang", () => {
     expect(equivalentPath("/de-de/brueckentage-2027/bayern/", "sv-SE")).toBe("/sv-se/klamdagar-2027/");
     expect(equivalentPath("/fr-be/ponts-2027/", "nl-BE")).toBe("/nl-be/brugdagen-2027/");
     expect(equivalentPath("/de-de/about/", "en")).toBe("/about/");
+    expect(equivalentPath("/uk-ua/dovhi-vykhidni-2027/", "en")).toBe("/ua/2027/");
+    expect(equivalentPath("/ua/2027/", "uk-UA")).toBe("/uk-ua/dovhi-vykhidni-2027/");
+    expect(equivalentPath("/uk-ua/dovhi-vykhidni-2028/", "pl-PL")).toBe("/pl-pl/dlugie-weekendy-2028/");
+    expect(equivalentPath("/uk-ua/about/", "en")).toBe("/about/");
+    expect(equivalentPath("/best/2027/", "uk-UA")).toBe("/uk-ua/best/2027/");
+  });
+});
+
+describe("Ukrainian locale", () => {
+  it("uses a hyphenated ASCII slug and points both ways with uk-UA", () => {
+    expect(locales["uk-UA"]).toMatchObject({
+      code: "uk-UA",
+      lang: "uk-UA",
+      country: "UA",
+      slug: "dovhi-vykhidni",
+      bridgeTerm: "довгі вихідні",
+      defaultBudget: 24,
+    });
+    expect(locales["uk-UA"]?.slug).toMatch(/^[a-z0-9-]+$/);
+    expect(locales["uk-UA"]?.translations.notice).toMatch(/воєнн/);
+    const english = "https://leavemaxxing.com/ua/2027/";
+    const localized = "https://leavemaxxing.com/uk-ua/dovhi-vykhidni-2027/";
+    expect(localizedPageAlternates("uk-UA", localized, english)).toEqual([
+      { lang: "uk-UA", url: localized },
+      { lang: "x-default", url: english },
+    ]);
+    expect(englishCountryAlternates([{ code: "uk-UA", url: localized }], english)).toEqual([
+      { lang: "uk-UA", url: localized },
+      { lang: "en", url: english },
+      { lang: "x-default", url: english },
+    ]);
+    const current = switcherLinks("/uk-ua/").find((link) => link.current);
+    expect(current?.short).toBe("UK");
+    expect(`${current?.short}, ${catalogs["uk-UA"]?.chrome.langLabel}`).toBe("UK, Мова");
+    expect(shouldIndexCountry("UA")).toBe(true);
+    expect(shouldIndexPage(localized)).toBe(true);
+    expect(shouldIndexPage("https://leavemaxxing.com/uk-ua/dovhi-vykhidni-2028/")).toBe(true);
   });
 });
 
