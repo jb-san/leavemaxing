@@ -5,6 +5,7 @@ import { countries, countryByCode, meta, ogYear } from "~/data";
 import { buildToday, readHolidayFile, serverPlan } from "~/data/server";
 import { locales } from "~/data/locales";
 import { SITE } from "~/data/site";
+import { englishCountryAlternates } from "~/lib/hreflang";
 import { shouldIndexCountry, shouldIndexYear } from "~/data/sitemap-config";
 import Base from "~/layouts/Base.astro";
 import { formatRange } from "~/lib/dates";
@@ -28,16 +29,14 @@ const description = `The best days to take off in ${country.name} in ${year}. ${
 const otherYears = meta.years.filter((y) => y !== year);
 const noindex = !shouldIndexCountry(code) || !shouldIndexYear(year);
 
-const hreflangs: Array<{ lang: string; url: string }> = [];
-for (const [localeCode, locale] of Object.entries(locales)) {
-  if (locale.country === code && (year === 2027 || year === 2028)) {
-    const localePath = `/${localeCode.toLowerCase()}/${locale.slug}-${year}/`;
-    hreflangs.push({ lang: locale.lang, url: `${SITE.url}${localePath}` });
-  }
-}
-if (hreflangs.length > 0) {
-  hreflangs.push({ lang: "x-default", url: `${SITE.url}/${code.toLowerCase()}/${year}/` });
-}
+const englishUrl = `${SITE.url}/${code.toLowerCase()}/${year}/`;
+const localizedAlternates = Object.entries(locales)
+  .filter(([, locale]) => locale.country === code && (year === 2027 || year === 2028))
+  .map(([localeCode, locale]) => ({
+    code: locale.code,
+    url: `${SITE.url}/${localeCode.toLowerCase()}/${locale.slug}-${year}/`,
+  }));
+const hreflangs = englishCountryAlternates(localizedAlternates, englishUrl);
 
 const jsonLd = {
   "@context": "https://schema.org",
