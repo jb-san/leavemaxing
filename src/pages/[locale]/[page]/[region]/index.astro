@@ -3,6 +3,7 @@ import HolidayList from "~/components/HolidayList.astro";
 import Planner from "~/components/planner/Planner";
 import { countryByCode } from "~/data";
 import { readHolidayFile, filesFor, buildToday } from "~/data/server";
+import { publishedRegionCodes } from "~/lib/regionSets";
 import { locales, replaceTokens, getLocale, isRegionalCountry } from "~/data/locales";
 import { SITE } from "~/data/site";
 import Base from "~/layouts/Base.astro";
@@ -24,9 +25,9 @@ export function getStaticPaths() {
     const country = countryByCode.get(locale.country);
     if (!country || !country.regional) continue;
     
-    const regionCodes = Object.keys(country.regions);
-    
     for (const year of years) {
+      const file = readHolidayFile(locale.country, year);
+      const regionCodes = publishedRegionCodes(locale.country, Object.keys(country.regions), file);
       for (const regionCode of regionCodes) {
         const copy = regionCopy(locale.country, regionCode, country.regions[regionCode] ?? regionCode);
         paths.push({
@@ -181,7 +182,7 @@ const jsonLd = {
   ],
 };
 
-// Get regional holidays
+const publishedRegions = publishedRegionCodes(locale.country, Object.keys(country.regions), file);
 const regionalHolidays = file.holidays.filter(h => 
   h.regions && h.regions.includes(regionCode)
 );
@@ -198,7 +199,7 @@ const regionalHolidays = file.holidays.filter(h =>
 >
   <div class="flex flex-col gap-2 pb-5 pt-2">
     <nav aria-label="Breadcrumb" class="text-sm font-semibold text-muted">
-      <a href="/" class="hover:text-ink">Planner</a> /
+      <a href="/" class="hover:text-ink">{locale.translations.home ?? "Planner"}</a> /
       <a href={`/${locale.country.toLowerCase()}/`} class="hover:text-ink">{country.name}</a> / 
       <a href={`/${localeParam}/${page}/`} class="hover:text-ink">{locale.bridgeTerm} {year}</a> /
       <span aria-current="page">{regionFullName}</span>
@@ -219,7 +220,7 @@ const regionalHolidays = file.holidays.filter(h =>
     </p>
     {regionalHolidays.length > 0 && (
       <p class="text-muted">
-        In {regionFullName} gelten {regionalHolidays.length} zusätzliche regionale Feiertage.
+        {replaceTokens(locale.translations.extraRegional ?? "In {region} gelten {count} zusätzliche regionale Feiertage.", { region: regionFullName, count: regionalHolidays.length })}
       </p>
     )}
   </div>
@@ -283,7 +284,9 @@ const regionalHolidays = file.holidays.filter(h =>
         top.length > 0 && (
           <section class="card p-5 sm:p-6">
             <h2 class="text-xl font-bold">{locale.translations.bestPlansHeading.replace(` ${year}`, '')}</h2>
-            <p class="mt-1 text-sm text-muted">Mit {settings.budget} Tagen.</p>
+            <p class="mt-1 text-sm text-muted">
+              {replaceTokens(locale.translations.withBudget ?? "Mit {budget} Tagen.", { budget: settings.budget })}
+            </p>
             <ol class="mt-4 flex flex-col gap-3">
               {top.map((b) => (
                 <li class="flex items-center gap-3">
@@ -318,9 +321,9 @@ const regionalHolidays = file.holidays.filter(h =>
         <section class="card p-5 sm:p-6">
           <h2 class="text-xl font-bold">{locale.translations.otherRegions}</h2>
           <ul class="mt-3 flex flex-col gap-1 max-h-64 overflow-y-auto text-sm">
-            {Object.entries(country.regions).map(([code, name]) => {
+            {publishedRegions.map((code) => {
               if (code === regionCode) return null;
-              const other = regionCopy(locale.country, code, name);
+              const other = regionCopy(locale.country, code, country.regions[code] ?? code);
               return (
                 <li>
                   <a href={`/${localeParam}/${page}/${other.slug}/`} class="hover:text-lime-ink hover:underline">
@@ -335,7 +338,7 @@ const regionalHolidays = file.holidays.filter(h =>
       <section class="card p-5 sm:p-6">
         <h2 class="text-xl font-bold">{locale.translations.calculator}</h2>
         <p class="mt-2 text-sm text-muted mb-3">
-          Passe den Plan an deine Bedürfnisse an.
+          {locale.translations.adjustHint ?? "Passe den Plan an deine Bedürfnisse an."}
         </p>
         <a href={`/${locale.country.toLowerCase()}/${year}/?r=${regionCode}`} class="chip inline-block">
           {locale.translations.calculatorLink}

@@ -11,11 +11,34 @@ export function localizedPageAlternates(
   localeCode: string,
   selfUrl: string,
   englishUrl: string,
+  siblings: Array<{ code: string; url: string }> = [],
 ): HreflangLink[] {
   return [
     { lang: localeCode, url: selfUrl },
+    ...siblings.map((item) => ({ lang: item.code, url: item.url })),
     { lang: "x-default", url: englishUrl },
   ];
+}
+
+/**
+ * Other locales for the same country, so fr-BE and nl-BE point at each other.
+ * Different countries that share a language (fr-FR / fr-BE) are not alternates.
+ */
+export function siblingLocaleAlternates(
+  localeCode: string,
+  year: number,
+  siteUrl: string,
+  all: Array<{ code: string; country: string; slug: string }>,
+): Array<{ code: string; url: string }> {
+  const country = all.find((item) => item.code === localeCode)?.country;
+  if (!country) return [];
+  return all
+    .filter((item) => item.country === country && item.code !== localeCode)
+    .map((item) => ({
+      code: item.code,
+      url: `${siteUrl}/${item.code.toLowerCase()}/${item.slug}-${year}/`,
+    }))
+    .sort((a, b) => a.code.localeCompare(b.code));
 }
 
 /**
