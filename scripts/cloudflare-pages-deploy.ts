@@ -69,6 +69,29 @@ async function deployToCloudflare() {
     console.log(`   Commit: ${commitHash}`);
   }
 
+  // Step 0: Verify project exists
+  console.log("\n🔍 Verifying project exists...");
+  const projectUrl =
+    `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/${PROJECT_NAME}`;
+  const projectResponse = await fetch(projectUrl, {
+    headers: {
+      "Authorization": `Bearer ${CLOUDFLARE_API_TOKEN}`,
+    },
+  });
+
+  if (!projectResponse.ok) {
+    const error = await projectResponse.json();
+    console.error(
+      "❌ Failed to verify project:",
+      JSON.stringify(error, null, 2),
+    );
+    console.error(`\nProject URL: ${projectUrl}`);
+    console.error(`HTTP Status: ${projectResponse.status}`);
+    Deno.exit(1);
+  }
+
+  console.log(`   ✅ Project ${PROJECT_NAME} exists`);
+
   // Step 1: Collect all files and their hashes
   console.log("\n📦 Collecting files...");
   const manifest = await collectFiles(DIST_DIR);
