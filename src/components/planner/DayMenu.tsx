@@ -17,6 +17,7 @@ export function DayMenu({
   day,
   kind,
   holidays,
+  naturallyOff,
   anchor,
   editable,
   onAction,
@@ -25,14 +26,22 @@ export function DayMenu({
   day: DayNum | null;
   kind: DayKind | null;
   holidays: string[];
+  /** A weekend or public holiday, whatever the user has marked on it. */
+  naturallyOff: boolean;
   anchor: DOMRect | null;
   editable: boolean;
   onAction: (day: DayNum, action: DayAction) => void;
   onClose: () => void;
 }) {
-  const last = useRef<{ day: DayNum; kind: DayKind; holidays: string[]; editable: boolean } | null>(null);
+  const last = useRef<{
+    day: DayNum;
+    kind: DayKind;
+    holidays: string[];
+    naturallyOff: boolean;
+    editable: boolean;
+  } | null>(null);
   const open = day !== null && kind !== null;
-  if (open) last.current = { day, kind, holidays, editable };
+  if (open) last.current = { day, kind, holidays, naturallyOff, editable };
   const shown = last.current;
   if (!shown)
     return (
@@ -47,6 +56,7 @@ function DayMenuSheet({
   day,
   kind,
   holidays,
+  naturallyOff,
   anchor,
   editable,
   open,
@@ -56,6 +66,7 @@ function DayMenuSheet({
   day: DayNum;
   kind: DayKind;
   holidays: string[];
+  naturallyOff: boolean;
   anchor: DOMRect | null;
   editable: boolean;
   open: boolean;
@@ -68,6 +79,7 @@ function DayMenuSheet({
   const lock: Option = { action: "lock", label: p.keepLeave, hint: p.keepLeaveHint, Icon: Lock };
   const take: Option = { action: "lock", label: p.takeDay, hint: p.takeDayHint, Icon: Lock };
   const block: Option = { action: "block", label: p.cantTake, hint: p.cantTakeHint, Icon: Ban };
+  const notFree: Option = { action: "block", label: p.notFree, hint: p.notFreeHint, Icon: Ban };
   const custom: Option = {
     action: "custom",
     label: p.dayOffAnyway,
@@ -90,8 +102,12 @@ function DayMenuSheet({
       options = [{ action: "clear", label: p.stopKeeping, hint: p.stopKeepingHint, Icon: Undo2 }];
       break;
     case "blocked":
-      note = p.cantTakeNote;
-      options = [{ action: "clear", label: p.allowAgain, hint: p.allowAgainHint, Icon: Undo2 }];
+      note = naturallyOff ? p.notFreeNote : p.cantTakeNote;
+      options = [
+        naturallyOff
+          ? { action: "clear", label: p.freeAgain, hint: p.freeAgainHint, Icon: Undo2 }
+          : { action: "clear", label: p.allowAgain, hint: p.allowAgainHint, Icon: Undo2 },
+      ];
       break;
     case "custom":
       note = p.customNote;
@@ -99,9 +115,11 @@ function DayMenuSheet({
       break;
     case "holiday":
       note = holidays.length ? i18n.text(p.holidayNote, { names: holidays.join(", ") }) : p.holidayPlain;
+      options = [notFree];
       break;
     case "weekend":
       note = p.weekendNote;
+      options = [notFree];
       break;
   }
   if (!editable && options.length && kind !== "locked" && kind !== "blocked" && kind !== "custom") {

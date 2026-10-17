@@ -223,7 +223,11 @@ const MonthCard = memo(function MonthCard({
   }
 
   return (
-    <div className="card h-full px-3 pb-4 pt-4 sm:px-3.5" id={`m-${year}-${month}`}>
+    <div
+      className="card h-full px-3 pb-4 pt-4 sm:px-3.5"
+      id={`m-${year}-${month}`}
+      data-past={first + count <= today ? "" : undefined}
+    >
       <h3 className="hidden items-baseline justify-between px-1.5 pb-3 text-lg font-bold sm:flex">
         <span>
           {i18n.monthsLong[month - 1]} <span className="text-muted">{year}</span>

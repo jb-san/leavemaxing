@@ -71,10 +71,13 @@ const steps = [
     <h1 class="max-w-[16ch] text-[clamp(34px,5.4vw,64px)] font-extrabold leading-[0.95]">
       Get the most time off from your leave days
     </h1>
-    <p class="max-w-[44ch] text-[15px] text-muted sm:pb-1">
-      Pick your country and how many days you have. The planner puts them next to weekends and public holidays, so each
-      one buys a longer break.
-    </p>
+    <div class="flex items-end gap-3 sm:max-w-[30rem] sm:pb-1">
+      <Mascot size={56} mood="happy" title="" className="shrink-0" />
+      <p class="bubble mb-6 text-[15px] leading-snug">
+        Pick your country and how many days you have. The planner puts them next to weekends and public holidays, so
+        each one buys a longer break.
+      </p>
+    </div>
   </div>
 
   <Planner client:load initial={settings} files={files} today={buildToday} mode="home" years={meta.years} />
