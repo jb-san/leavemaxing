@@ -57,6 +57,33 @@ jobs:
             echo "secrets_available=true" >> $GITHUB_OUTPUT
           fi
 
+      - name: Verify API token permissions
+        if: steps.check-secrets.outputs.secrets_available == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "Checking token permissions..."
+          verify_response=$(curl -s "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/tokens/verify" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN")
+          echo "Token verification:"
+          echo "$verify_response" | jq .
+
+          echo ""
+          echo "Testing GET project access..."
+          get_response=$(curl -s -w "\nHTTP_STATUS:%{http_code}" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/leavemaxing" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN")
+          http_code=$(echo "$get_response" | grep "HTTP_STATUS:" | cut -d: -f2)
+          body=$(echo "$get_response" | sed '/HTTP_STATUS:/d')
+
+          if [ "$http_code" = "200" ]; then
+            echo "✅ GET project: OK"
+          else
+            echo "❌ GET project: HTTP $http_code"
+            echo "$body" | jq . || echo "$body"
+          fi
+
       - name: Deploy to Cloudflare Pages
         if: steps.check-secrets.outputs.secrets_available == 'true'
         id: deploy
