@@ -84,7 +84,10 @@ const jsonLd = {
 >
   <div class="flex flex-col gap-3 pb-7 pt-3 sm:flex-row sm:items-end sm:justify-between">
     <h1 class="max-w-[16ch] text-[clamp(34px,5.4vw,64px)] font-extrabold leading-[0.95]">{copy.home.h1}</h1>
-    <p class="max-w-[44ch] text-[15px] text-muted sm:pb-1">{copy.home.intro}</p>
+    <div class="flex items-end gap-3 sm:max-w-[30rem] sm:pb-1">
+      <Mascot size={56} mood="happy" title="" className="shrink-0" />
+      <p class="bubble mb-6 text-[15px] leading-snug">{copy.home.intro}</p>
+    </div>
   </div>
 
   <Planner

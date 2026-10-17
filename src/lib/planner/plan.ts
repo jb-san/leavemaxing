@@ -66,7 +66,11 @@ function buildTimeline(input: PlanInput): Timeline {
   for (let i = 0; i < n; i++) {
     const day = first + i;
     const working = input.workWeek[weekdayMon0(day)] ?? true;
-    if (holidayByDay.has(day)) {
+    // A blocked day is never free, even on a weekend or public holiday.
+    if (blocked.has(day)) {
+      cells[i] = Cell.Work;
+      kinds[i] = "blocked";
+    } else if (holidayByDay.has(day)) {
       cells[i] = Cell.Free;
       kinds[i] = "holiday";
     } else if (!working) {
@@ -79,9 +83,6 @@ function buildTimeline(input: PlanInput): Timeline {
       cells[i] = Cell.Locked;
       kinds[i] = "locked";
       if (day >= range.start && day <= range.end) lockedInYear.push(day);
-    } else if (blocked.has(day)) {
-      cells[i] = Cell.Work;
-      kinds[i] = "blocked";
     } else if (day >= range.start && day <= range.end && day >= input.today) {
       cells[i] = Cell.Choosable;
       kinds[i] = "work";
@@ -374,11 +375,11 @@ export function classifyDays(
   const out = new Map<DayNum, DayKind>();
   for (let d = from; d <= to; d++) {
     let k: DayKind;
-    if (holidays.has(d)) k = "holiday";
+    if (blocked.has(d)) k = "blocked";
+    else if (holidays.has(d)) k = "holiday";
     else if (!(input.workWeek[weekdayMon0(d)] ?? true)) k = "weekend";
     else if (custom.has(d)) k = "custom";
     else if (locked.has(d)) k = "locked";
-    else if (blocked.has(d)) k = "blocked";
     else if (suggested.has(d)) k = "leave";
     else k = "work";
     out.set(d, k);

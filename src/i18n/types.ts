@@ -175,6 +175,11 @@ export interface Copy {
     cantTakeNote: string;
     allowAgain: string;
     allowAgainHint: string;
+    notFree: string;
+    notFreeHint: string;
+    notFreeNote: string;
+    freeAgain: string;
+    freeAgainHint: string;
     customNote: string;
     removeDayOff: string;
     removeDayOffHint: string;

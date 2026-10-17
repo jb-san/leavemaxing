@@ -10,6 +10,7 @@ import {
   leaveYearMonths,
   leaveYearRange,
   localToday,
+  weekdayMon0,
 } from "~/lib/dates";
 import { detectCountry } from "~/lib/detect";
 import { type HolidayFile, holidayMap, loadHolidayFile } from "~/lib/holidays";
@@ -305,6 +306,7 @@ function PlannerApp(props: PlannerProps) {
     dispatch({ type: "day", day, action });
   };
   const menuKind = menu ? (kinds.get(menu.day) ?? null) : null;
+  const menuOff = menu ? holidays.has(menu.day) || !(shown.workWeek[weekdayMon0(menu.day)] ?? true) : false;
   const editable = menu ? menu.day >= range.start && menu.day <= range.end && menu.day >= shown.today : false;
   const loading = input === null || input !== result.input;
   const styleLabel = styleName(settings.style);
@@ -456,6 +458,7 @@ function PlannerApp(props: PlannerProps) {
         day={menu?.day ?? null}
         kind={menuKind}
         holidays={menu ? (holidays.get(menu.day) ?? []) : []}
+        naturallyOff={menuOff}
         anchor={menu?.rect ?? null}
         editable={editable}
         onAction={onDayAction}
