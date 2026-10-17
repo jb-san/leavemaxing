@@ -1,26 +1,9 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
-import {
-  type DayNum,
-  dayNum,
-  daysInMonth,
-  formatShort,
-  MONTHS_LONG,
-  WEEKDAYS_SHORT,
-  weekdayMon0,
-} from "~/lib/dates";
+import { useI18n } from "~/i18n/context";
+import { type DayNum, dayNum, daysInMonth, weekdayMon0 } from "~/lib/dates";
 import type { Break, DayKind } from "~/lib/planner/types";
 import { cx, DayIcon } from "./ui";
-
-const KIND_LABEL: Record<DayKind, string> = {
-  work: "workday",
-  weekend: "weekend",
-  holiday: "public holiday",
-  custom: "your day off",
-  leave: "suggested leave",
-  locked: "leave you've locked",
-  blocked: "blocked, you can't take it",
-};
 
 const ICON: Partial<Record<DayKind, React.ReactNode>> = {
   leave: DayIcon.check,
@@ -48,6 +31,8 @@ interface BreakMark {
 }
 
 export function Calendar({ months, kinds, breaks, holidays, today, pop, sundayFirst, onDay }: CalendarProps) {
+  const i18n = useI18n();
+  const p = i18n.m.planner;
   const breakOf = useMemo(() => {
     const map = new Map<DayNum, BreakMark>();
     for (const b of breaks) {
@@ -113,20 +98,20 @@ export function Calendar({ months, kinds, breaks, holidays, today, pop, sundayFi
     }
   }
   return (
-    <section aria-label="Calendar" className="flex flex-col gap-3">
+    <section aria-label={p.calendar} className="flex flex-col gap-3">
       <div className="flex items-center justify-between sm:hidden">
         <h2 className="flex items-center gap-2 font-display text-xl font-bold" aria-live="polite">
-          {current ? `${MONTHS_LONG[current.month - 1]} ${current.year}` : ""}
+          {current ? `${i18n.monthsLong[current.month - 1]} ${current.year}` : ""}
           {currentLeave > 0 && (
             <span className="rounded-full bg-lime-soft px-2 py-0.5 font-sans text-xs font-bold">
-              {currentLeave === 1 ? "1 leave day" : `${currentLeave} leave days`}
+              {i18n.count(currentLeave, p.leaveDay)}
             </span>
           )}
         </h2>
         <div className="flex gap-2">
           <button
             type="button"
-            aria-label="Previous month"
+            aria-label={p.prevMonth}
             onClick={() => go(-1)}
             disabled={index === 0}
             className="grid size-10 place-items-center rounded-full border border-line bg-card transition-transform duration-150 ease-[var(--ease-out)] active:scale-[0.94] disabled:opacity-40"
@@ -135,7 +120,7 @@ export function Calendar({ months, kinds, breaks, holidays, today, pop, sundayFi
           </button>
           <button
             type="button"
-            aria-label="Next month"
+            aria-label={p.nextMonth}
             onClick={() => go(1)}
             disabled={index === months.length - 1}
             className="grid size-10 place-items-center rounded-full border border-line bg-card transition-transform duration-150 ease-[var(--ease-out)] active:scale-[0.94] disabled:opacity-40"
@@ -217,7 +202,19 @@ const MonthCard = memo(function MonthCard({
   const count = daysInMonth(year, month);
   const col = (d: DayNum) => (sundayFirst ? (weekdayMon0(d) + 1) % 7 : weekdayMon0(d));
   const lead = col(first);
-  const headers = sundayFirst ? [WEEKDAYS_SHORT[6], ...WEEKDAYS_SHORT.slice(0, 6)] : WEEKDAYS_SHORT;
+  const i18n = useI18n();
+  const p = i18n.m.planner;
+  const dows = i18n.weekdaysShort;
+  const headers = sundayFirst ? [dows[6], ...dows.slice(0, 6)] : dows;
+  const kindLabel: Record<DayKind, string> = {
+    work: p.kindWork,
+    weekend: p.kindWeekend,
+    holiday: p.kindHoliday,
+    custom: p.kindCustom,
+    leave: p.kindLeave,
+    locked: p.kindLocked,
+    blocked: p.kindBlocked,
+  };
 
   let leave = 0;
   for (let d = first; d < first + count; d++) {
@@ -229,15 +226,15 @@ const MonthCard = memo(function MonthCard({
     <div className="card h-full px-3 pb-4 pt-4 sm:px-3.5" id={`m-${year}-${month}`}>
       <h3 className="hidden items-baseline justify-between px-1.5 pb-3 text-lg font-bold sm:flex">
         <span>
-          {MONTHS_LONG[month - 1]} <span className="text-muted">{year}</span>
+          {i18n.monthsLong[month - 1]} <span className="text-muted">{year}</span>
         </span>
         {leave > 0 && (
           <span className="rounded-full bg-lime-soft px-2 py-0.5 font-sans text-xs font-bold text-ink">
-            {leave === 1 ? "1 leave day" : `${leave} leave days`}
+            {i18n.count(leave, p.leaveDay)}
           </span>
         )}
       </h3>
-      <div className="cal" role="group" aria-label={`${MONTHS_LONG[month - 1]} ${year}`}>
+      <div className="cal" role="group" aria-label={`${i18n.monthsLong[month - 1]} ${year}`}>
         {headers.map((d) => (
           <div key={d} className="cal-dow" aria-hidden="true">
             {d}
@@ -253,7 +250,7 @@ const MonthCard = memo(function MonthCard({
           const b = breakOf.get(d);
           const c = col(d);
           const names = holidays.get(d);
-          const label = `${formatShort(d)}, ${KIND_LABEL[k]}${names ? `: ${names.join(", ")}` : ""}`;
+          const label = `${i18n.formatShort(d)}, ${kindLabel[k]}${names ? `: ${names.join(", ")}` : ""}`;
           const popIndex = pop.get(d);
           return (
             <button
@@ -285,12 +282,13 @@ const MonthCard = memo(function MonthCard({
 
 /** Lightweight stand-in rendered on the server; the real calendar mounts in the browser. */
 export function CalendarPlaceholder({ months }: { months: { year: number; month: number }[] }) {
+  const { monthsLong } = useI18n();
   return (
     <div aria-hidden="true" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {months.map((m, i) => (
         <div key={`${m.year}-${m.month}`} className={cx("card h-[330px] p-4", i > 0 && "hidden sm:block")}>
           <p className="px-1.5 font-display text-lg font-bold">
-            {MONTHS_LONG[m.month - 1]} <span className="text-muted">{m.year}</span>
+            {monthsLong[m.month - 1]} <span className="text-muted">{m.year}</span>
           </p>
           <div className="mt-4 h-[250px] rounded-2xl bg-[radial-gradient(circle,var(--wkd)_13px,transparent_14px)] bg-[length:14.28%_50px] opacity-70" />
         </div>
@@ -300,15 +298,18 @@ export function CalendarPlaceholder({ months }: { months: { year: number; month:
 }
 
 export function Legend() {
+  const p = useI18n().m.planner;
+  const br = p.breakDay.one;
+  const breakLabel = br.charAt(0).toUpperCase() + br.slice(1);
   const items: [string, React.ReactNode, string][] = [
-    ["bg-lime text-lime-ink", DayIcon.check, "Leave"],
-    ["bg-lime text-lime-ink", DayIcon.lock, "Locked"],
-    ["bg-sun text-sun-ink", DayIcon.sun, "Public holiday"],
-    ["bg-wkd", null, "Weekend"],
-    ["bg-red text-white", DayIcon.x, "Blocked"],
+    ["bg-lime text-lime-ink", DayIcon.check, p.legendLeave],
+    ["bg-lime text-lime-ink", DayIcon.lock, p.legendLocked],
+    ["bg-sun text-sun-ink", DayIcon.sun, p.legendHoliday],
+    ["bg-wkd", null, p.legendWeekend],
+    ["bg-red text-white", DayIcon.x, p.legendBlocked],
   ];
   return (
-    <ul className="flex flex-wrap gap-x-4 gap-y-2 text-[13px] font-semibold text-muted" aria-label="Legend">
+    <ul className="flex flex-wrap gap-x-4 gap-y-2 text-[13px] font-semibold text-muted" aria-label={p.legend}>
       {items.map(([cls, icon, label]) => (
         <li key={label} className="flex items-center gap-1.5">
           <span className={cx("grid size-[18px] place-items-center rounded-full [&>svg]:size-[11px]", cls)}>
@@ -319,7 +320,7 @@ export function Legend() {
       ))}
       <li className="flex items-center gap-1.5">
         <span className="h-[18px] w-7 rounded-full bg-lime-soft" />
-        Break
+        {breakLabel}
       </li>
     </ul>
   );

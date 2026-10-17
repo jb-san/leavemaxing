@@ -1,6 +1,7 @@
 import { Ban, Lock, Sparkles, Undo2 } from "lucide-react";
 import { useRef } from "react";
-import { type DayNum, formatShort, parts } from "~/lib/dates";
+import { useI18n } from "~/i18n/context";
+import { type DayNum, parts } from "~/lib/dates";
 import type { DayKind } from "~/lib/planner/types";
 import type { DayAction } from "./state";
 import { Sheet } from "./ui";
@@ -11,21 +12,6 @@ interface Option {
   hint: string;
   Icon: typeof Lock;
 }
-
-const LOCK: Option = { action: "lock", label: "Keep as leave", hint: "Always include this day", Icon: Lock };
-const TAKE: Option = { action: "lock", label: "Take this day off", hint: "Uses one leave day", Icon: Lock };
-const BLOCK: Option = {
-  action: "block",
-  label: "I can't take this day",
-  hint: "The plan works around it",
-  Icon: Ban,
-};
-const CUSTOM: Option = {
-  action: "custom",
-  label: "Day off anyway",
-  hint: "Company shutdown, birthday… doesn't use leave",
-  Icon: Sparkles,
-};
 
 export function DayMenu({
   day,
@@ -44,7 +30,6 @@ export function DayMenu({
   onAction: (day: DayNum, action: DayAction) => void;
   onClose: () => void;
 }) {
-  // Keep showing the last day while the menu animates closed.
   const last = useRef<{ day: DayNum; kind: DayKind; holidays: string[]; editable: boolean } | null>(null);
   const open = day !== null && kind !== null;
   if (open) last.current = { day, kind, holidays, editable };
@@ -77,43 +62,54 @@ function DayMenuSheet({
   onAction: (day: DayNum, action: DayAction) => void;
   onClose: () => void;
 }) {
-  const p = parts(day);
+  const i18n = useI18n();
+  const p = i18n.m.planner;
+  const date = parts(day);
+  const lock: Option = { action: "lock", label: p.keepLeave, hint: p.keepLeaveHint, Icon: Lock };
+  const take: Option = { action: "lock", label: p.takeDay, hint: p.takeDayHint, Icon: Lock };
+  const block: Option = { action: "block", label: p.cantTake, hint: p.cantTakeHint, Icon: Ban };
+  const custom: Option = {
+    action: "custom",
+    label: p.dayOffAnyway,
+    hint: p.dayOffAnywayHint,
+    Icon: Sparkles,
+  };
 
   let note: string | null = null;
   let options: Option[] = [];
   switch (kind) {
     case "leave":
-      note = "Suggested leave day.";
-      options = [LOCK, BLOCK, CUSTOM];
+      note = p.suggestedLeave;
+      options = [lock, block, custom];
       break;
     case "work":
-      options = [TAKE, BLOCK, CUSTOM];
+      options = [take, block, custom];
       break;
     case "locked":
-      note = "You're keeping this day as leave.";
-      options = [{ action: "clear", label: "Stop keeping it", hint: "Let the planner decide", Icon: Undo2 }];
+      note = p.keepingLeave;
+      options = [{ action: "clear", label: p.stopKeeping, hint: p.stopKeepingHint, Icon: Undo2 }];
       break;
     case "blocked":
-      note = "You can't take this day.";
-      options = [{ action: "clear", label: "Allow it again", hint: "The planner may use it", Icon: Undo2 }];
+      note = p.cantTakeNote;
+      options = [{ action: "clear", label: p.allowAgain, hint: p.allowAgainHint, Icon: Undo2 }];
       break;
     case "custom":
-      note = "A day off that doesn't use leave.";
-      options = [{ action: "clear", label: "Remove day off", hint: "Back to a normal workday", Icon: Undo2 }];
+      note = p.customNote;
+      options = [{ action: "clear", label: p.removeDayOff, hint: p.removeDayOffHint, Icon: Undo2 }];
       break;
     case "holiday":
-      note = holidays.length ? `Public holiday: ${holidays.join(", ")}.` : "Public holiday.";
+      note = holidays.length ? i18n.text(p.holidayNote, { names: holidays.join(", ") }) : p.holidayPlain;
       break;
     case "weekend":
-      note = "Weekend. Already a day off.";
+      note = p.weekendNote;
       break;
   }
   if (!editable && options.length && kind !== "locked" && kind !== "blocked" && kind !== "custom") {
-    note = `${note ? `${note} ` : ""}This day is outside the leave year or in the past, but you can still mark it.`;
+    note = `${note ? `${note} ` : ""}${p.outsideYear}`;
   }
 
   return (
-    <Sheet open={open} onClose={onClose} anchor={anchor} title={`${formatShort(day)} ${p.year}`}>
+    <Sheet open={open} onClose={onClose} anchor={anchor} title={`${i18n.formatShort(day)} ${date.year}`}>
       {note && <p className="-mt-2 text-sm text-muted">{note}</p>}
       {options.length > 0 && (
         <ul className="flex flex-col gap-1.5">

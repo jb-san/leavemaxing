@@ -1,5 +1,28 @@
 import { X } from "lucide-react";
 import { type ReactNode, useEffect, useId, useRef, useState } from "react";
+import { useI18n } from "~/i18n/context";
+
+const CLOSE: Record<string, string> = {
+  de: "Schließen",
+  sv: "Stäng",
+  nb: "Lukk",
+  no: "Lukk",
+  da: "Luk",
+  fi: "Sulje",
+  pl: "Zamknij",
+  nl: "Sluiten",
+  fr: "Fermer",
+  es: "Cerrar",
+  it: "Chiudi",
+  pt: "Fechar",
+  cs: "Zavřít",
+};
+
+function closeLabel(locale: string): string {
+  if (locale === "en") return "Close";
+  const lang = locale.toLowerCase().startsWith("nb") ? "nb" : locale.split("-")[0];
+  return (lang && CLOSE[lang]) || "Close";
+}
 
 export function cx(...parts: (string | false | null | undefined)[]): string {
   return parts.filter(Boolean).join(" ");
@@ -37,6 +60,7 @@ export function Sheet({
   anchor?: DOMRect | null;
   wide?: boolean;
 }) {
+  const close = closeLabel(useI18n().code);
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const closeRef = useRef(onClose);
@@ -168,7 +192,7 @@ export function Sheet({
                 <button
                   type="button"
                   onClick={onClose}
-                  aria-label="Close"
+                  aria-label={close}
                   className="-mr-1 -mt-1 grid size-9 shrink-0 place-items-center rounded-full text-muted transition-transform hover:bg-card-2 hover:text-ink active:scale-95"
                 >
                   <X size={18} />
@@ -305,6 +329,7 @@ export function Stepper({
   big?: boolean;
   format?: (n: number) => string;
 }) {
+  const i18n = useI18n();
   const clamp = (n: number) => Math.min(max, Math.max(min, n));
   return (
     <div
@@ -315,7 +340,7 @@ export function Stepper({
     >
       <button
         type="button"
-        aria-label={`Fewer ${label}`}
+        aria-label={i18n.text(i18n.m.planner.fewer, { label })}
         disabled={value <= min}
         onClick={() => onChange(clamp(value - 1))}
         className={cx(
@@ -353,7 +378,7 @@ export function Stepper({
       )}
       <button
         type="button"
-        aria-label={`More ${label}`}
+        aria-label={i18n.text(i18n.m.planner.more, { label })}
         disabled={value >= max}
         onClick={() => onChange(clamp(value + 1))}
         className={cx(

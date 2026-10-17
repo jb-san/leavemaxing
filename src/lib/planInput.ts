@@ -17,12 +17,17 @@ export function planningToday(s: Pick<Settings, "year" | "yearStart">, today: Da
   return range.end < today ? range.start : today;
 }
 
-export function toPlanInput(s: Settings, files: (HolidayFile | undefined)[], today: DayNum): PlanInput {
+export function toPlanInput(
+  s: Settings,
+  files: (HolidayFile | undefined)[],
+  today: DayNum,
+  locale?: string | null,
+): PlanInput {
   return {
     year: s.year,
     yearStart: s.yearStart,
     budget: s.budget,
-    holidays: resolveHolidays(files, s.region),
+    holidays: resolveHolidays(files, s.region, locale),
     workWeek: s.workWeek,
     customOff: s.customOff,
     locked: s.locked,

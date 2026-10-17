@@ -1,9 +1,16 @@
 import { Bookmark, CalendarPlus, Share2, TriangleAlert } from "lucide-react";
 import { Mascot, moodFor } from "~/components/Mascot";
-import { type DayNum, formatRange, MONTHS_SHORT, parts } from "~/lib/dates";
+import { useI18n } from "~/i18n/context";
+import { translateWarning } from "~/i18n/warnings";
+import type { DayNum } from "~/lib/dates";
+import { parts } from "~/lib/dates";
 import type { Plan } from "~/lib/planner/types";
-import { countdown, plural, quip } from "./copy";
 import { cx, Tick } from "./ui";
+
+function splitCount(template: string): { before: string; after: string } {
+  const [before = "", after = ""] = template.split("{n}");
+  return { before, after };
+}
 
 export function HeroCard({
   plan,
@@ -28,18 +35,24 @@ export function HeroCard({
   onExport: () => void;
   onSave: () => void;
 }) {
+  const i18n = useI18n();
+  const p = i18n.m.planner;
   const { stats } = plan;
   const mood = moodFor(stats.multiplier, stats.leaveUsed);
   const next = plan.breaks.find((b) => b.leave > 0 && b.end >= today);
-  const nextLabel = next
+  const nextWhen = next
     ? next.start <= today
-      ? "happening now"
-      : countdown(next.start - today)
-    : "none left";
+      ? i18n.code === "en"
+        ? "happening now"
+        : p.now
+      : countdown(i18n, next.start - today)
+    : p.noneLeft;
+  const leave = splitCount(i18n.plural(stats.leaveUsed, p.heroLeave));
+  const off = splitCount(p.heroOff);
 
   return (
     <section
-      aria-label="Your plan"
+      aria-label={p.yourPlan}
       className={cx(
         "rounded-[var(--radius-hero)] bg-hero p-5 text-hero-ink transition-opacity sm:p-7",
         loading && "opacity-90",
@@ -50,12 +63,10 @@ export function HeroCard({
           <span key={mood} className="swap-pop">
             <Mascot size={26} mood={mood} title="" blink />
           </span>
-          <span className="truncate">
-            Your {yearLabel} in {place}
-          </span>
+          <span className="truncate">{i18n.text(p.yourYear, { year: yearLabel, place })}</span>
           {loading && (
             <span className="size-2 shrink-0 animate-pulse rounded-full bg-lime">
-              <span className="sr-only">Updating</span>
+              <span className="sr-only">{p.updating}</span>
             </span>
           )}
         </p>
@@ -67,17 +78,24 @@ export function HeroCard({
             {stats.leaveUsed > 0 ? (
               <>
                 <span className="text-lime">
-                  <Tick>{stats.leaveUsed}</Tick> leave {stats.leaveUsed === 1 ? "day" : "days"}
+                  {leave.before}
+                  <Tick>{stats.leaveUsed}</Tick>
+                  {leave.after}
                 </span>{" "}
-                <span className="font-semibold text-hero-muted">become</span> <br />
-                <Tick>{stats.daysOff}</Tick> days off
+                <span className="font-semibold text-hero-muted">
+                  {i18n.plural(stats.leaveUsed, p.heroBecome)}
+                </span>{" "}
+                <br />
+                {off.before}
+                <Tick>{stats.daysOff}</Tick>
+                {off.after}
               </>
             ) : (
-              <>No leave planned yet</>
+              p.heroEmpty
             )}
           </p>
           <p className="max-w-[52ch] text-[15px] text-hero-muted">
-            {quip(stats.multiplier, stats.leaveUsed)}
+            {quip(i18n, stats.multiplier, stats.leaveUsed)}
           </p>
         </div>
 
@@ -85,11 +103,11 @@ export function HeroCard({
         <YearStrip plan={plan} range={range} />
 
         <dl className="grid grid-cols-[auto_auto_minmax(0,1fr)] gap-x-8 gap-y-1 border-t border-hero-line pt-4">
-          <Stat label="Breaks" value={String(stats.breaksWithLeave)} />
-          <Stat label="Longest" value={stats.longest ? plural(stats.longest, "day") : "None"} />
+          <Stat label={p.breaksLabel} value={String(stats.breaksWithLeave)} />
+          <Stat label={p.longestLabel} value={stats.longest ? i18n.count(stats.longest, p.day) : p.none} />
           <Stat
-            label={next ? `Next, ${nextLabel}` : "Next break"}
-            value={next ? formatRange(next.start, next.end) : "None left"}
+            label={next ? i18n.text(p.nextWhen, { when: nextWhen }) : p.nextLabel}
+            value={next ? i18n.formatRange(next.start, next.end) : p.noneLeft}
           />
         </dl>
 
@@ -98,7 +116,7 @@ export function HeroCard({
             {plan.warnings.map((w) => (
               <li key={w} className="flex gap-2">
                 <TriangleAlert size={16} className="mt-0.5 shrink-0" />
-                {w}
+                {translateWarning(i18n.code, w)}
               </li>
             ))}
           </ul>
@@ -106,18 +124,36 @@ export function HeroCard({
 
         <div className="flex flex-wrap gap-2.5">
           <button type="button" className="btn btn-primary" onClick={onShare}>
-            <Share2 size={16} /> Share
+            <Share2 size={16} /> {p.share}
           </button>
           <button type="button" className="btn btn-ghost" onClick={onExport}>
-            <CalendarPlus size={16} /> Add to calendar
+            <CalendarPlus size={16} /> {p.addCalendar}
           </button>
           <button type="button" className="btn btn-ghost" onClick={onSave}>
-            <Bookmark size={16} /> Save plan
+            <Bookmark size={16} /> {p.savePlan}
           </button>
         </div>
       </div>
     </section>
   );
+}
+
+function quip(i18n: ReturnType<typeof useI18n>, multiplier: number, leaveUsed: number): string {
+  const p = i18n.m.planner;
+  if (leaveUsed === 0) return p.quipNone;
+  const ratio = i18n.text(p.quipRatio, { ratio: multiplier.toFixed(1) });
+  if (multiplier >= 2) return `${ratio} ${p.quipHigh}`;
+  if (multiplier >= 1.6) return `${ratio} ${p.quipMid}`;
+  return `${ratio} ${p.quipLow}`;
+}
+
+function countdown(i18n: ReturnType<typeof useI18n>, days: number): string {
+  const p = i18n.m.planner;
+  if (days <= 0) return p.now;
+  if (days === 1) return p.tomorrow;
+  if (days < 14) return i18n.text(p.inDays, { n: days });
+  if (days < 60) return i18n.text(p.inWeeks, { n: Math.round(days / 7) });
+  return i18n.text(p.inMonths, { n: Math.round(days / 30.4) });
 }
 
 function Stat({ value, label }: { value: string; label: string }) {
@@ -130,7 +166,9 @@ function Stat({ value, label }: { value: string; label: string }) {
 }
 
 function BudgetDots({ used, budget }: { used: number; budget: number }) {
-  const label = `${used} of ${budget} leave days used`;
+  const i18n = useI18n();
+  const usedLabel = i18n.text(i18n.m.planner.usedOf, { used, budget });
+  const label = i18n.code === "en" ? `${used} of ${budget} leave days used` : usedLabel;
   if (budget > 40 || budget === 0) {
     return (
       <div className="flex items-center gap-3" role="img" aria-label={label}>
@@ -140,9 +178,7 @@ function BudgetDots({ used, budget }: { used: number; budget: number }) {
             style={{ width: `${budget ? (used / budget) * 100 : 0}%` }}
           />
         </div>
-        <span className="text-xs font-semibold text-hero-muted">
-          {used} of {budget} used
-        </span>
+        <span className="text-xs font-semibold text-hero-muted">{usedLabel}</span>
       </div>
     );
   }
@@ -155,9 +191,7 @@ function BudgetDots({ used, budget }: { used: number; budget: number }) {
           className={cx("size-2.5 rounded-full transition-colors", i < used ? "bg-lime" : "bg-hero-line")}
         />
       ))}
-      <span className="ml-1 text-xs font-semibold text-hero-muted">
-        {used} of {budget} used
-      </span>
+      <span className="ml-1 text-xs font-semibold text-hero-muted">{usedLabel}</span>
     </div>
   );
 }
@@ -171,6 +205,7 @@ export function YearStrip({
   range: { start: DayNum; end: DayNum };
   compact?: boolean;
 }) {
+  const { monthsShort } = useI18n();
   const span = range.end - range.start + 1;
   const pct = (d: DayNum) => `${(Math.min(Math.max(d - range.start, 0), span) / span) * 100}%`;
   const ticks: { day: DayNum; label: string }[] = [];
@@ -179,7 +214,7 @@ export function YearStrip({
     const m0 = startParts.month - 1 + i;
     const y = startParts.year + Math.floor(m0 / 12);
     const m = (m0 % 12) + 1;
-    ticks.push({ day: Date.UTC(y, m - 1, 1) / 86_400_000, label: MONTHS_SHORT[m - 1] ?? "" });
+    ticks.push({ day: Date.UTC(y, m - 1, 1) / 86_400_000, label: monthsShort[m - 1] ?? "" });
   }
   return (
     <div className={cx("relative", compact ? "h-6" : "h-10")} aria-hidden="true">

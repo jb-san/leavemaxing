@@ -33,7 +33,7 @@ export const BEST_BUDGETS = [10, 15, 20, 25, 30];
 const bestYears = [thisYear, thisYear + 1];
 
 const pkg = JSON.parse(readFileSync(join(root, "node_modules/date-holidays/package.json"), "utf8"));
-const stamp = JSON.stringify({ v: pkg.version, years, extraYear, script: 3 });
+const stamp = JSON.stringify({ v: pkg.version, years, extraYear, script: 4 });
 const stampFile = join(publicData, ".stamp");
 if (
   existsSync(stampFile) &&

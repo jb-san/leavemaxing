@@ -43,6 +43,11 @@ export interface CardData {
   flag: string;
   yearLabel: string;
   range: { start: DayNum; end: DayNum };
+  /** Localized hero lines. English cards keep the built-in wording when omitted. */
+  headline?: string;
+  subhead?: string;
+  months?: string[];
+  storyLines?: string[];
 }
 
 /** Draw the shareable summary card. Everything happens in the browser. */
@@ -103,9 +108,13 @@ export async function drawShareCard(
   ctx.font = `800 condensed ${bigSize}px ${DISPLAY}`;
   ctx.fillStyle = C.lime;
   const line1Y = top + (story ? 100 : 76) + bigSize * 1.15;
-  ctx.fillText(`${stats.leaveUsed} leave ${stats.leaveUsed === 1 ? "day" : "days"} become`, inner, line1Y);
+  ctx.fillText(
+    data.headline ?? `${stats.leaveUsed} leave ${stats.leaveUsed === 1 ? "day" : "days"} become`,
+    inner,
+    line1Y,
+  );
   ctx.fillStyle = C.ink;
-  ctx.fillText(`${stats.daysOff} days off`, inner, line1Y + bigSize * 1.05);
+  ctx.fillText(data.subhead ?? `${stats.daysOff} days off`, inner, line1Y + bigSize * 1.05);
 
   // Multiplier badge
   const r = story ? 120 : 92;
@@ -129,7 +138,7 @@ export async function drawShareCard(
   if (story) {
     ctx.font = `600 34px ${BODY}`;
     ctx.fillStyle = C.muted;
-    const lines = [`${stats.breaksWithLeave} breaks`, `longest ${stats.longest} days`];
+    const lines = data.storyLines ?? [`${stats.breaksWithLeave} breaks`, `longest ${stats.longest} days`];
     lines.forEach((l, i) => {
       ctx.fillText(l, inner, cy - 24 + i * 52);
     });
@@ -156,7 +165,8 @@ export async function drawShareCard(
   for (let i = 0; i < 12; i += story ? 2 : 1) {
     const m0 = sp.month - 1 + i;
     const d = Date.UTC(sp.year + Math.floor(m0 / 12), m0 % 12, 1) / 86_400_000;
-    ctx.fillText(MONTHS_SHORT[m0 % 12] ?? "", xOf(d), stripY + 28);
+    const months = data.months ?? MONTHS_SHORT;
+    ctx.fillText(months[m0 % 12] ?? "", xOf(d), stripY + 28);
   }
 
   if (story) {
