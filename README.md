@@ -122,7 +122,8 @@ If you see "Authentication failed (status: 400) [code: 9106]" in GitHub Actions:
 
 1. The `CLOUDFLARE_API_TOKEN` secret needs **Cloudflare Pages: Edit** permission
 2. To fix:
-   - Go to [Cloudflare API Tokens](https://dash.cloudflare.com/profile/api-tokens)
+   - Go to
+     [Cloudflare API Tokens](https://dash.cloudflare.com/profile/api-tokens)
    - Create a new token with:
      - **Permissions**: `Account → Cloudflare Pages → Edit`
      - **Account Resources**: Include your account
