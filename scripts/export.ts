@@ -98,8 +98,22 @@ async function copyStaticAssets() {
 async function copyFreshAssets() {
   console.log("📁 Copying Fresh build assets...");
   try {
-    await copy("./_fresh", join(DIST_DIR, "/_fresh"), { overwrite: true });
-    console.log("✅ Fresh assets copied");
+    // Read the build ID from snapshot.json
+    const snapshotPath = "./_fresh/snapshot.json";
+    const snapshotText = await Deno.readTextFile(snapshotPath);
+    const snapshot = JSON.parse(snapshotText);
+    const buildId = snapshot.build_id;
+
+    if (!buildId) {
+      throw new Error("No build_id found in snapshot.json");
+    }
+
+    console.log(`  Build ID: ${buildId}`);
+
+    // Copy to the Fresh URL structure: _frsh/js/{buildId}/
+    const targetPath = join(DIST_DIR, "_frsh", "js", buildId);
+    await copy("./_fresh", targetPath, { overwrite: true });
+    console.log(`✅ Fresh assets copied to _frsh/js/${buildId}/`);
   } catch (error) {
     console.log(
       "⚠️  No Fresh assets found (this is OK for static sites):",
