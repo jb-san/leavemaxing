@@ -103,7 +103,6 @@ describe("Holiday data generation", () => {
     });
 
     it("no duplicate dates in a single country file", () => {
-      const _countries = readCountries();
       const testCountries = ["US", "GB", "DE", "FR", "SE"];
 
       for (const cc of testCountries) {

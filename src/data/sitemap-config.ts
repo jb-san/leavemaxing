@@ -81,15 +81,16 @@ export function shouldIndexYear(year: number): boolean {
  */
 export function shouldIndexPage(url: string): boolean {
   const match = url.match(/\/([a-z]{2})\/(\d{4})\//);
-  if (match) {
-    const [, cc, yearStr] = match;
+  if (match && match[1] && match[2]) {
+    const cc = match[1];
+    const yearStr = match[2];
     const year = parseInt(yearStr, 10);
     return shouldIndexCountry(cc) && shouldIndexYear(year);
   }
 
   const hubMatch = url.match(/\/([a-z]{2})\/$/);
-  if (hubMatch) {
-    const [, cc] = hubMatch;
+  if (hubMatch && hubMatch[1]) {
+    const cc = hubMatch[1];
     return shouldIndexCountry(cc);
   }
 
