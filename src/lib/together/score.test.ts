@@ -42,6 +42,8 @@ function group(over: Partial<GroupRecord> = {}): GroupRecord {
 }
 
 const today = d(4, 30);
+const today0 = dayNum(2026, 12, 31);
+const twelve = Array.from({ length: 12 }, (_, i) => ({ year: 2027, month: i + 1 }));
 
 function allBut(from: number, to: number): number[] {
   const out: number[] = [];
@@ -69,9 +71,10 @@ describe("costFor", () => {
     expect(costFor(es, d(5, 10), d(5, 16))).toBe(5);
   });
 
-  it("does not charge a blocked day that falls on a weekend", () => {
-    const m = member("a", { blocked: [d(5, 15)] });
-    expect(costFor(m, d(5, 15), d(5, 16))).toBe(0);
+  it("charges a blocked day even on a weekend or holiday", () => {
+    const m = member("a", { blocked: [d(5, 15), d(5, 14)] }, [friHoliday]);
+    expect(costFor(m, d(5, 15), d(5, 16))).toBe(1);
+    expect(costFor(m, d(5, 14), d(5, 14))).toBe(1);
   });
 });
 
@@ -213,12 +216,43 @@ describe("scoreWindows", () => {
     }
   });
 
-  it("scores 20 members over 12 months quickly", () => {
-    const months = Array.from({ length: 12 }, (_, i) => ({ year: 2027, month: i + 1 }));
-    const members = Array.from({ length: 20 }, (_, i) => member(`m${i}`, {}, [friHoliday]));
-    const t0 = performance.now();
-    const { ranked } = scoreWindows(group({ months }), members, dayNum(2026, 12, 31));
-    expect(performance.now() - t0).toBeLessThan(100);
-    expect(ranked.length).toBeGreaterThan(0);
+  it("does not list a blocked holiday as a help", () => {
+    const k = key(10, 16);
+    const a = member("de", { proposals: [k], blocked: [d(5, 14)] }, [friHoliday]);
+    expect(scoreWindows(group(), [a], today).proposals[0]?.helps).toEqual([]);
+  });
+
+  it("keeps ranked full and clear of a proposal that equals the best window", () => {
+    const members = [member("a"), member("b")];
+    const best = scoreWindows(group({ months: twelve }), members, today0).ranked[0];
+    const k = best?.key as WindowKey;
+    const withProposal = [member("a", { proposals: [k] }), member("b")];
+    const { ranked, proposals } = scoreWindows(group({ months: twelve }), withProposal, today0);
+    expect(ranked).toHaveLength(TOP_N);
+    const p = proposals[0];
+    for (const w of ranked) {
+      const overlap = Math.min(w.end, p?.end ?? 0) - Math.max(w.start, p?.start ?? 0) + 1;
+      expect(overlap).toBeLessThanOrEqual(Math.min(w.length, p?.length ?? 0) / 2);
+    }
+  });
+
+  it("scores 20 members over 12 months within budget", () => {
+    const members = Array.from({ length: 20 }, (_, i) => {
+      const holidays = Array.from({ length: 14 }, (_, h) => ({
+        day: dayNum(2027, (h % 12) + 1, 3 + ((h * 7 + i) % 24)),
+        name: `Holiday ${h}`,
+      }));
+      return member(`m${i}`, { allowance: 25 + (i % 5) }, holidays);
+    });
+    const g = group({ months: twelve });
+    const run = () => {
+      const t0 = performance.now();
+      const { ranked } = scoreWindows(g, members, today0);
+      expect(ranked.length).toBeGreaterThan(0);
+      return performance.now() - t0;
+    };
+    run();
+    const times = Array.from({ length: 9 }, run).sort((x, y) => x - y);
+    expect(times[4]).toBeLessThan(12);
   });
 });

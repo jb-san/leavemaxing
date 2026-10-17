@@ -73,7 +73,7 @@ function isOff(m: Days, day: DayNum): boolean {
 }
 
 function isCharged(m: Days, day: DayNum): boolean {
-  return !!m.workWeek[weekdayMon0(day)] && !m.holidays.has(day) && !m.off.has(day);
+  return !isOff(m, day);
 }
 
 function cost(m: Days, start: DayNum, end: DayNum): number {
@@ -156,7 +156,7 @@ export function scoreWindows(group: GroupRecord, members: ScoreMember[], today: 
   const agreed = fromKeys(members, days, agreedKeys);
 
   return {
-    ranked: members.length === 0 ? [] : rank(group, members, days, today, proposed),
+    ranked: members.length === 0 ? [] : rank(group, members, days, today, proposals),
     proposals,
     agreed,
   };
@@ -167,7 +167,7 @@ function rank(
   members: ScoreMember[],
   days: Days[],
   today: DayNum,
-  proposed: Map<WindowKey, string[]>,
+  proposals: ScoredWindow[],
 ): ScoredWindow[] {
   const range = groupRange(group);
   const lo = Math.max(range.start, today + 1);
@@ -191,7 +191,14 @@ function rank(
     offAll[i] = everyoneOff;
   }
 
-  const found = new Map<WindowKey, ScoredWindow>();
+  interface Candidate {
+    a: DayNum;
+    b: DayNum;
+    score: number;
+    costs: number[];
+  }
+  const seen = new Set<number>();
+  const found: Candidate[] = [];
   for (let start = lo; start <= hi; start++) {
     for (let len = group.minLength; len <= group.maxLength; len++) {
       let a = start;
@@ -200,8 +207,9 @@ function rank(
       while (a > lo && offAll[a - 1 - lo]) a--;
       while (b < hi && offAll[b + 1 - lo]) b++;
       if (b - a + 1 > group.maxLength) continue;
-      const k = windowKey(a, b);
-      if (found.has(k)) continue;
+      const id = (a - lo) * 4096 + (b - lo);
+      if (seen.has(id)) continue;
+      seen.add(id);
 
       const ia = a - lo;
       const ib = b - lo + 1;
@@ -217,42 +225,43 @@ function rank(
         }
         costs.push(c);
       }
-      if (!ok) continue;
-
-      const length = b - a + 1;
-      const costMap: Record<string, number> = {};
-      members.forEach((m, j) => {
-        costMap[m.id] = costs[j] as number;
-      });
-      found.set(k, {
-        key: k,
-        start: a,
-        end: b,
-        length,
-        score: formula(length, costs),
-        costs: costMap,
-        flagged: [],
-        helps: helpsFor(members, days, a, b),
-        proposedBy: [],
-      });
+      if (ok) found.push({ a, b, score: formula(b - a + 1, costs), costs });
     }
   }
+  found.sort((x, y) => y.score - x.score || x.a - y.a);
 
-  const sorted = [...found.values()]
-    .filter((w) => !proposed.has(w.key))
-    .sort((x, y) => y.score - x.score || x.start - y.start);
-
-  const kept: ScoredWindow[] = [];
-  for (const w of sorted) {
-    const tooClose = kept.some((k) => {
-      const overlap = Math.min(k.end, w.end) - Math.max(k.start, w.start) + 1;
-      return overlap > Math.min(k.length, w.length) / 2;
+  // Proposals take slots for overlap purposes but are not part of the ranking.
+  const taken = proposals.map((w) => ({ start: w.start, end: w.end, length: w.length }));
+  const kept: Candidate[] = [];
+  for (const w of found) {
+    const length = w.b - w.a + 1;
+    const tooClose = taken.some((k) => {
+      const overlap = Math.min(k.end, w.b) - Math.max(k.start, w.a) + 1;
+      return overlap > Math.min(k.length, length) / 2;
     });
     if (tooClose) continue;
+    taken.push({ start: w.a, end: w.b, length });
     kept.push(w);
     if (kept.length === TOP_N) break;
   }
-  return kept;
+
+  return kept.map((w) => {
+    const costs: Record<string, number> = {};
+    members.forEach((m, j) => {
+      costs[m.id] = w.costs[j] as number;
+    });
+    return {
+      key: windowKey(w.a, w.b),
+      start: w.a,
+      end: w.b,
+      length: w.b - w.a + 1,
+      score: w.score,
+      costs,
+      flagged: [],
+      helps: helpsFor(members, days, w.a, w.b),
+      proposedBy: [],
+    };
+  });
 }
 
 function helpsFor(members: ScoreMember[], days: Days[], start: DayNum, end: DayNum): Helper[] {
@@ -260,7 +269,12 @@ function helpsFor(members: ScoreMember[], days: Days[], start: DayNum, end: DayN
   members.forEach((m, i) => {
     const workWeek = (days[i] as Days).workWeek;
     for (const h of m.holidays) {
-      if (h.day >= start && h.day <= end && workWeek[weekdayMon0(h.day)]) {
+      if (
+        h.day >= start &&
+        h.day <= end &&
+        workWeek[weekdayMon0(h.day)] &&
+        !(days[i] as Days).blocked.has(h.day)
+      ) {
         helps.push({ memberId: m.id, day: h.day, name: h.name });
       }
     }
