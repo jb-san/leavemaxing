@@ -509,6 +509,12 @@ dialog.sheet[open]::backdrop {
 .sheet-grab {
   touch-action: none;
 }
+@media (prefers-reduced-transparency: reduce) {
+  dialog.sheet::backdrop {
+    background: rgb(10 14 20 / 0.6);
+    backdrop-filter: none;
+  }
+}
 
 /* Toasts rise from the bottom edge and sink back into it. */
 .toast {

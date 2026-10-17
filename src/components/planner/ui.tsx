@@ -8,6 +8,16 @@ export function cx(...parts: (string | false | null | undefined)[]): string {
 /** How long a closing sheet stays rendered, so it can animate out (matches global.css). */
 const SHEET_EXIT_MS = 320;
 
+/** Where a flick would come to rest (Apple's scroll-deceleration projection), in px from v px/ms. */
+function project(v: number, decelerationRate = 0.998): number {
+  return (v * decelerationRate) / (1 - decelerationRate);
+}
+
+/** Progressive resistance past an edge: the further you pull, the less it follows. */
+function rubberband(overshoot: number, dimension: number, constant = 0.55): number {
+  return (overshoot * dimension * constant) / (dimension + constant * overshoot);
+}
+
 /**
  * Modal built on <dialog>: a bottom sheet on phones, a centred card or anchored popover on wider screens.
  * On phones the grabber and title row drag the sheet down to dismiss it.
@@ -80,12 +90,14 @@ export function Sheet({
     return () => d?.removeEventListener("close", handler);
   }, []);
 
-  const drag = useRef<{ id: number; y: number; t: number; dy: number } | null>(null);
+  const drag = useRef<{ id: number; y: number; dy: number; samples: { t: number; dy: number }[] } | null>(
+    null,
+  );
   const onGrabDown = (e: React.PointerEvent<HTMLDivElement>) => {
     const d = ref.current;
     if (!d || drag.current || window.innerWidth >= 640) return;
     if ((e.target as HTMLElement).closest("button, a, input, select")) return;
-    drag.current = { id: e.pointerId, y: e.clientY, t: performance.now(), dy: 0 };
+    drag.current = { id: e.pointerId, y: e.clientY, dy: 0, samples: [{ t: e.timeStamp, dy: 0 }] };
     e.currentTarget.setPointerCapture(e.pointerId);
     d.style.transition = "none";
   };
@@ -94,8 +106,10 @@ export function Sheet({
     const g = drag.current;
     if (!d || !g || g.id !== e.pointerId) return;
     const raw = e.clientY - g.y;
-    // Pulling up past the top meets rising resistance instead of a wall.
-    g.dy = raw >= 0 ? raw : -8 * Math.log1p(-raw / 8);
+    // The sheet follows the finger 1:1 downwards and rubber-bands upwards.
+    g.dy = raw >= 0 ? raw : -rubberband(-raw, d.offsetHeight);
+    g.samples.push({ t: e.timeStamp, dy: raw });
+    if (g.samples.length > 6) g.samples.shift();
     d.style.transform = `translateY(${g.dy}px)`;
   };
   const onGrabEnd = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -103,11 +117,26 @@ export function Sheet({
     const g = drag.current;
     if (!d || !g || g.id !== e.pointerId) return;
     drag.current = null;
-    const velocity = g.dy / Math.max(1, performance.now() - g.t);
-    // Clear the drag styles and close in the same frame, so the exit continues from where the finger let go.
-    d.style.transition = "";
+    // Release velocity (px/ms) from the last ~100ms of movement, not the whole drag.
+    const recent = g.samples.filter((s) => e.timeStamp - s.t < 100);
+    const first = recent[0] ?? g.samples[0];
+    const last = g.samples[g.samples.length - 1];
+    const v = first && last && last.t > first.t ? (last.dy - first.dy) / (last.t - first.t) : 0;
+    // Throw the sheet: dismiss if it's still heading down and its projected resting point is past halfway.
+    const h = d.offsetHeight;
+    const dismiss = v >= 0 && g.dy + project(v) > h / 2;
+    // Match the finger's speed: --ease-drawer starts at ~2.25x its average speed.
+    const remaining = dismiss ? h - g.dy : Math.abs(g.dy);
+    const ms = Math.round(
+      Math.min(300, Math.max(120, Math.abs(v) > 0.05 ? (2.25 * remaining) / Math.abs(v) : 300)),
+    );
+    d.style.transition = `transform ${ms}ms var(--ease-drawer), display ${ms}ms allow-discrete, overlay ${ms}ms allow-discrete`;
+    // Clear the drag offset in the same frame as closing, so the exit continues from where the finger let go.
     d.style.transform = "";
-    if (g.dy > d.offsetHeight * 0.3 || (g.dy > 12 && velocity > 0.11)) d.close();
+    if (dismiss) d.close();
+    setTimeout(() => {
+      if (!drag.current) d.style.transition = "";
+    }, ms + 50);
   };
 
   return (
