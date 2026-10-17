@@ -393,7 +393,7 @@ export const locales: Record<string, LocaleConfig> = {
     lang: "pl",
     country: "PL",
     bridgeTerm: "długie weekendy",
-    slug: "dlugie-weekendy",
+    slug: "dlugieweekendy",
     defaultBudget: 20,
     translations: {
       pageTitle: "Długie weekendy {year}: Zamień {leave} dni urlopu na {total} dni wolnych",
