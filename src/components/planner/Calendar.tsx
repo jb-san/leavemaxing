@@ -119,7 +119,7 @@ export function Calendar({ months, kinds, breaks, holidays, today, pop, sundayFi
           {current ? `${MONTHS_LONG[current.month - 1]} ${current.year}` : ""}
           {currentLeave > 0 && (
             <span className="rounded-full bg-lime-soft px-2 py-0.5 font-sans text-xs font-bold">
-              {currentLeave} leave
+              {currentLeave === 1 ? "1 leave day" : `${currentLeave} leave days`}
             </span>
           )}
         </h2>
@@ -233,7 +233,7 @@ const MonthCard = memo(function MonthCard({
         </span>
         {leave > 0 && (
           <span className="rounded-full bg-lime-soft px-2 py-0.5 font-sans text-xs font-bold text-ink">
-            {leave} leave
+            {leave === 1 ? "1 leave day" : `${leave} leave days`}
           </span>
         )}
       </h3>

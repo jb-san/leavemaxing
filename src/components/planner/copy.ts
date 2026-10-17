@@ -1,12 +1,9 @@
-export function quip(multiplier: number, leaveUsed: number, daysOff: number): string {
-  if (leaveUsed === 0) return "No leave planned yet. Add some days and watch them multiply.";
-  if (multiplier >= 3.2) return "Elite leavemaxxing. Frame this calendar.";
-  if (multiplier >= 2.6)
-    return `Every leave day is pulling ${multiplier >= 3 ? "triple" : "double"} duty or more. Legend.`;
-  if (multiplier >= 2)
-    return `${daysOff} days away from your desk. Weekends and holidays are doing the heavy lifting.`;
-  if (multiplier >= 1.6) return "Solid plan. Try “Long weekends” if you want a higher score.";
-  return "Not many holidays to lean on here. Try another style or shorter breaks.";
+export function quip(multiplier: number, leaveUsed: number): string {
+  if (leaveUsed === 0) return "Add leave days in the settings to see where your breaks land.";
+  const ratio = `That's ${multiplier.toFixed(1)} days off for every day of leave.`;
+  if (multiplier >= 2) return `${ratio} Weekends and public holidays make up the rest.`;
+  if (multiplier >= 1.6) return `${ratio} Long weekends usually stretch it further.`;
+  return `${ratio} Few holidays fall on workdays here, so breaks cost more leave.`;
 }
 
 export function plural(n: number, one: string, many = `${one}s`): string {

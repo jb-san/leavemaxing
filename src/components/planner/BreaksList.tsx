@@ -24,14 +24,12 @@ export function BreaksList({ plan, today }: { plan: Plan; today: DayNum }) {
             <li key={b.start} className={cx("flex items-center gap-3 py-3", past && "opacity-50")}>
               <span
                 className={cx(
-                  "grid h-12 w-14 shrink-0 place-items-center rounded-2xl font-display text-lg font-extrabold leading-none",
+                  "flex h-12 w-14 shrink-0 flex-col items-center justify-center rounded-xl leading-none",
                   b.leave > 0 ? "bg-lime text-lime-ink" : "bg-sun-soft text-ink",
                 )}
               >
-                <span className="flex flex-col items-center">
-                  {b.length}
-                  <span className="font-sans text-[10px] font-bold uppercase tracking-wide">days</span>
-                </span>
+                <span className="font-display text-2xl font-extrabold">{b.length}</span>
+                <span className="text-[11px] font-semibold">{b.length === 1 ? "day" : "days"}</span>
               </span>
               <div className="min-w-0 flex-1">
                 <p className="font-bold">
@@ -43,8 +41,8 @@ export function BreaksList({ plan, today }: { plan: Plan; today: DayNum }) {
                   )}
                 </p>
                 <p className="truncate text-sm text-muted">
-                  {b.leave > 0 ? `${plural(b.leave, "leave day")}` : "No leave needed"}
-                  {holidays.length > 0 && ` · ${holidays.join(", ")}`}
+                  {b.leave > 0 ? plural(b.leave, "leave day") : "No leave needed"}
+                  {holidays.length > 0 && `, around ${holidays.join(", ")}`}
                 </p>
               </div>
               {b.leave > 0 && (

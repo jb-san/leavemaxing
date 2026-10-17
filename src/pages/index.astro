@@ -51,55 +51,53 @@ const jsonLd = {
 };
 
 const steps = [
-  { title: "Pick your country", text: "Public holidays for 200+ countries and their regions, built right in." },
-  { title: "Say how many days you have", text: "The planner tries every option and finds the best plan for your style." },
-  { title: "Make it yours", text: "Tap days you've booked or can't take. The plan rebuilds around them." },
-  { title: "Take it with you", text: "Share a link, export to your calendar, or save it in this browser." },
-];
+  { title: "Pick your country", text: "Public holidays for over 200 countries, down to the region." },
+  { title: "Say how many days you have", text: "The planner checks every combination and picks the best one for how you like to take time off." },
+  { title: "Make it yours", text: "Tap days you've already booked or can't take. The plan rebuilds around them." },
+  { title: "Take it with you", text: "Share a link, add the breaks to your calendar, or save the plan in this browser." },
+]
 ---
 
 <Base title="leavemaxxing: turn your leave days into the most time off" description={SITE.description} jsonLd={jsonLd} wide>
-  <div class="flex flex-col gap-3 pb-6 pt-2 sm:flex-row sm:items-end sm:justify-between">
-    <div>
-      <p class="eyebrow">Leave planner</p>
-      <h1 class="mt-1 text-[clamp(30px,4.6vw,52px)] font-extrabold leading-[1.02] tracking-[-0.035em]">
-        Same leave. <span class="text-lime-strong">Way more time off.</span>
-      </h1>
-    </div>
-    <p class="max-w-[42ch] text-muted">
-      We line your leave up with weekends and public holidays, so every day you take buys the most days away.
+  <div class="flex flex-col gap-3 pb-7 pt-3 sm:flex-row sm:items-end sm:justify-between">
+    <h1 class="max-w-[16ch] text-[clamp(34px,5.4vw,64px)] font-extrabold leading-[0.95]">
+      Get the most time off from your leave days
+    </h1>
+    <p class="max-w-[44ch] text-[15px] text-muted sm:pb-1">
+      Pick your country and how many days you have. The planner puts them next to weekends and public holidays, so each
+      one buys a longer break.
     </p>
   </div>
 
   <Planner client:load initial={settings} files={files} today={buildToday} mode="home" years={meta.years} />
 
-  <section aria-labelledby="how" class="mt-14">
-    <h2 id="how" class="text-2xl font-bold">How it works</h2>
-    <ol class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+  <section aria-labelledby="how" class="mt-16">
+    <h2 id="how" class="text-3xl font-extrabold">How it works</h2>
+    <ol class="mt-6 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-4">
       {
         steps.map((s, i) => (
-          <li class="card flex flex-col gap-2 p-5">
-            <span class="grid size-9 place-items-center rounded-full bg-lime font-display font-extrabold text-lime-ink">{i + 1}</span>
-            <h3 class="text-lg font-bold">{s.title}</h3>
-            <p class="text-sm text-muted">{s.text}</p>
+          <li class="flex flex-col gap-1.5">
+            <span class="font-display text-5xl font-black leading-none text-lime-strong" aria-hidden="true">{i + 1}</span>
+            <h3 class="mt-2 text-xl font-bold">{s.title}</h3>
+            <p class="max-w-[34ch] text-sm text-muted">{s.text}</p>
           </li>
         ))
       }
     </ol>
   </section>
 
-  <section aria-labelledby="countries" class="mt-14">
-    <div class="flex items-end justify-between gap-4">
-      <h2 id="countries" class="text-2xl font-bold">Popular countries</h2>
-      <a href={`/best/${year}/`} class="text-sm font-bold underline decoration-lime decoration-[3px] underline-offset-4">See where leave goes furthest</a>
+  <section aria-labelledby="countries" class="mt-16">
+    <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+      <h2 id="countries" class="text-3xl font-extrabold">Popular countries</h2>
+      <a href={`/best/${year}/`} class="text-sm font-semibold underline decoration-lime decoration-2 underline-offset-4">See where leave goes furthest</a>
     </div>
-    <ul class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+    <ul class="mt-5 flex flex-wrap gap-x-6 gap-y-3">
       {
         popular.map((c) => (
           <li>
-            <a href={`/${c.code.toLowerCase()}/${year}/`} class="card flex items-center gap-2.5 px-4 py-3 text-sm font-bold transition-transform hover:-translate-y-0.5">
-              <span class="text-xl leading-none">{c.flag}</span>
-              <span class="truncate">{c.name}</span>
+            <a href={`/${c.code.toLowerCase()}/${year}/`} class="flex items-center gap-2 font-semibold decoration-lime decoration-2 underline-offset-4 hover:underline">
+              <span class="text-lg leading-none" aria-hidden="true">{c.flag}</span>
+              {c.name}
             </a>
           </li>
         ))
@@ -107,15 +105,14 @@ const steps = [
     </ul>
   </section>
 
-  <section class="card mt-14 flex flex-col items-center gap-4 p-8 text-center sm:flex-row sm:text-left">
-    <Mascot size={72} mood="starry" title="" />
-    <div class="flex-1">
-      <h2 class="text-xl font-bold">No accounts. No tracking of your plans.</h2>
-      <p class="mt-1 text-sm text-muted">
-        Everything is worked out in your browser. Saved plans stay on your device, and the app works offline once you've
-        visited.
+  <section aria-labelledby="private" class="mt-16 flex items-start gap-4 border-t border-line pt-8">
+    <Mascot size={48} mood="happy" title="" />
+    <div>
+      <h2 id="private" class="text-xl font-bold">Your plans stay on your device</h2>
+      <p class="mt-1 max-w-[62ch] text-sm text-muted">
+        The planner runs in your browser. There are no accounts, saved plans are kept in this browser, and the app works
+        offline after your first visit. <a href="/about/" class="font-semibold text-ink underline decoration-lime decoration-2 underline-offset-4">How the planner works</a>
       </p>
     </div>
-    <a href="/about/" class="btn btn-soft">How we plan</a>
   </section>
 </Base>

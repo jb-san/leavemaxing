@@ -236,8 +236,8 @@ export default function Compare({ years }: { years: number[] }) {
                       <span className="text-base font-bold text-hero-muted">days off</span>
                     </p>
                     <p className="mt-1 text-sm text-hero-muted">
-                      {plan.stats.multiplier.toFixed(1)}× · {plan.stats.breaksWithLeave} breaks · longest{" "}
-                      {plan.stats.longest}d
+                      {plan.stats.breaksWithLeave} breaks, the longest {plan.stats.longest} days.{" "}
+                      {plan.stats.multiplier.toFixed(1)} days off per leave day.
                     </p>
                   </div>
                   <a href={`${planPath(pick.country, year)}${q ? `?${q}` : ""}`} className="btn btn-soft">

@@ -64,8 +64,7 @@ const jsonLd = {
 <Base title={title} description={description} image={`/og/${code.toLowerCase()}/${ogYear(year)}.png`} jsonLd={jsonLd} hreflangs={hreflangs} wide noindex={noindex}>
   <div class="flex flex-col gap-2 pb-5 pt-2">
     <nav aria-label="Breadcrumb" class="text-sm font-semibold text-muted">
-      <a href="/" class="hover:text-ink">Planner</a> /
-      <a href={`/${code.toLowerCase()}/`} class="hover:text-ink">{country.name}</a> / <span aria-current="page">{year}</span>
+      <a href="/" class="hover:text-ink">Planner</a>{" / "}<a href={`/${code.toLowerCase()}/`} class="hover:text-ink">{country.name}</a>{" / "}<span aria-current="page">{year}</span>
     </nav>
     <h1 class="text-[clamp(28px,4vw,44px)] font-extrabold leading-tight">
       {country.flag} Best days to take off in {country.name} {year}
@@ -91,7 +90,7 @@ const jsonLd = {
                   <span class="text-sm">
                     <span class="block font-bold">{formatRange(b.start, b.end)}</span>
                     <span class="text-muted">
-                      {b.leave} leave → {b.length} days off
+                      {b.leave} leave days for {b.length} days off
                     </span>
                   </span>
                 </li>

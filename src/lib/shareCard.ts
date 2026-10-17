@@ -19,8 +19,8 @@ const C = {
   limeInk: "#1C3300",
   sun: "#FFC83D",
 };
-const DISPLAY = '"Bricolage Grotesque Variable", "Avenir Next", system-ui, sans-serif';
-const BODY = '"Plus Jakarta Sans Variable", "Avenir Next", system-ui, sans-serif';
+const DISPLAY = '"Archivo Variable", "Arial Narrow", system-ui, sans-serif';
+const BODY = '"Archivo Variable", "Helvetica Neue", system-ui, sans-serif';
 
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -57,7 +57,7 @@ export async function drawShareCard(
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
   await Promise.all([
-    document.fonts.load(`800 80px ${DISPLAY}`),
+    document.fonts.load(`800 condensed 80px ${DISPLAY}`),
     document.fonts.load(`600 24px ${BODY}`),
   ]).catch(() => {});
   const { stats } = data.plan;
@@ -76,7 +76,7 @@ export async function drawShareCard(
   const markSize = story ? 96 : 72;
   ctx.drawImage(mascot, pad, pad, markSize, markSize);
   ctx.fillStyle = C.navy;
-  ctx.font = `800 ${story ? 48 : 40}px ${DISPLAY}`;
+  ctx.font = `800 condensed ${story ? 48 : 40}px ${DISPLAY}`;
   ctx.textBaseline = "middle";
   const wordY = pad + markSize / 2 + 4;
   ctx.fillText("leavema", pad + markSize + 20, wordY);
@@ -97,14 +97,14 @@ export async function drawShareCard(
   ctx.textBaseline = "alphabetic";
   ctx.fillStyle = C.muted;
   ctx.font = `600 ${story ? 34 : 26}px ${BODY}`;
-  ctx.fillText(`${data.flag}  ${data.place} · ${data.yearLabel}`, inner, top + (story ? 100 : 76));
+  ctx.fillText(`${data.flag}  ${data.place}, ${data.yearLabel}`, inner, top + (story ? 100 : 76));
 
   const bigSize = story ? 112 : 76;
-  ctx.font = `800 ${bigSize}px ${DISPLAY}`;
-  ctx.fillStyle = C.ink;
-  const line1Y = top + (story ? 100 : 76) + bigSize * 1.15;
-  ctx.fillText(`${stats.leaveUsed} days of leave →`, inner, line1Y);
+  ctx.font = `800 condensed ${bigSize}px ${DISPLAY}`;
   ctx.fillStyle = C.lime;
+  const line1Y = top + (story ? 100 : 76) + bigSize * 1.15;
+  ctx.fillText(`${stats.leaveUsed} leave ${stats.leaveUsed === 1 ? "day" : "days"} become`, inner, line1Y);
+  ctx.fillStyle = C.ink;
   ctx.fillText(`${stats.daysOff} days off`, inner, line1Y + bigSize * 1.05);
 
   // Multiplier badge
@@ -122,7 +122,7 @@ export async function drawShareCard(
   ctx.fillStyle = C.limeInk;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.font = `800 ${story ? 84 : 62}px ${DISPLAY}`;
+  ctx.font = `800 condensed ${story ? 84 : 62}px ${DISPLAY}`;
   ctx.fillText(`${stats.multiplier.toFixed(1)}×`, cx, cy + 4);
   ctx.textAlign = "left";
 

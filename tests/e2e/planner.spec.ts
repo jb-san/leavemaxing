@@ -22,13 +22,13 @@ test("home page plans without errors", async ({ page }) => {
 
 test("a shared link restores the plan", async ({ page }) => {
   await page.goto("/de/2027/?r=BY&d=14&s=weekends");
-  await expect(hero(page)).toContainText("14 days of leave");
+  await expect(hero(page)).toContainText("14 leave days");
   await expect(page.getByText("Your 2027 in Bayern")).toBeVisible();
 });
 
 test("locking a day updates the plan and the link", async ({ page, isMobile }) => {
   await page.goto("/de/2027/?d=10");
-  await expect(hero(page)).toContainText("10 days of leave");
+  await expect(hero(page)).toContainText("10 leave days");
   if (isMobile) {
     // Phones show one month at a time; jump to July.
     for (let i = 0; i < 6; i++) await page.getByRole("button", { name: "Next month" }).click();

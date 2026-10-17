@@ -2,7 +2,7 @@ import { Bookmark, CalendarPlus, Share2, TriangleAlert } from "lucide-react";
 import { Mascot, moodFor } from "~/components/Mascot";
 import { type DayNum, formatRange, MONTHS_SHORT, parts } from "~/lib/dates";
 import type { Plan } from "~/lib/planner/types";
-import { countdown, quip } from "./copy";
+import { countdown, plural, quip } from "./copy";
 import { cx, Tick } from "./ui";
 
 export function HeroCard({
@@ -41,76 +41,55 @@ export function HeroCard({
     <section
       aria-label="Your plan"
       className={cx(
-        "relative overflow-hidden rounded-[var(--radius-hero)] bg-hero p-5 text-hero-ink sm:p-7",
+        "rounded-[var(--radius-hero)] bg-hero p-5 text-hero-ink transition-opacity sm:p-7",
         loading && "opacity-90",
       )}
     >
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -right-16 -top-20 size-72 rounded-full bg-[radial-gradient(circle,rgb(139_209_47/0.28),transparent_65%)]"
-      />
-      <div className="relative flex flex-col gap-5">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 gap-y-2">
-          <p className="col-start-1 row-start-1 flex min-w-0 items-center gap-2 self-center text-sm font-semibold text-hero-muted">
-            <span key={mood} className="swap-pop">
-              <Mascot size={26} mood={mood} title="" blink />
+      <div className="flex flex-col gap-5">
+        <p className="flex min-w-0 items-center gap-2 text-sm font-semibold text-hero-muted">
+          <span key={mood} className="swap-pop">
+            <Mascot size={26} mood={mood} title="" blink />
+          </span>
+          <span className="truncate">
+            Your {yearLabel} in {place}
+          </span>
+          {loading && (
+            <span className="size-2 shrink-0 animate-pulse rounded-full bg-lime">
+              <span className="sr-only">Updating</span>
             </span>
-            <span className="truncate">
-              Your {yearLabel} in {place}
-            </span>
-            {loading && (
-              <span className="size-2 shrink-0 animate-pulse rounded-full bg-lime">
-                <span className="sr-only">Updating</span>
-              </span>
-            )}
-          </p>
-          <div
-            className="col-start-2 row-start-1 grid size-16 place-items-center rounded-full bg-lime text-lime-ink shadow-[0_0_0_6px_rgb(139_209_47/0.15)] sm:row-span-3 sm:size-24 sm:shadow-[0_0_0_8px_rgb(139_209_47/0.15)]"
-            title="Days off per leave day"
-          >
-            <span className="font-display text-xl font-extrabold tracking-[-0.03em] sm:text-[30px]">
-              <Tick>{stats.multiplier ? `${stats.multiplier.toFixed(1)}×` : "–"}</Tick>
-            </span>
-          </div>
+          )}
+        </p>
+        <div className="flex flex-col gap-2">
           <p
-            className="col-span-2 font-display text-[clamp(28px,4.6vw,48px)] font-extrabold leading-[1.04] tracking-[-0.035em] sm:col-span-1"
+            className="font-display text-[clamp(40px,6.4vw,76px)] font-extrabold leading-[0.92] [font-stretch:72%]"
             aria-live="polite"
           >
             {stats.leaveUsed > 0 ? (
               <>
-                <span className="whitespace-nowrap">
-                  <Tick>{stats.leaveUsed}</Tick> {stats.leaveUsed === 1 ? "day" : "days"} of leave →
-                </span>
-                <br />
                 <span className="text-lime">
-                  <Tick>{stats.daysOff}</Tick> days off
-                </span>
+                  <Tick>{stats.leaveUsed}</Tick> leave {stats.leaveUsed === 1 ? "day" : "days"}
+                </span>{" "}
+                <span className="font-semibold text-hero-muted">become</span> <br />
+                <Tick>{stats.daysOff}</Tick> days off
               </>
             ) : (
-              <>
-                Ready when you are.
-                <br />
-                <span className="text-lime">Add leave days.</span>
-              </>
+              <>No leave planned yet</>
             )}
           </p>
-          <p className="col-span-2 max-w-[52ch] text-sm text-hero-muted sm:col-span-1">
-            {quip(stats.multiplier, stats.leaveUsed, stats.daysOff)}
+          <p className="max-w-[52ch] text-[15px] text-hero-muted">
+            {quip(stats.multiplier, stats.leaveUsed)}
           </p>
         </div>
 
         <BudgetDots used={stats.leaveUsed} budget={budget} />
         <YearStrip plan={plan} range={range} />
 
-        <dl className="flex flex-wrap gap-2.5">
+        <dl className="grid grid-cols-[auto_auto_minmax(0,1fr)] gap-x-8 gap-y-1 border-t border-hero-line pt-4">
+          <Stat label="Breaks" value={String(stats.breaksWithLeave)} />
+          <Stat label="Longest" value={stats.longest ? plural(stats.longest, "day") : "None"} />
           <Stat
-            value={String(stats.breaksWithLeave)}
-            label={stats.breaksWithLeave === 1 ? "break" : "breaks"}
-          />
-          <Stat value={stats.longest ? `${stats.longest}d` : "–"} label="longest break" />
-          <Stat
-            value={next ? formatRange(next.start, next.end) : "–"}
-            label={next ? `next break, ${nextLabel}` : "next break"}
+            label={next ? `Next, ${nextLabel}` : "Next break"}
+            value={next ? formatRange(next.start, next.end) : "None left"}
           />
         </dl>
 
@@ -143,12 +122,9 @@ export function HeroCard({
 
 function Stat({ value, label }: { value: string; label: string }) {
   return (
-    <div className="min-w-[104px] rounded-[18px] border border-hero-line bg-white/5 px-3.5 py-2.5">
-      <dt className="sr-only">{label}</dt>
-      <dd className="font-display text-xl font-bold tabular-nums">{value}</dd>
-      <dd className="text-xs text-hero-muted" aria-hidden="true">
-        {label}
-      </dd>
+    <div className="flex min-w-0 flex-col">
+      <dt className="truncate text-[13px] text-hero-muted">{label}</dt>
+      <dd className="truncate font-display text-2xl font-extrabold">{value}</dd>
     </div>
   );
 }
@@ -165,7 +141,7 @@ function BudgetDots({ used, budget }: { used: number; budget: number }) {
           />
         </div>
         <span className="text-xs font-semibold text-hero-muted">
-          {used} / {budget} used
+          {used} of {budget} used
         </span>
       </div>
     );
@@ -179,8 +155,8 @@ function BudgetDots({ used, budget }: { used: number; budget: number }) {
           className={cx("size-2.5 rounded-full transition-colors", i < used ? "bg-lime" : "bg-hero-line")}
         />
       ))}
-      <span className="ml-1.5 text-xs font-semibold text-hero-muted">
-        {used} / {budget} used
+      <span className="ml-1 text-xs font-semibold text-hero-muted">
+        {used} of {budget} used
       </span>
     </div>
   );

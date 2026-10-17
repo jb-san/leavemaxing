@@ -9,24 +9,24 @@ import type { Plan } from "./planner/types";
 const require = createRequire(import.meta.url);
 const font = (pkg: string, file: string) => readFileSync(require.resolve(`${pkg}/files/${file}`));
 
-let fonts: { name: string; data: Buffer; weight: 500 | 700 | 800; style: "normal" }[] | null = null;
+let fonts: { name: string; data: Buffer; weight: 500 | 700; style: "normal" }[] | null = null;
 function loadFonts() {
   fonts ??= [
     {
-      name: "Bricolage",
-      data: font("@fontsource/bricolage-grotesque", "bricolage-grotesque-latin-800-normal.woff"),
-      weight: 800,
+      name: "Display",
+      data: font("@fontsource/archivo-narrow", "archivo-narrow-latin-700-normal.woff"),
+      weight: 700,
       style: "normal",
     },
     {
-      name: "Jakarta",
-      data: font("@fontsource/plus-jakarta-sans", "plus-jakarta-sans-latin-500-normal.woff"),
+      name: "Body",
+      data: font("@fontsource/archivo", "archivo-latin-500-normal.woff"),
       weight: 500,
       style: "normal",
     },
     {
-      name: "Jakarta",
-      data: font("@fontsource/plus-jakarta-sans", "plus-jakarta-sans-latin-700-normal.woff"),
+      name: "Body",
+      data: font("@fontsource/archivo", "archivo-latin-700-normal.woff"),
       weight: 700,
       style: "normal",
     },
@@ -112,7 +112,7 @@ export async function renderOg({ title, subtitle, plan, range }: OgInput): Promi
       background: C.bg,
       padding: 56,
       flexDirection: "column",
-      fontFamily: "Jakarta",
+      fontFamily: "Body",
     },
     h(
       "div",
@@ -123,7 +123,7 @@ export async function renderOg({ title, subtitle, plan, range }: OgInput): Promi
         { type: "img", props: { src: mascot, width: 72, height: 72 } },
         h(
           "div",
-          { fontFamily: "Bricolage", fontSize: 40, color: C.navy },
+          { fontFamily: "Display", fontSize: 40, color: C.navy },
           "leavema",
           h("span", { color: "#4F8A0E" }, "xx"),
           "ing",
@@ -153,19 +153,19 @@ export async function renderOg({ title, subtitle, plan, range }: OgInput): Promi
           h("div", { fontSize: 28, fontWeight: 700, color: C.muted }, subtitle),
           h(
             "div",
-            { fontFamily: "Bricolage", fontSize: 60, lineHeight: 1.05, color: C.ink, marginTop: 10 },
+            { fontFamily: "Display", fontSize: 60, lineHeight: 1.05, color: C.ink, marginTop: 10 },
             title,
           ),
           plan
             ? h(
                 "div",
-                { fontFamily: "Bricolage", fontSize: 60, lineHeight: 1.05, color: C.lime, marginTop: 6 },
-                `${plan.stats.leaveUsed} leave days, ${plan.stats.daysOff} days off`,
+                { fontFamily: "Display", fontSize: 60, lineHeight: 1.05, color: C.lime, marginTop: 6 },
+                `${plan.stats.leaveUsed} leave ${plan.stats.leaveUsed === 1 ? "day" : "days"}, ${plan.stats.daysOff} days off`,
               )
             : h(
                 "div",
-                { fontFamily: "Bricolage", fontSize: 60, lineHeight: 1.05, color: C.lime, marginTop: 6 },
-                "Way more time off.",
+                { fontFamily: "Display", fontSize: 60, lineHeight: 1.05, color: C.lime, marginTop: 6 },
+                "Get the most from your leave.",
               ),
         ),
         plan
@@ -179,7 +179,7 @@ export async function renderOg({ title, subtitle, plan, range }: OgInput): Promi
                 color: C.limeInk,
                 alignItems: "center",
                 justifyContent: "center",
-                fontFamily: "Bricolage",
+                fontFamily: "Display",
                 fontSize: 56,
                 boxShadow: "0 0 0 14px rgba(139,209,47,0.18)",
               },

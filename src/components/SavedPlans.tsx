@@ -75,14 +75,16 @@ export default function SavedPlans() {
                   <h2 className="truncate text-lg font-bold">{p.name}</h2>
                 )}
                 <p className="text-sm text-muted">
-                  {c?.flag} {p.summary.place} · {p.summary.yearLabel}
+                  {c?.flag} {p.summary.place}, {p.summary.yearLabel}
                 </p>
               </div>
             </div>
             <div className="flex items-end justify-between rounded-2xl bg-hero p-4 text-hero-ink">
               <div>
                 <p className="font-display text-2xl font-extrabold leading-tight">
-                  {p.summary.leaveUsed} → <span className="text-lime">{p.summary.daysOff} days off</span>
+                  <span className="text-lime">{p.summary.leaveUsed} leave days</span>
+                  <br />
+                  {p.summary.daysOff} days off
                 </p>
                 <p className="text-xs text-hero-muted">Saved {new Date(p.savedAt).toLocaleDateString()}</p>
               </div>

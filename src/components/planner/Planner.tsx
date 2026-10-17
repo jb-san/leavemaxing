@@ -304,10 +304,11 @@ export default function Planner(props: PlannerProps) {
             {country?.flag ?? "🌍"}
           </span>
           <span className="flex min-w-0 flex-1 flex-col">
-            <span className="eyebrow text-[11px]">Planning for</span>
-            <span className="truncate font-display text-lg font-bold leading-tight">{place}</span>
-            <span className="truncate text-sm font-semibold text-muted">
-              {yearLabel} · {plural(settings.budget, "day")} · {styleLabel}
+            <span className="truncate font-display text-xl font-extrabold leading-tight">
+              {place}, {yearLabel}
+            </span>
+            <span className="truncate text-sm text-muted">
+              {plural(settings.budget, "leave day")}, {styleLabel?.toLowerCase()}
             </span>
           </span>
           <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-lime px-3.5 py-2 text-sm font-bold text-lime-ink">
@@ -367,7 +368,7 @@ export default function Planner(props: PlannerProps) {
         type="button"
         onClick={() => setDialog("settings")}
         aria-label="Plan settings"
-        className="fixed bottom-[max(20px,env(safe-area-inset-bottom))] right-[max(20px,env(safe-area-inset-right))] z-30 grid size-16 place-items-center rounded-full bg-lime text-lime-ink shadow-[0_12px_28px_-8px_rgb(139_209_47/0.8)] transition-transform duration-150 ease-[var(--ease-out)] active:scale-[0.94] lg:hidden"
+        className="fixed bottom-[max(20px,env(safe-area-inset-bottom))] right-[max(20px,env(safe-area-inset-right))] z-30 grid size-16 place-items-center rounded-full bg-lime text-lime-ink shadow-lift transition-transform duration-150 ease-[var(--ease-out)] active:scale-[0.94] lg:hidden"
       >
         <SlidersHorizontal size={26} />
       </button>
