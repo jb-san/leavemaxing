@@ -130,13 +130,15 @@ const supportedCountryCodes = new Set([
 
 // Helper: Check localStorage safely (for SSR compatibility)
 function getInitialDarkMode() {
-  if (typeof window !== "undefined" && window.localStorage) {
-    const storedPref = window.localStorage.getItem("darkMode");
+  if (typeof globalThis !== "undefined" && globalThis.localStorage) {
+    const storedPref = globalThis.localStorage.getItem("darkMode");
     if (storedPref) {
       return storedPref === "true";
     }
-    // Check system preference if no stored preference
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+    // Check system preference if no stored preference (only in browser)
+    if (globalThis.matchMedia) {
+      return globalThis.matchMedia("(prefers-color-scheme: dark)").matches;
+    }
   }
   return false; // Default to light mode on server or if localStorage unavailable
 }
@@ -153,7 +155,7 @@ export default function LeaveCalculator() {
   const isLoadingHolidays = useSignal(false); // Renamed for clarity
   const isCalculating = useSignal(false); // New signal for calculation state
   const error = useSignal<string | null>(null);
-  const darkMode = useSignal<boolean>(getInitialDarkMode());
+  const _darkMode = useSignal<boolean>(getInitialDarkMode());
 
   // Effect to apply dark class and save preference
   // effect(() => {
@@ -352,6 +354,7 @@ export default function LeaveCalculator() {
 
       <div class="mb-6 flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-4">
         <button
+          type="button"
           onClick={handleCalculateClick}
           disabled={isLoadingHolidays.value || isCalculating.value ||
             !holidays.value}

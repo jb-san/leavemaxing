@@ -1,0 +1,11 @@
+{
+  "name": "leavemaxing",
+  "version": "1.0.0",
+  "description": "LeaveMaxing - Maximize Your Vacation Days",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "deno task start",
+    "build": "deno task export"
+  }
+}

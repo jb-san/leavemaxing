@@ -46,6 +46,7 @@ export function getAllFreeDays(year: number, holidays: Holiday[]): Set<string> {
   const startDate = new Date(Date.UTC(year, 0, 1));
   const endDate = new Date(Date.UTC(year, 11, 31));
 
+  // deno-lint-ignore prefer-const
   for (let d = startDate; d <= endDate; d.setUTCDate(d.getUTCDate() + 1)) {
     const dateString = formatDate(new Date(d)); // Create new Date object from timestamp
     if (isWeekend(d) || holidayDates.has(dateString)) {
@@ -66,6 +67,7 @@ export function getWorkdays(year: number, freeDaysSet: Set<string>): string[] {
   const startDate = new Date(Date.UTC(year, 0, 1));
   const endDate = new Date(Date.UTC(year, 11, 31));
 
+  // deno-lint-ignore prefer-const
   for (let d = startDate; d <= endDate; d.setUTCDate(d.getUTCDate() + 1)) {
     const dateString = formatDate(new Date(d)); // Create new Date object
     if (!freeDaysSet.has(dateString)) {

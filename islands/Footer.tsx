@@ -1,10 +1,3 @@
-// Remove useState and useEffect imports if no longer needed
-// import { useEffect, useState } from "preact/hooks";
-
-// Simple Sun/Moon Icons (can be replaced with SVGs)
-const SunIcon = () => <span>☀️</span>;
-const MoonIcon = () => <span>🌙</span>;
-
 export default function FooterIsland() {
   // Remove theme state, effect, and toggle function
   // const [theme, setTheme] = useState("light");
