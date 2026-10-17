@@ -19,7 +19,7 @@ test-results/
 playwright-report/
 
 .DS_Store
-.shot.mjs
+.shot*.mjs
 .interact.mjs
 .interact2.mjs
 .dbg.mjs
