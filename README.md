@@ -85,7 +85,7 @@ deno task check
 The site automatically deploys to
 [Cloudflare Pages](https://pages.cloudflare.com/) via GitHub Actions:
 
-- **Production**: Deploys to `leavemaxing.com` on push to `main`
+- **Production**: Deploys to `leavemaxxing.com` on push to `main`
 - **Preview**: Deploys preview URLs for pull requests
 
 ### Initial Cloudflare Pages Setup
@@ -113,7 +113,7 @@ If you're setting up deployment for the first time:
 
 4. **Configure custom domain** (optional):
    - In Cloudflare Pages project settings → Custom domains
-   - Add `leavemaxing.com` (or your domain)
+   - Add `leavemaxxing.com` (or your domain)
    - Follow DNS setup instructions
 
 ### Manual Deployment

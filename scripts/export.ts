@@ -3,7 +3,7 @@ import { join } from "$std/path/mod.ts";
 import { copy } from "$std/fs/copy.ts";
 
 const DIST_DIR = "./dist";
-const BASE_URL = "https://leavemaxing.com";
+const BASE_URL = "https://leavemaxxing.com";
 const PORT = 8001;
 
 const PAGES = [

@@ -35,7 +35,7 @@ export default function App({ Component }: PageProps) {
         {/* Plausible Analytics Script */}
         <script
           defer
-          data-domain="leavemaxing.com"
+          data-domain="leavemaxxing.com"
           src="https://plausible.io/js/script.js"
         >
         </script>
