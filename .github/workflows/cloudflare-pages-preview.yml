@@ -74,9 +74,11 @@ jobs:
         if: steps.check-secrets.outputs.secrets_available == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           # Trim whitespace from token
           export CLOUDFLARE_API_TOKEN="$(echo -n "$CLOUDFLARE_API_TOKEN" | tr -d '[:space:]')"
+          export CLOUDFLARE_ACCOUNT_ID="$(echo -n "$CLOUDFLARE_ACCOUNT_ID" | tr -d '[:space:]')"
           wrangler pages deploy dist \
             --project-name=leavemaxing \
             --branch=${{ github.head_ref }} \
