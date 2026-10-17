@@ -1,8 +1,9 @@
-import { type SubmitEvent, useId, useMemo, useState } from "react";
+import { type SubmitEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Mascot } from "~/components/Mascot";
 import { Stepper, Toasts, useToasts } from "~/components/planner/ui";
 import { MONTHS_LONG } from "~/lib/dates";
 import { newGroup } from "~/lib/together/link";
+import { limitToMonths } from "~/lib/together/member";
 import { type GroupRecord, LIMITS, type MemberRecord } from "~/lib/together/protocol";
 import { GroupSession } from "~/lib/together/session";
 import { t } from "./copy";
@@ -45,6 +46,14 @@ export function CreateGroup({ onCreated }: { onCreated: (session: GroupSession) 
   const { toasts, push } = useToasts();
   const months = useMemo(() => options.slice(from, to + 1), [options, from, to]);
   const lastTo = Math.min(options.length - 1, from + MAX_SPAN);
+  // A link opened while the group is being created wins; the finished create must not take over.
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   const submit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -54,11 +63,16 @@ export function CreateGroup({ onCreated }: { onCreated: (session: GroupSession) 
     const session = new GroupSession(link);
     const group: GroupRecord = { name: name.trim(), months, minLength, maxLength, createdBy: "" };
     try {
-      await session.create(group, { ...me, name: me.name.trim() });
+      await session.create(group, limitToMonths({ ...me, name: me.name.trim() }, months));
     } catch {
       session.close();
+      if (!mounted.current) return;
       setBusy(false);
       push(t.createFailed, "warn");
+      return;
+    }
+    if (!mounted.current) {
+      session.close();
       return;
     }
     track("together_create");

@@ -40,7 +40,7 @@ export function windowKey(start: DayNum, end: DayNum): WindowKey {
   return `${toIso(start)}..${toIso(end)}`;
 }
 
-export function groupRange(g: GroupRecord): { start: DayNum; end: DayNum } {
+export function groupRange(g: Pick<GroupRecord, "months">): { start: DayNum; end: DayNum } {
   let start = Infinity;
   let end = -Infinity;
   for (const { year, month } of g.months) {

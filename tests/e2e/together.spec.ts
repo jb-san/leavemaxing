@@ -1,6 +1,11 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 
+// Keep test runs out of the real analytics.
+test.beforeEach(async ({ context }) => {
+  await context.route("**/analytics.vril.tech/**", (r) => r.abort());
+});
+
 async function createGroup(page: Page) {
   await page.goto("/together/");
   await page.getByLabel("Trip name").fill("Lisbon 2027");
@@ -20,6 +25,40 @@ test("create shows an invite QR", async ({ page }) => {
   await expect(page.getByRole("img", { name: /Scan to join Lisbon 2027/ })).toBeVisible();
   await expect.poll(() => new URL(page.url()).hash.slice(1).split(".").length).toBeGreaterThanOrEqual(4);
   expect(new URL(page.url()).hash.slice(1).split(".").length).toBeLessThanOrEqual(5);
+});
+
+test("the skip link doesn't reset the create form", async ({ page, isMobile }) => {
+  test.skip(isMobile, "the skip link is for keyboards");
+  await page.goto("/together/");
+  await page.keyboard.press("Tab");
+  const skip = page.getByRole("link", { name: "Skip to content" });
+  await expect(skip).toBeFocused();
+  await page.getByLabel("Trip name").fill("Lisbon 2027");
+  await skip.focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/#main$/);
+  await expect(page.getByLabel("Trip name")).toHaveValue("Lisbon 2027");
+});
+
+test("a hash that isn't a group link shows the create form", async ({ page }) => {
+  await page.goto("/together/#main");
+  await expect(page.getByLabel("Trip name")).toBeVisible();
+});
+
+test("closing the invite returns focus to the Invite button", async ({ page }) => {
+  await createGroup(page);
+  await expect(page.getByRole("img", { name: /Scan to join Lisbon 2027/ })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button", { name: "Invite", exact: true })).toBeFocused();
+});
+
+test("links and QR codes are hidden from session replay", async ({ page }) => {
+  await createGroup(page);
+  const sheet = page.getByRole("dialog");
+  await expect(sheet.getByRole("img", { name: /Scan to join/ }).locator("xpath=..")).toHaveClass(
+    /\brr-block\b/,
+  );
+  await expect(sheet.getByLabel("Link")).toHaveClass(/\brr-block\b/);
 });
 
 test("tapping a day blocks it and tapping again frees it", async ({ page }) => {

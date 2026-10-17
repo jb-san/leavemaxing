@@ -59,7 +59,8 @@ export function ShareSheet({
       <figure className="flex flex-col items-center gap-3">
         <div
           className={cx(
-            "w-full max-w-[280px] rounded-[24px] border-2 p-2 dark:bg-hero-ink",
+            // rr-block: session replay, if it's ever turned on, must never record a link or its QR.
+            "rr-block w-full max-w-[280px] rounded-[24px] border-2 p-2 dark:bg-hero-ink",
             warning ? "border-dashed border-sun" : "border-line",
           )}
         >
@@ -88,7 +89,7 @@ export function ShareSheet({
           readOnly
           value={url}
           onFocus={(e) => e.currentTarget.select()}
-          className="input min-w-0 sm:text-sm"
+          className="rr-block input min-w-0 sm:text-sm"
         />
       </div>
       <div className="grid gap-2 sm:auto-cols-fr sm:grid-flow-col">
