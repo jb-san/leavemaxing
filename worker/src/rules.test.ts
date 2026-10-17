@@ -5,6 +5,7 @@ import {
   applyRemove,
   emptyRoom,
   expiresAt,
+  markDeleted,
   parseClientMsg,
   type Room,
   rate,
@@ -18,7 +19,13 @@ function env(kind: "group" | "member", id: string, version = 1, data = "x"): Env
 }
 
 async function groupPut(secret: string, version = 1, until?: string): Promise<PutMsg> {
-  return { t: "put", env: env("group", "g", version), secret, secretHash: await hashSecret(secret), until };
+  return {
+    t: "put",
+    env: env("group", "group", version),
+    secret,
+    secretHash: await hashSecret(secret),
+    until,
+  };
 }
 
 async function memberPut(id: string, secret: string, version = 1, withHash = true): Promise<PutMsg> {
@@ -50,7 +57,7 @@ describe("applyPut", () => {
     const out = await applyPut(room, await groupPut("admin", 1, "2027-03-31"), 5);
     expect(out.ok).toBe(true);
     if (out.ok) {
-      expect(out.broadcast).toEqual({ t: "update", env: env("group", "g", 1) });
+      expect(out.broadcast).toEqual({ t: "update", env: env("group", "group", 1) });
       expect(out.dirty).toEqual(expect.arrayContaining(["group", "admin", "until", "lastWrite"]));
     }
     expect(room.adminHash).toBe(await hashSecret("admin"));
@@ -72,35 +79,40 @@ describe("applyPut", () => {
     const room = await roomWithGroup();
     const bad = await applyPut(room, { ...(await groupPut("nope", 2)) }, 0);
     expect(bad).toEqual({ ok: false, reply: { t: "error", code: "auth" } });
-    const good = await applyPut(room, { t: "put", env: env("group", "g", 2), secret: "admin" }, 0);
+    const good = await applyPut(room, { t: "put", env: env("group", "group", 2), secret: "admin" }, 0);
     expect(good.ok).toBe(true);
   });
 
   it("stores until when present and keeps it otherwise", async () => {
     const room = await roomWithGroup();
-    await applyPut(room, { t: "put", env: env("group", "g", 2), secret: "admin", until: "2027-05-31" }, 0);
+    await applyPut(
+      room,
+      { t: "put", env: env("group", "group", 2), secret: "admin", until: "2027-05-31" },
+      0,
+    );
     expect(room.until).toBe("2027-05-31");
-    await applyPut(room, { t: "put", env: env("group", "g", 3), secret: "admin" }, 0);
+    await applyPut(room, { t: "put", env: env("group", "group", 3), secret: "admin" }, 0);
     expect(room.until).toBe("2027-05-31");
   });
 
   it("returns gone for a member put with no group", async () => {
-    const out = await applyPut(emptyRoom(), await memberPut("m1", "s1"), 0);
+    const out = await applyPut(emptyRoom(), await memberPut("m1xxxxxx", "s1"), 0);
     expect(out).toEqual({ ok: false, reply: { t: "error", code: "gone" } });
   });
 
   it("registers a new member with a matching secretHash", async () => {
     const room = await roomWithGroup();
-    const out = await applyPut(room, await memberPut("m1", "s1"), 7);
+    const out = await applyPut(room, await memberPut("m1xxxxxx", "s1"), 7);
     expect(out.ok).toBe(true);
-    if (out.ok) expect(out.dirty).toEqual(expect.arrayContaining(["member:m1", "hash:m1", "lastWrite"]));
-    expect(room.hashes.get("m1")).toBe(await hashSecret("s1"));
+    if (out.ok)
+      expect(out.dirty).toEqual(expect.arrayContaining(["member:m1xxxxxx", "hash:m1xxxxxx", "lastWrite"]));
+    expect(room.hashes.get("m1xxxxxx")).toBe(await hashSecret("s1"));
   });
 
   it("rejects an unknown member without a matching secretHash", async () => {
     const room = await roomWithGroup();
-    const missing = await memberPut("m1", "s1", 1, false);
-    const wrong = { ...(await memberPut("m1", "s1")), secretHash: await hashSecret("other") };
+    const missing = await memberPut("m1xxxxxx", "s1", 1, false);
+    const wrong = { ...(await memberPut("m1xxxxxx", "s1")), secretHash: await hashSecret("other") };
     for (const msg of [missing, wrong]) {
       expect(await applyPut(room, msg, 0)).toEqual({ ok: false, reply: { t: "error", code: "auth" } });
     }
@@ -109,90 +121,94 @@ describe("applyPut", () => {
 
   it("requires the stored secret for a known member", async () => {
     const room = await roomWithGroup();
-    await applyPut(room, await memberPut("m1", "s1"), 0);
-    const bad = await applyPut(room, { t: "put", env: env("member", "m1", 2), secret: "other" }, 0);
+    await applyPut(room, await memberPut("m1xxxxxx", "s1"), 0);
+    const bad = await applyPut(room, { t: "put", env: env("member", "m1xxxxxx", 2), secret: "other" }, 0);
     expect(bad).toEqual({ ok: false, reply: { t: "error", code: "auth" } });
-    const good = await applyPut(room, { t: "put", env: env("member", "m1", 2), secret: "s1" }, 0);
+    const good = await applyPut(room, { t: "put", env: env("member", "m1xxxxxx", 2), secret: "s1" }, 0);
     expect(good.ok).toBe(true);
   });
 
   it("returns limit when the group is full", async () => {
     const room = await roomWithGroup();
     for (let i = 0; i < LIMITS.members; i++) {
-      expect((await applyPut(room, await memberPut(`m${i}`, `s${i}`), 0)).ok).toBe(true);
+      expect((await applyPut(room, await memberPut(`m${i}`.padEnd(8, "x"), `s${i}`), 0)).ok).toBe(true);
     }
-    const out = await applyPut(room, await memberPut("extra", "sx"), 0);
+    const out = await applyPut(room, await memberPut("extra123", "sx"), 0);
     expect(out).toEqual({ ok: false, reply: { t: "error", code: "limit" } });
-    expect((await applyPut(room, { t: "put", env: env("member", "m0", 2), secret: "s0" }, 0)).ok).toBe(true);
+    expect((await applyPut(room, { t: "put", env: env("member", "m0xxxxxx", 2), secret: "s0" }, 0)).ok).toBe(
+      true,
+    );
   });
 
   it("returns stale for a version at or below the stored one", async () => {
     const room = await roomWithGroup();
-    await applyPut(room, await memberPut("m1", "s1", 5), 0);
+    await applyPut(room, await memberPut("m1xxxxxx", "s1", 5), 0);
     for (const v of [5, 4]) {
-      const out = await applyPut(room, { t: "put", env: env("member", "m1", v), secret: "s1" }, 0);
-      expect(out).toEqual({ ok: false, reply: { t: "error", code: "stale", id: "m1", version: 5 } });
+      const out = await applyPut(room, { t: "put", env: env("member", "m1xxxxxx", v), secret: "s1" }, 0);
+      expect(out).toEqual({ ok: false, reply: { t: "error", code: "stale", id: "m1xxxxxx", version: 5 } });
     }
-    const group = await applyPut(room, { t: "put", env: env("group", "g", 1), secret: "admin" }, 0);
-    expect(group).toEqual({ ok: false, reply: { t: "error", code: "stale", id: "g", version: 1 } });
+    const group = await applyPut(room, { t: "put", env: env("group", "group", 1), secret: "admin" }, 0);
+    expect(group).toEqual({ ok: false, reply: { t: "error", code: "stale", id: "group", version: 1 } });
   });
 
   it("does not reveal versions to a caller without the secret", async () => {
     const room = await roomWithGroup();
-    const out = await applyPut(room, { t: "put", env: env("group", "g", 1), secret: "nope" }, 0);
+    const out = await applyPut(room, { t: "put", env: env("group", "group", 1), secret: "nope" }, 0);
     expect(out).toEqual({ ok: false, reply: { t: "error", code: "auth" } });
   });
 
   it("rejects a removed id and never re-registers it", async () => {
     const room = await roomWithGroup();
-    await applyPut(room, await memberPut("m1", "s1"), 0);
-    await applyRemove(room, { t: "remove", memberId: "m1", secret: "admin" }, 0);
-    const out = await applyPut(room, await memberPut("m1", "s1", 9), 0);
+    await applyPut(room, await memberPut("m1xxxxxx", "s1"), 0);
+    await applyRemove(room, { t: "remove", memberId: "m1xxxxxx", secret: "admin" }, 0);
+    const out = await applyPut(room, await memberPut("m1xxxxxx", "s1", 9), 0);
     expect(out).toEqual({ ok: false, reply: { t: "error", code: "auth" } });
-    expect(room.hashes.has("m1")).toBe(false);
+    expect(room.hashes.has("m1xxxxxx")).toBe(false);
   });
 });
 
 describe("applyRemove", () => {
   it("needs the admin secret", async () => {
     const room = await roomWithGroup();
-    await applyPut(room, await memberPut("m1", "s1"), 0);
-    const out = await applyRemove(room, { t: "remove", memberId: "m1", secret: "s1" }, 0);
+    await applyPut(room, await memberPut("m1xxxxxx", "s1"), 0);
+    const out = await applyRemove(room, { t: "remove", memberId: "m1xxxxxx", secret: "s1" }, 0);
     expect(out).toEqual({ ok: false, reply: { t: "error", code: "auth" } });
-    expect(room.envs.has("member:m1")).toBe(true);
+    expect(room.envs.has("member:m1xxxxxx")).toBe(true);
   });
 
   it("fails when no admin is registered", async () => {
-    const out = await applyRemove(emptyRoom(), { t: "remove", memberId: "m1", secret: "admin" }, 0);
+    const out = await applyRemove(emptyRoom(), { t: "remove", memberId: "m1xxxxxx", secret: "admin" }, 0);
     expect(out).toEqual({ ok: false, reply: { t: "error", code: "auth" } });
   });
 
   it("deletes the envelope and hash, adds a tombstone and broadcasts", async () => {
     const room = await roomWithGroup();
-    await applyPut(room, await memberPut("m1", "s1"), 0);
-    const out = await applyRemove(room, { t: "remove", memberId: "m1", secret: "admin" }, 9);
+    await applyPut(room, await memberPut("m1xxxxxx", "s1"), 0);
+    const out = await applyRemove(room, { t: "remove", memberId: "m1xxxxxx", secret: "admin" }, 9);
     expect(out.ok).toBe(true);
     if (out.ok) {
-      expect(out.broadcast).toEqual({ t: "removed", memberId: "m1" });
-      expect(out.dirty).toEqual(expect.arrayContaining(["member:m1", "hash:m1", "tomb:m1", "lastWrite"]));
+      expect(out.broadcast).toEqual({ t: "removed", memberId: "m1xxxxxx" });
+      expect(out.dirty).toEqual(
+        expect.arrayContaining(["member:m1xxxxxx", "hash:m1xxxxxx", "tomb:m1xxxxxx", "lastWrite"]),
+      );
     }
-    expect(room.envs.has("member:m1")).toBe(false);
-    expect(room.hashes.has("m1")).toBe(false);
-    expect(room.removed.has("m1")).toBe(true);
+    expect(room.envs.has("member:m1xxxxxx")).toBe(false);
+    expect(room.hashes.has("m1xxxxxx")).toBe(false);
+    expect(room.removed.has("m1xxxxxx")).toBe(true);
   });
 });
 
 describe("snapshot", () => {
   it("lists envelopes and removed ids", async () => {
     const room = await roomWithGroup();
-    await applyPut(room, await memberPut("m1", "s1"), 0);
-    await applyPut(room, await memberPut("m2", "s2"), 0);
-    await applyRemove(room, { t: "remove", memberId: "m2", secret: "admin" }, 0);
+    await applyPut(room, await memberPut("m1xxxxxx", "s1"), 0);
+    await applyPut(room, await memberPut("m2xxxxxx", "s2"), 0);
+    await applyRemove(room, { t: "remove", memberId: "m2xxxxxx", secret: "admin" }, 0);
     const snap = snapshot(room);
     expect(snap.t).toBe("snapshot");
     if (snap.t === "snapshot") {
-      expect(snap.envs.map((e) => e.id).sort()).toEqual(["g", "m1"]);
-      expect(snap.removed).toEqual(["m2"]);
+      expect(snap.envs.map((e) => e.id).sort()).toEqual(["group", "m1xxxxxx"]);
+      expect(snap.removed).toEqual(["m2xxxxxx"]);
     }
   });
 });
@@ -245,9 +261,9 @@ describe("rate", () => {
 
 describe("parseClientMsg", () => {
   it("parses valid put and remove messages", () => {
-    const put = { t: "put", env: env("member", "m1"), secret: "s" };
+    const put = { t: "put", env: env("member", "m1xxxxxx"), secret: "s" };
     expect(parseClientMsg(JSON.stringify(put))).toEqual(put);
-    const remove = { t: "remove", memberId: "m1", secret: "s" };
+    const remove = { t: "remove", memberId: "m1xxxxxx", secret: "s" };
     expect(parseClientMsg(JSON.stringify(remove))).toEqual(remove);
   });
 
@@ -256,7 +272,54 @@ describe("parseClientMsg", () => {
     expect(parseClientMsg("null")).toBeNull();
     expect(parseClientMsg(JSON.stringify({ t: "hello" }))).toBeNull();
     expect(parseClientMsg(JSON.stringify({ t: "put", env: { kind: "x" }, secret: "s" }))).toBeNull();
-    expect(parseClientMsg(JSON.stringify({ t: "put", env: env("group", "g") }))).toBeNull();
+    expect(parseClientMsg(JSON.stringify({ t: "put", env: env("group", "group") }))).toBeNull();
     expect(parseClientMsg(JSON.stringify({ t: "remove", memberId: 3, secret: "s" }))).toBeNull();
+  });
+});
+
+describe("id validation", () => {
+  const bad = { ok: false, reply: { t: "error", code: "bad" } };
+
+  it("rejects member ids that are not 8 base64url chars", async () => {
+    const room = await roomWithGroup();
+    for (const id of ["", "short", "waytoolong1", "bad id!!", "x".repeat(16_000)]) {
+      expect(await applyPut(room, await memberPut(id, "s1"), 0)).toEqual(bad);
+    }
+    expect(room.hashes.size).toBe(0);
+    expect(room.envs.size).toBe(1);
+  });
+
+  it("rejects a group envelope whose id is not group", async () => {
+    const room = emptyRoom();
+    const msg = await groupPut("admin");
+    msg.env.id = "other";
+    expect(await applyPut(room, msg, 0)).toEqual(bad);
+    expect(room).toEqual(emptyRoom());
+  });
+
+  it("rejects remove for a malformed member id", async () => {
+    const room = await roomWithGroup();
+    for (const memberId of ["", "x".repeat(16_000), "no good!"]) {
+      expect(await applyRemove(room, { t: "remove", memberId, secret: "admin" }, 0)).toEqual(bad);
+    }
+    expect(room.removed.size).toBe(0);
+  });
+});
+
+describe("deleted rooms", () => {
+  const gone = { ok: false, reply: { t: "error", code: "gone" } };
+
+  it("markDeleted returns an empty deleted room", () => {
+    expect(markDeleted()).toEqual({ ...emptyRoom(), deleted: true });
+    expect(emptyRoom().deleted).toBe(false);
+  });
+
+  it("refuses puts and removes without mutation", async () => {
+    const room = markDeleted();
+    expect(await applyPut(room, await groupPut("admin"), 5)).toEqual(gone);
+    expect(await applyPut(room, await memberPut("m1xxxxxx", "s1"), 5)).toEqual(gone);
+    expect(await applyRemove(room, { t: "remove", memberId: "m1xxxxxx", secret: "admin" }, 5)).toEqual(gone);
+    expect(room).toEqual(markDeleted());
+    expect(room.adminHash).toBeNull();
   });
 });

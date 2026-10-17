@@ -17,6 +17,7 @@ export interface Room {
   removed: Set<string>;
   until: string | null;
   lastWrite: number;
+  deleted: boolean;
 }
 
 export type Outcome = { ok: true; broadcast: ServerMsg; dirty: string[] } | { ok: false; reply: ServerMsg };
@@ -27,6 +28,7 @@ export interface RateState {
 }
 
 const DAY = 86_400_000;
+const MEMBER_ID = /^[A-Za-z0-9_-]{8}$/;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 export function emptyRoom(): Room {
@@ -37,7 +39,12 @@ export function emptyRoom(): Room {
     removed: new Set(),
     until: null,
     lastWrite: 0,
+    deleted: false,
   };
+}
+
+export function markDeleted(): Room {
+  return { ...emptyRoom(), deleted: true };
 }
 
 function fail(
@@ -75,6 +82,8 @@ export function parseClientMsg(raw: string): ClientMsg | null {
 
 export async function applyPut(room: Room, msg: PutMsg, now: number): Promise<Outcome> {
   const { env, secret } = msg;
+  if (room.deleted) return fail("gone");
+  if (env.kind === "group" ? env.id !== "group" : !MEMBER_ID.test(env.id)) return fail("bad");
   if (JSON.stringify(env).length > LIMITS.envelopeChars) return fail("limit");
   if (msg.until !== undefined && !validUntil(msg.until)) return fail("bad");
 
@@ -127,6 +136,8 @@ export async function applyPut(room: Room, msg: PutMsg, now: number): Promise<Ou
 }
 
 export async function applyRemove(room: Room, msg: RemoveMsg, now: number): Promise<Outcome> {
+  if (room.deleted) return fail("gone");
+  if (!MEMBER_ID.test(msg.memberId)) return fail("bad");
   if (room.adminHash === null || room.adminHash !== (await hashSecret(msg.secret))) return fail("auth");
   const { memberId } = msg;
   room.envs.delete(envKey("member", memberId));
