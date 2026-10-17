@@ -12,12 +12,14 @@
     "prebuild": "pnpm data",
     "build": "astro build",
     "preview": "astro preview",
-    "check": "astro check && biome check .",
+    "check": "astro check && biome check . && pnpm check:worker",
+    "check:worker": "tsc -p worker --noEmit",
     "lint": "biome check .",
     "format": "biome check --write .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "worker:dev": "wrangler dev --config worker/wrangler.toml --port 8787"
   },
   "dependencies": {
     "@astrojs/react": "5.0.5",
@@ -37,6 +39,7 @@
     "@astrojs/check": "^0.9.10",
     "@axe-core/playwright": "^4.14.0",
     "@biomejs/biome": "2.5.15",
+    "@cloudflare/workers-types": "^5.20261016.1",
     "@playwright/test": "1.64.1",
     "@resvg/resvg-js": "2.6.2",
     "@types/canvas-confetti": "^1.9.0",
@@ -46,7 +49,8 @@
     "satori": "0.62.0",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
-    "vitest": "5.0.5"
+    "vitest": "5.0.5",
+    "wrangler": "^4.151.1"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

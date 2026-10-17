@@ -25,3 +25,6 @@ playwright-report/
 .dbg.mjs
 .dbg2.mjs
 .dbg3.mjs
+
+# wrangler local state
+.wrangler/

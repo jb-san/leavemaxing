@@ -1,0 +1,12 @@
+name = "leavemaxxing-together"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+routes = [{ pattern = "leavemaxxing.com/api/together/*", zone_name = "leavemaxxing.com" }]
+
+[[durable_objects.bindings]]
+name = "GROUP"
+class_name = "Group"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Group"]
