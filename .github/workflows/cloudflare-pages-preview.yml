@@ -6,7 +6,29 @@ on:
       - main
 
 jobs:
+  lint-and-check:
+    runs-on: ubuntu-latest
+    name: Lint and Type Check
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Format check
+        run: deno fmt --check
+
+      - name: Lint
+        run: deno lint
+
+      - name: Type check
+        run: deno check **/*.ts && deno check **/*.tsx
+
   deploy-preview:
+    needs: lint-and-check
     runs-on: ubuntu-latest
     name: Deploy PR Preview
     permissions:
