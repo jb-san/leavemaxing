@@ -3,6 +3,7 @@ import HolidayList from "~/components/HolidayList.astro";
 import Planner from "~/components/planner/Planner";
 import { countries, countryByCode, meta, ogYear } from "~/data";
 import { buildToday, readHolidayFile, serverPlan } from "~/data/server";
+import { locales } from "~/data/locales";
 import { SITE } from "~/data/site";
 import { shouldIndexCountry, shouldIndexYear } from "~/data/sitemap-config";
 import Base from "~/layouts/Base.astro";
@@ -26,6 +27,18 @@ const title = `${country.name} ${year}: turn ${settings.budget} leave days into 
 const description = `The best days to take off in ${country.name} in ${year}. ${settings.budget} leave days around ${country.name}'s public holidays give ${stats.daysOff} days off (${stats.multiplier.toFixed(1)}×). Change the days, region and style to plan your own.`;
 const otherYears = meta.years.filter((y) => y !== year);
 const noindex = !shouldIndexCountry(code) || !shouldIndexYear(year);
+
+const hreflangs: Array<{ lang: string; url: string }> = [];
+for (const [localeCode, locale] of Object.entries(locales)) {
+  if (locale.country === code && (year === 2027 || year === 2028)) {
+    const localePath = `/${localeCode.toLowerCase()}/${locale.slug}-${year}/`;
+    hreflangs.push({ lang: locale.lang, url: `${SITE.url}${localePath}` });
+  }
+}
+if (hreflangs.length > 0) {
+  hreflangs.push({ lang: "x-default", url: `${SITE.url}/${code.toLowerCase()}/${year}/` });
+}
+
 const jsonLd = {
   "@context": "https://schema.org",
   "@graph": [
@@ -49,7 +62,7 @@ const jsonLd = {
 };
 ---
 
-<Base title={title} description={description} image={`/og/${code.toLowerCase()}/${ogYear(year)}.png`} jsonLd={jsonLd} wide noindex={noindex}>
+<Base title={title} description={description} image={`/og/${code.toLowerCase()}/${ogYear(year)}.png`} jsonLd={jsonLd} hreflangs={hreflangs} wide noindex={noindex}>
   <div class="flex flex-col gap-2 pb-5 pt-2">
     <nav aria-label="Breadcrumb" class="text-sm font-semibold text-muted">
       <a href="/" class="hover:text-ink">Planner</a> /

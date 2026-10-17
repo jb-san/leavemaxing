@@ -80,6 +80,13 @@ export function shouldIndexYear(year: number): boolean {
  * Determine if a page should be indexed based on URL
  */
 export function shouldIndexPage(url: string): boolean {
+  // Localized pages: /xx-yy/<slug>-YYYY/ and /xx-yy/<slug>-YYYY/<region>/.
+  // Checked before the country-year rule so these are not treated as /cc/yyyy/.
+  const localizedMatch = url.match(/\/[a-z]{2}-[a-z]{2}\/[^/]+-(\d{4})(?:\/|$)/);
+  if (localizedMatch && localizedMatch[1]) {
+    return shouldIndexYear(parseInt(localizedMatch[1], 10));
+  }
+
   const match = url.match(/\/([a-z]{2})\/(\d{4})\//);
   if (match && match[1] && match[2]) {
     const cc = match[1];

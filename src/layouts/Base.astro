@@ -12,22 +12,40 @@ interface Props {
   noindex?: boolean;
   jsonLd?: Record<string, unknown>;
   wide?: boolean;
+  /** Language code for <html lang=""> */
+  lang?: string;
+  /** Canonical URL override */
+  canonical?: string;
+  /** hreflang links for multilingual pages */
+  hreflangs?: Array<{ lang: string; url: string }>;
 }
 
-const { title, description = SITE.description, image = "/og/default.png", noindex = false, jsonLd, wide = false } =
-  Astro.props;
-const canonical = new URL(Astro.url.pathname, SITE.url).href;
+const { 
+  title, 
+  description = SITE.description, 
+  image = "/og/default.png", 
+  noindex = false, 
+  jsonLd, 
+  wide = false,
+  lang = "en",
+  canonical: canonicalProp,
+  hreflangs = []
+} = Astro.props;
+const canonical = canonicalProp || new URL(Astro.url.pathname, SITE.url).href;
 const ogImage = new URL(image, SITE.url).href;
 ---
 
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang={lang} data-theme="light">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+    {hreflangs.map(({ lang: hreflang, url }) => (
+      <link rel="alternate" hreflang={hreflang} href={url} />
+    ))}
     {noindex && <meta name="robots" content="noindex" />}
     <meta name="theme-color" content="#eef3ea" />
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
