@@ -318,6 +318,7 @@ export function Stepper({
   max,
   label,
   big = false,
+  size,
   format,
 }: {
   id: string;
@@ -327,15 +328,18 @@ export function Stepper({
   max: number;
   label: string;
   big?: boolean;
+  /** "field": exactly as tall as an `.input`, to line up with text fields in a form row. */
+  size?: "field";
   format?: (n: number) => string;
 }) {
   const i18n = useI18n();
   const clamp = (n: number) => Math.min(max, Math.max(min, n));
+  const field = size === "field";
   return (
     <div
       className={cx(
-        "flex items-center justify-between rounded-[18px] border border-line bg-card-2",
-        big ? "p-1.5" : "p-1",
+        "flex items-center justify-between border border-line bg-card-2",
+        field ? "h-[46px] rounded-[16px] px-[6px]" : big ? "rounded-[18px] p-1.5" : "rounded-[18px] p-1",
       )}
     >
       <button

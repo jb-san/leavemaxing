@@ -1,22 +1,22 @@
 import { type SubmitEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Mascot } from "~/components/Mascot";
 import { Stepper, Toasts, useToasts } from "~/components/planner/ui";
-import { MONTHS_LONG } from "~/lib/dates";
 import { newGroup } from "~/lib/together/link";
 import { limitToMonths } from "~/lib/together/member";
 import { type GroupRecord, LIMITS, type MemberRecord } from "~/lib/together/protocol";
 import { GroupSession } from "~/lib/together/session";
 import { t } from "./copy";
 import { defaultMember, MemberForm } from "./MemberForm";
+import { type MonthRange, MonthRangePicker } from "./MonthRangePicker";
 import { track } from "./track";
 
 type Month = { year: number; month: number };
 
-/** Months offered in the pickers, starting with the current one. */
+/** Months that can be picked, starting with the current one. */
 const MONTHS_AHEAD = 24;
-/** The last month can be at most this many months after the first. */
-const MAX_SPAN = 12;
-const DEFAULT_SPAN = 5;
+/** The longest group, counting both ends. */
+const MAX_MONTHS = 12;
+const DEFAULT_MONTHS = 6;
 
 function upcomingMonths(now = new Date()): Month[] {
   return Array.from({ length: MONTHS_AHEAD }, (_, i) => {
@@ -25,27 +25,29 @@ function upcomingMonths(now = new Date()): Month[] {
   });
 }
 
-const monthLabel = (m: Month) => `${MONTHS_LONG[m.month - 1]} ${m.year}`;
-
-const selectStyle = {
-  backgroundImage:
-    "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23889' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")",
-};
-const selectClass = "input appearance-none bg-[length:16px] bg-[right_14px_center] bg-no-repeat pr-10";
+/** Every month from the first to the last of a range. */
+function monthsOf({ from, to }: MonthRange): Month[] {
+  const out: Month[] = [];
+  for (let i = from.year * 12 + from.month - 1; i <= to.year * 12 + to.month - 1; i++) {
+    out.push({ year: Math.floor(i / 12), month: (i % 12) + 1 });
+  }
+  return out;
+}
 
 export function CreateGroup({ onCreated }: { onCreated: (session: GroupSession) => void }) {
   const id = useId();
   const options = useMemo(() => upcomingMonths(), []);
   const [name, setName] = useState("");
-  const [from, setFrom] = useState(0);
-  const [to, setTo] = useState(DEFAULT_SPAN);
+  const [range, setRange] = useState<MonthRange>(() => ({
+    from: options[0] as Month,
+    to: options[DEFAULT_MONTHS - 1] as Month,
+  }));
   const [minLength, setMin] = useState<number>(LIMITS.minLength);
   const [maxLength, setMax] = useState(7);
   const [me, setMe] = useState<MemberRecord>(defaultMember);
   const [busy, setBusy] = useState(false);
   const { toasts, push } = useToasts();
-  const months = useMemo(() => options.slice(from, to + 1), [options, from, to]);
-  const lastTo = Math.min(options.length - 1, from + MAX_SPAN);
+  const months = useMemo(() => monthsOf(range), [range]);
   // A link opened while the group is being created wins; the finished create must not take over.
   const mounted = useRef(true);
   useEffect(() => {
@@ -98,8 +100,8 @@ export function CreateGroup({ onCreated }: { onCreated: (session: GroupSession) 
         <h2 id={`${id}-trip`} className="text-2xl font-extrabold">
           {t.trip}
         </h2>
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          <div className="flex flex-col gap-2 md:col-span-2 lg:col-span-1">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-5 lg:grid-cols-[minmax(0,4fr)_minmax(0,4fr)_minmax(0,3fr)_minmax(0,3fr)] lg:gap-x-5">
+          <div className="col-span-2 flex flex-col gap-2 sm:col-span-1">
             <label htmlFor={`${id}-name`} className="field-label">
               {t.tripName}
             </label>
@@ -115,86 +117,60 @@ export function CreateGroup({ onCreated }: { onCreated: (session: GroupSession) 
               className="input placeholder:font-medium placeholder:text-muted/70"
             />
           </div>
-
-          <fieldset className="flex flex-col gap-2">
-            <legend className="field-label mb-2">{t.when}</legend>
-            <div className="grid grid-cols-2 gap-2">
-              <select
-                aria-label={t.from}
-                value={from}
-                onChange={(e) => {
-                  const f = Number(e.target.value);
-                  setFrom(f);
-                  setTo((x) => Math.min(Math.max(x, f), f + MAX_SPAN, options.length - 1));
-                }}
-                className={selectClass}
-                style={selectStyle}
-              >
-                {options.map((m, i) => (
-                  <option key={monthLabel(m)} value={i}>
-                    {monthLabel(m)}
-                  </option>
-                ))}
-              </select>
-              <select
-                aria-label={t.to}
-                value={to}
-                onChange={(e) => setTo(Number(e.target.value))}
-                className={selectClass}
-                style={selectStyle}
-              >
-                {options.slice(from, lastTo + 1).map((m, i) => (
-                  <option key={monthLabel(m)} value={from + i}>
-                    {monthLabel(m)}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </fieldset>
-
-          <fieldset className="flex flex-col gap-2">
-            <legend className="field-label mb-2">{t.tripLength}</legend>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="flex flex-col gap-1">
-                <label htmlFor={`${id}-min`} className="text-xs text-muted">
-                  {t.shortest}
-                </label>
-                <Stepper
-                  id={`${id}-min`}
-                  value={minLength}
-                  min={LIMITS.minLength}
-                  max={LIMITS.maxLength}
-                  label={t.shortestAria}
-                  format={t.nDays}
-                  onChange={(n) => {
-                    setMin(n);
-                    if (maxLength < n) setMax(n);
-                  }}
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label htmlFor={`${id}-max`} className="text-xs text-muted">
-                  {t.longest}
-                </label>
-                <Stepper
-                  id={`${id}-max`}
-                  value={maxLength}
-                  min={LIMITS.minLength}
-                  max={LIMITS.maxLength}
-                  label={t.longestAria}
-                  format={t.nDays}
-                  onChange={(n) => {
-                    setMax(n);
-                    if (minLength > n) setMin(n);
-                  }}
-                />
-              </div>
-            </div>
-          </fieldset>
+          <div className="col-span-2 flex flex-col gap-2 sm:col-span-1">
+            <span id={`${id}-when-label`} className="field-label">
+              {t.when}
+            </span>
+            <MonthRangePicker
+              id={`${id}-when`}
+              labelId={`${id}-when-label`}
+              value={range}
+              onChange={setRange}
+              min={options[0] as Month}
+              max={options[options.length - 1] as Month}
+              maxMonths={MAX_MONTHS}
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label htmlFor={`${id}-min`} className="field-label">
+              {t.shortest}
+            </label>
+            <Stepper
+              id={`${id}-min`}
+              size="field"
+              value={minLength}
+              min={LIMITS.minLength}
+              max={LIMITS.maxLength}
+              label={t.shortestAria}
+              format={t.nDays}
+              onChange={(n) => {
+                setMin(n);
+                if (maxLength < n) setMax(n);
+              }}
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label htmlFor={`${id}-max`} className="field-label">
+              {t.longest}
+            </label>
+            <Stepper
+              id={`${id}-max`}
+              size="field"
+              value={maxLength}
+              min={LIMITS.minLength}
+              max={LIMITS.maxLength}
+              label={t.longestAria}
+              format={t.nDays}
+              onChange={(n) => {
+                setMax(n);
+                if (minLength > n) setMin(n);
+              }}
+            />
+          </div>
         </div>
       </section>
 
-      <MemberForm value={me} onChange={setMe} months={months} taken={[]} />
+      <MemberForm value={me} onChange={setMe} taken={[]} />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
         <p className="text-sm text-muted">{t.createHint}</p>

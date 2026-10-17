@@ -22,8 +22,6 @@ export interface CalendarProps {
   pop: Map<DayNum, number>;
   sundayFirst: boolean;
   onDay: (day: DayNum, rect: DOMRect) => void;
-  /** Make days before today inert, for calendars where the past can't be changed. */
-  pastDisabled?: boolean;
 }
 
 interface BreakMark {
@@ -32,17 +30,7 @@ interface BreakMark {
   free: boolean;
 }
 
-export function Calendar({
-  months,
-  kinds,
-  breaks,
-  holidays,
-  today,
-  pop,
-  sundayFirst,
-  onDay,
-  pastDisabled = false,
-}: CalendarProps) {
+export function Calendar({ months, kinds, breaks, holidays, today, pop, sundayFirst, onDay }: CalendarProps) {
   const i18n = useI18n();
   const p = i18n.m.planner;
   const breakOf = useMemo(() => {
@@ -170,7 +158,6 @@ export function Calendar({
               pop={pop}
               sundayFirst={sundayFirst}
               onDay={onDay}
-              pastDisabled={pastDisabled}
             />
           </div>
         ))}
@@ -200,7 +187,6 @@ const MonthCard = memo(function MonthCard({
   pop,
   sundayFirst,
   onDay,
-  pastDisabled,
 }: {
   year: number;
   month: number;
@@ -211,7 +197,6 @@ const MonthCard = memo(function MonthCard({
   pop: Map<DayNum, number>;
   sundayFirst: boolean;
   onDay: (day: DayNum, rect: DOMRect) => void;
-  pastDisabled: boolean;
 }) {
   const first = dayNum(year, month, 1);
   const count = daysInMonth(year, month);
@@ -280,7 +265,6 @@ const MonthCard = memo(function MonthCard({
               data-k={k}
               data-today={d === today ? "" : undefined}
               data-past={d < today ? "" : undefined}
-              disabled={pastDisabled && d < today}
               data-br={b ? (b.free ? "free" : "leave") : undefined}
               data-s={b && (c === 0 || d === b.start || i === 0) ? "" : undefined}
               data-e={b && (c === 6 || d === b.end || i === count - 1) ? "" : undefined}
