@@ -9,6 +9,30 @@ interface RawDay {
   local: string;
 }
 
+/**
+ * Country-specific de facto non-working days that aren't in date-holidays as public holidays.
+ * These are days that are culturally/legally treated as days off but not marked as "public" type.
+ */
+const DE_FACTO_HOLIDAYS: Record<
+  string,
+  Array<{ month: number; day: number; name: string; local?: string }>
+> = {
+  SE: [
+    // Midsummer Eve: Friday before Midsummer Day (between June 19-25)
+    // We'll add it dynamically in extractCountryYear since it moves
+    { month: 12, day: 24, name: "Christmas Eve", local: "Julafton" },
+    { month: 12, day: 31, name: "New Year's Eve", local: "Nyårsafton" },
+  ],
+};
+
+/**
+ * Holidays to exclude for specific countries (by name pattern).
+ * Some countries in date-holidays include observances from multiple religions that aren't official public holidays.
+ */
+const EXCLUDE_HOLIDAYS: Record<string, RegExp[]> = {
+  ME: [/Ramadan/i, /Eid al-/i, /Pesach/i, /Yom Kippur/i],
+};
+
 /** Public holidays of one country (or one of its states) for one year, one entry per day off. */
 function publicDays(hd: Holidays, year: number): RawDay[] {
   const en = hd.getHolidays(year, "en");
@@ -32,11 +56,28 @@ function publicDays(hd: Holidays, year: number): RawDay[] {
 }
 
 export function listCountries(): Record<string, string> {
-  return new Holidays().getCountries("en") ?? {};
+  const countries = new Holidays().getCountries("en") ?? {};
+  if (countries.SZ) {
+    countries.SZ = "Eswatini";
+  }
+  return countries;
 }
 
 export function listRegions(country: string): Record<string, string> {
   return new Holidays().getStates(country, "en") ?? {};
+}
+
+/** Calculate Midsummer Eve for Sweden: Friday before Midsummer Day (which is between June 19-25) */
+function getMidsummerEve(year: number): string | null {
+  for (let day = 19; day <= 25; day++) {
+    const date = new Date(year, 5, day);
+    if (date.getDay() === 6) {
+      const eve = new Date(date);
+      eve.setDate(eve.getDate() - 1);
+      return eve.toISOString().slice(0, 10);
+    }
+  }
+  return null;
 }
 
 /** Build the data file for one country and year, merging national and regional holidays. */
@@ -44,18 +85,54 @@ export function extractCountryYear(country: string, year: number, regions: strin
   const key = (d: RawDay) => `${d.date}|${d.name}`;
   const entries = new Map<string, { day: RawDay; national: boolean; regions: Set<string> }>();
 
+  const excludePatterns = EXCLUDE_HOLIDAYS[country] || [];
+  const shouldExclude = (name: string) => excludePatterns.some((pattern) => pattern.test(name));
+
   for (const d of publicDays(new Holidays(country), year)) {
+    if (shouldExclude(d.name)) continue;
     entries.set(key(d), { day: d, national: true, regions: new Set() });
   }
   for (const region of regions) {
     for (const d of publicDays(new Holidays(country, region), year)) {
+      if (shouldExclude(d.name)) continue;
       const e = entries.get(key(d));
       if (e) e.regions.add(region);
       else entries.set(key(d), { day: d, national: false, regions: new Set([region]) });
     }
   }
 
-  const holidays: HolidayEntry[] = [...entries.values()]
+  const deFacto = DE_FACTO_HOLIDAYS[country];
+  if (deFacto) {
+    for (const h of deFacto) {
+      const date = `${year}-${String(h.month).padStart(2, "0")}-${String(h.day).padStart(2, "0")}`;
+      const raw: RawDay = { date, name: h.name, local: h.local ?? h.name };
+      entries.set(key(raw), { day: raw, national: true, regions: new Set() });
+    }
+  }
+
+  if (country === "SE") {
+    const midsummerEve = getMidsummerEve(year);
+    if (midsummerEve) {
+      const raw: RawDay = { date: midsummerEve, name: "Midsummer Eve", local: "Midsommarafton" };
+      entries.set(key(raw), { day: raw, national: true, regions: new Set() });
+    }
+  }
+
+  const dateMap = new Map<string, { day: RawDay; national: boolean; regions: Set<string> }>();
+  for (const [_k, e] of entries) {
+    const existing = dateMap.get(e.day.date);
+    if (existing) {
+      if (e.national && !existing.national) {
+        dateMap.set(e.day.date, e);
+      } else if (e.national === existing.national && e.day.name < existing.day.name) {
+        dateMap.set(e.day.date, e);
+      }
+    } else {
+      dateMap.set(e.day.date, e);
+    }
+  }
+
+  const holidays: HolidayEntry[] = [...dateMap.values()]
     .sort((a, b) => a.day.date.localeCompare(b.day.date) || a.day.name.localeCompare(b.day.name))
     .map((e) => {
       const entry: HolidayEntry = { date: e.day.date, name: e.day.name };

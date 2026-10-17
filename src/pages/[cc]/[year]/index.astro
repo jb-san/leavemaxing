@@ -4,6 +4,7 @@ import Planner from "~/components/planner/Planner";
 import { countries, countryByCode, meta, ogYear } from "~/data";
 import { buildToday, readHolidayFile, serverPlan } from "~/data/server";
 import { SITE } from "~/data/site";
+import { shouldIndexCountry, shouldIndexYear } from "~/data/sitemap-config";
 import Base from "~/layouts/Base.astro";
 import { formatRange } from "~/lib/dates";
 import { defaultSettings } from "~/lib/settings";
@@ -24,6 +25,7 @@ const top = [...plan.breaks].filter((b) => b.leave > 0).sort((a, b) => b.length 
 const title = `${country.name} ${year}: turn ${settings.budget} leave days into ${stats.daysOff} days off`;
 const description = `The best days to take off in ${country.name} in ${year}. ${settings.budget} leave days around ${country.name}'s public holidays give ${stats.daysOff} days off (${stats.multiplier.toFixed(1)}×). Change the days, region and style to plan your own.`;
 const otherYears = meta.years.filter((y) => y !== year);
+const noindex = !shouldIndexCountry(code) || !shouldIndexYear(year);
 const jsonLd = {
   "@context": "https://schema.org",
   "@graph": [
@@ -47,7 +49,7 @@ const jsonLd = {
 };
 ---
 
-<Base title={title} description={description} image={`/og/${code.toLowerCase()}/${ogYear(year)}.png`} jsonLd={jsonLd} wide>
+<Base title={title} description={description} image={`/og/${code.toLowerCase()}/${ogYear(year)}.png`} jsonLd={jsonLd} wide noindex={noindex}>
   <div class="flex flex-col gap-2 pb-5 pt-2">
     <nav aria-label="Breadcrumb" class="text-sm font-semibold text-muted">
       <a href="/" class="hover:text-ink">Planner</a> /

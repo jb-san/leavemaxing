@@ -4,6 +4,7 @@ import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 import serviceWorker from "./integrations/service-worker.mjs";
+import { shouldIndexPage } from "./src/data/sitemap-config.ts";
 
 export default defineConfig({
   site: "https://leavemaxxing.com",
@@ -11,7 +12,12 @@ export default defineConfig({
   build: { format: "directory" },
   integrations: [
     react(),
-    sitemap({ filter: (page) => !page.includes("/plans/") && !page.includes("/offline/") }),
+    sitemap({
+      filter: (page) => {
+        if (page.includes("/plans/") || page.includes("/offline/")) return false;
+        return shouldIndexPage(page);
+      },
+    }),
     serviceWorker(),
   ],
   vite: {
