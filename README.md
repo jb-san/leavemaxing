@@ -116,13 +116,25 @@ If you're setting up deployment for the first time:
    - Add `leavemaxxing.com` (or your domain)
    - Follow DNS setup instructions
 
+### Troubleshooting Deployment
+
+If you see "Authentication failed (status: 400) [code: 9106]" in GitHub Actions:
+
+1. The `CLOUDFLARE_API_TOKEN` secret needs **Cloudflare Pages: Edit** permission
+2. To fix:
+   - Go to [Cloudflare API Tokens](https://dash.cloudflare.com/profile/api-tokens)
+   - Create a new token with:
+     - **Permissions**: `Account → Cloudflare Pages → Edit`
+     - **Account Resources**: Include your account
+   - Update the `CLOUDFLARE_API_TOKEN` secret in GitHub repository settings
+
 ### Manual Deployment
 
 To deploy manually using Wrangler CLI:
 
 ```bash
 # Install Wrangler (if not already installed)
-npm install -g wrangler
+npm install -g wrangler@3.90.0
 
 # Login to Cloudflare
 wrangler login
