@@ -168,7 +168,7 @@ export default function Compare({ years }: { years: number[] }) {
         </div>
       </section>
 
-      <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <ul className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-4">
         {results.map(({ pick, plan }, i) => {
           const c = countryByCode.get(pick.country);
           const regions = Object.entries(c?.regions ?? {}).sort((a, b) => a[1].localeCompare(b[1]));
@@ -258,7 +258,7 @@ export default function Compare({ years }: { years: number[] }) {
                 const next = countries.find((c) => !picks.some((p) => p.country === c.code));
                 if (next) setPicks([...picks, { country: next.code, region: null }]);
               }}
-              className="grid h-full min-h-40 w-full place-items-center rounded-[28px] border-2 border-dashed border-line font-bold text-muted transition-colors hover:border-lime hover:text-ink"
+              className="grid min-h-40 w-full place-items-center rounded-[28px] border-2 border-dashed border-line font-bold text-muted transition-colors hover:border-lime hover:text-ink"
             >
               <span className="flex items-center gap-2">
                 <Plus size={18} /> Add a country
