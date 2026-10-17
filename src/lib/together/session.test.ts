@@ -17,7 +17,7 @@ import {
   type ServerMsg,
 } from "./protocol";
 import { BACKOFF_MS, GroupSession, type SessionDeps, type SocketLike, socketUrl } from "./session";
-import { loadMembership, type StorageLike, saveMembership } from "./store";
+import { loadCache, loadMembership, type StorageLike, saveMembership } from "./store";
 
 const GROUP: GroupRecord = {
   name: "Lisbon 2027",
@@ -57,15 +57,20 @@ function memoryStorage(): StorageLike & { data: Map<string, string> } {
 }
 
 function manualTimers() {
-  const queue: { fn: () => void; ms: number }[] = [];
+  const queue: { id: number; fn: () => void; ms: number }[] = [];
+  let next = 0;
   return {
     queue,
     timers: {
       set: (fn: () => void, ms: number) => {
-        queue.push({ fn, ms });
-        return queue.length as unknown as ReturnType<typeof setTimeout>;
+        next++;
+        queue.push({ id: next, fn, ms });
+        return next as unknown as ReturnType<typeof setTimeout>;
       },
-      clear: () => {},
+      clear: (id: ReturnType<typeof setTimeout>) => {
+        const i = queue.findIndex((t) => t.id === (id as unknown as number));
+        if (i >= 0) queue.splice(i, 1);
+      },
     },
     runNext(): number | undefined {
       const t = queue.shift();
@@ -345,9 +350,13 @@ describe("GroupSession", () => {
 
     a.removeMember(b.state.me as string);
     expect(a.state.members.size).toBe(1);
+    expect(loadCache(link.groupId, storage).length).toBeGreaterThan(0);
     await until(() => expect(b.state.error).toBe("removed"));
     expect(loadMembership(link.groupId, storage)).toBeNull();
     expect(a.state.members.size).toBe(1);
+    expect(b.state.group).toBeNull();
+    expect(b.state.members.size).toBe(0);
+    expect(loadCache(link.groupId, storage)).toEqual([]);
   });
 
   it("reports removed when the snapshot lists me", async () => {
@@ -465,6 +474,135 @@ describe("GroupSession", () => {
     const s = server.session({ groupId: randomId(10), key: "!!" });
     await until(() => expect(s.state.error).toBe("incomplete"));
     expect(server.all.length).toBe(0);
+  });
+
+  it("never shows an older edit after a newer one, and keeps every edit", async () => {
+    const server = new FakeServer();
+    const { a, b } = await createAndJoin(server);
+    const personal = b.personalLink() as PersonalLink;
+    // put() reads the clock just before sealing, so the hook types while a seal is in progress.
+    let hook: (() => void) | null = null;
+    const now = () => {
+      const h = hook;
+      hook = null;
+      h?.();
+      return Date.now();
+    };
+    const c = server.session(personal, { now });
+    await until(() => expect(c.state.members.has(personal.memberId)).toBe(true));
+    const names: string[] = [];
+    c.subscribe((st) => names.push(st.members.get(personal.memberId)?.name ?? ""));
+
+    await Promise.all(["xA", "xAB", "xABC"].map((name) => c.updateMe({ name })));
+    let during: Promise<void> = Promise.resolve();
+    hook = () => {
+      during = c.updateMe({ name: "xABCDE" });
+    };
+    await c.updateMe({ name: "xABCD" });
+    await during;
+    await c.updateMe({ allowance: 11 });
+
+    const progress = names.filter((n) => n.startsWith("x")).map((n) => n.length);
+    expect(progress).toEqual([...progress].sort((x, y) => x - y));
+    for (const s of [a, b, c]) {
+      await until(() =>
+        expect(s.state.members.get(personal.memberId)).toMatchObject({ name: "xABCDE", allowance: 11 }),
+      );
+    }
+  });
+
+  it("keeps two quick edits to different fields", async () => {
+    const server = new FakeServer();
+    const { a, b } = await createAndJoin(server);
+    const me = b.state.me as string;
+    await Promise.all([b.updateMe({ name: "Both" }), b.updateMe({ allowance: 7 })]);
+    for (const s of [a, b]) {
+      await until(() => expect(s.state.members.get(me)).toMatchObject({ name: "Both", allowance: 7 }));
+    }
+  });
+
+  it("gives incomplete when the server refuses my secret, and doesn't resend", async () => {
+    const server = new FakeServer();
+    const { b } = await createAndJoin(server);
+    const wrong = { ...(b.personalLink() as PersonalLink), secret: randomId(16) };
+    const before = server.all.length;
+    const c = server.session(wrong);
+    await until(() => expect(c.state.members.has(wrong.memberId)).toBe(true));
+    await c.updateMe({ name: "Intruder" });
+    await until(() => expect(c.state.error).toBe("incomplete"));
+    await new Promise((r) => setTimeout(r, 20));
+    expect(puts(server.all.slice(before)).length).toBe(1);
+  });
+
+  for (const code of ["limit", "bad"] as const) {
+    it(`drops an edit the server refuses with ${code} instead of resending it`, async () => {
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      const server = new FakeServer();
+      const { b } = await createAndJoin(server);
+      const t = manualTimers();
+      const personal = b.personalLink() as PersonalLink;
+      const c = server.session(personal, { timers: t.timers });
+      await until(() => expect(c.state.members.has(personal.memberId)).toBe(true));
+      const first = server.all.at(-1) as FakeSocket;
+      server.intercept = (m) => (m.t === "put" ? { t: "error", code } : null);
+      await c.updateMe({ name: "Refused" });
+      await until(() => expect(puts([first]).length).toBe(1));
+      await new Promise((r) => setTimeout(r, 20));
+      server.intercept = null;
+      server.drop(first);
+      await until(() => expect(c.state.status).toBe("connecting"));
+      t.runNext();
+      await until(() => expect(c.state.status).toBe("online"));
+      await new Promise((r) => setTimeout(r, 20));
+      expect(puts([server.all.at(-1) as FakeSocket])).toEqual([]);
+      expect(c.state.error).toBeNull();
+    });
+  }
+
+  it("keeps the stored admin secret for a personal link without one", async () => {
+    const server = new FakeServer();
+    const storage = memoryStorage();
+    const link = newGroup();
+    const a = server.session(link, { storage });
+    await a.create(GROUP, member("Sam"));
+    const full = a.personalLink() as PersonalLink;
+    const { admin: _admin, ...plain } = full;
+    const c = server.session(plain, { storage });
+    expect(c.state.isAdmin).toBe(true);
+    expect(c.personalLink()?.admin).toBe(full.admin);
+    expect(loadMembership(link.groupId, storage)?.admin).toBe(full.admin);
+  });
+
+  it("schedules one rate timer, cancels it on close and never hides another error", async () => {
+    const server = new FakeServer();
+    const t = manualTimers();
+    const link = newGroup();
+    const a = server.session(link, { timers: t.timers });
+    await a.create(GROUP, member("Sam"));
+    await until(() => expect(server.room.envs.size).toBe(2));
+    const sock = [...server.sockets][0] as FakeSocket;
+    server.deliver(sock, { t: "error", code: "rate" });
+    server.deliver(sock, { t: "error", code: "rate" });
+    await until(() => expect(a.state.error).toBe("rate"));
+    await new Promise((r) => setTimeout(r, 20));
+    expect(t.queue.length).toBe(1);
+    const seen: unknown[] = [];
+    a.subscribe((st) => seen.push(st));
+    a.close();
+    expect(t.queue.length).toBe(0);
+    expect(seen).toEqual([]);
+
+    for (let i = 0; i < 19; i++) server.room.hashes.set(randomId(6), "x");
+    const t2 = manualTimers();
+    const late = server.session({ groupId: link.groupId, key: link.key }, { timers: t2.timers });
+    await until(() => expect(late.state.group).not.toBeNull());
+    await late.join(member("Late"));
+    await until(() => expect(late.state.error).toBe("full"));
+    server.deliver(server.all.at(-1) as FakeSocket, { t: "error", code: "rate" });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(late.state.error).toBe("full");
+    t2.runNext();
+    expect(late.state.error).toBe("full");
   });
 
   it("reports rate and clears it after the window", async () => {

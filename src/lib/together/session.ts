@@ -65,6 +65,7 @@ const MAX_TRIES = 3;
 const MEMBER = "member:";
 
 type Rec = GroupRecord | MemberRecord;
+type Edit = (r: Rec) => Rec | null;
 /** What this tab shows for one record. `iv` is "" until the record is sealed. */
 interface Held {
   version: number;
@@ -110,12 +111,17 @@ export class GroupSession {
   private local = new Map<string, Held>();
   private confirmed = new Map<string, Envelope>();
   private pending = new Map<string, Pending>();
+  /** Messages sent on this socket and not yet answered, oldest first. The server answers in order. */
+  private inflight: { key: string; msg: PutMsg | RemoveMsg }[] = [];
+  /** Edits shown but not yet sealed, per key, re-applied in order on top of any newer record. */
+  private drafts = new Map<string, Edit[]>();
   private hashes = new Map<string, Promise<string>>();
   private listeners = new Set<(s: GroupState) => void>();
   private work: Promise<void> = Promise.resolve();
   private ws: SocketLike | null = null;
   private attempt = 0;
   private timer: TimerId | null = null;
+  private rateTimer: TimerId | null = null;
   private closed = false;
 
   constructor(link: InviteLink | PersonalLink | null, deps: SessionDeps = {}) {
@@ -130,7 +136,8 @@ export class GroupSession {
       const stored = loadMembership(link.groupId, this.storage);
       const linkAdmin = (link as { admin?: unknown }).admin;
       if ("memberId" in link) {
-        this.adopt(link.memberId, link.secret, link.admin ?? null);
+        const sameMember = stored?.memberId === link.memberId;
+        this.adopt(link.memberId, link.secret, link.admin ?? (sameMember ? stored?.admin : null) ?? null);
         this.groupName = stored?.groupName ?? "";
         this.remember();
       } else if (stored) {
@@ -230,8 +237,9 @@ export class GroupSession {
 
   close(): void {
     this.closed = true;
-    if (this.timer !== null) this.timers.clear(this.timer);
+    for (const t of [this.timer, this.rateTimer]) if (t !== null) this.timers.clear(t);
     this.timer = null;
+    this.rateTimer = null;
     const ws = this.ws;
     this.ws = null;
     ws?.close();
@@ -264,6 +272,7 @@ export class GroupSession {
       opened = true;
       this.attempt = 0;
       this.status = "online";
+      this.inflight = [];
       for (const p of this.pending.values()) this.transmit(p.msg);
       this.emit();
     };
@@ -289,6 +298,10 @@ export class GroupSession {
     if (this.ws?.readyState !== OPEN) return;
     try {
       this.ws.send(JSON.stringify(msg));
+      this.inflight.push({
+        key: msg.t === "put" ? envKey(msg.env.kind, msg.env.id) : `remove:${msg.memberId}`,
+        msg,
+      });
     } catch {
       // Resent from `pending` on the next open.
     }
@@ -337,10 +350,11 @@ export class GroupSession {
     if (key === "group") this.creating = false;
     const p = this.pending.get(key);
     if (p?.t === "put" && sameEnv(p.msg.env, env)) this.pending.delete(key);
+    this.answered((m) => m.t === "put" && sameEnv(m.env, env));
     const held = this.local.get(key);
     if (!held || env.version > held.version) {
       const opened = await this.decrypt(env);
-      if (opened) this.local.set(key, opened);
+      if (opened) this.local.set(key, this.compose(key, opened));
     }
     this.emit();
   }
@@ -351,12 +365,17 @@ export class GroupSession {
     this.confirmed.delete(key);
     this.pending.delete(key);
     this.pending.delete(`remove:${memberId}`);
+    this.answered((m) => m.t === "remove" && m.memberId === memberId);
     this.persist();
     if (memberId === this.memberId) this.fail("removed");
     else this.emit();
   }
 
   private async onError(code: string, id?: string, version?: number): Promise<void> {
+    // Errors carry no id (except stale), but they answer the oldest unanswered message.
+    const head = this.inflight.shift();
+    const pending = head ? this.pending.get(head.key) : undefined;
+    const refused = head && pending?.msg === head.msg ? head.key : null;
     if (code === "stale" && id !== undefined && version !== undefined) {
       // Another tab of mine wrote first. Bump past the server and resend this edit, a few times at most.
       const key = id === "group" ? "group" : MEMBER + id;
@@ -369,33 +388,45 @@ export class GroupSession {
       }
       return this.put(key, p.record, p.tries + 1, version);
     }
-    if (code === "limit") {
-      const key = this.memberId ? MEMBER + this.memberId : "";
-      if (this.pending.has(key) && !this.confirmed.has(key)) {
-        // My join was refused: the group already has its full number of members.
-        forgetMembership(this.groupId, this.storage);
-        this.pending.delete(key);
-        this.local.delete(key);
-        this.memberId = null;
-        this.secret = null;
-        this.error = "full";
-        this.emit();
-      } else console.warn("Together: a record was too large to save");
-      return;
-    }
-    if (code === "rate") {
-      this.error = "rate";
-      this.emit();
-      const { set } = this.timers;
-      set(() => {
-        if (this.error === "rate") this.error = null;
-        for (const p of this.pending.values()) this.transmit(p.msg);
-        this.emit();
-      }, LIMITS.rateWindowMs);
-      return;
-    }
+    if (code === "rate") return this.rateLimited();
     if (code === "gone") return this.fail("gone");
+    // auth, bad or limit: the server will never take this message, so stop sending it.
+    if (refused) this.pending.delete(refused);
+    const mine = this.memberId ? MEMBER + this.memberId : "";
+    if (code === "limit" && refused === mine && !this.confirmed.has(mine)) {
+      // My join was refused: the group already has its full number of members.
+      forgetMembership(this.groupId, this.storage);
+      this.local.delete(mine);
+      this.drafts.delete(mine);
+      this.memberId = null;
+      this.secret = null;
+      this.error = "full";
+      this.emit();
+      return;
+    }
+    // My secret doesn't match: the link I came in with is wrong.
+    if (code === "auth" && refused) return this.fail("incomplete");
     console.warn(`Together: the server refused a message (${code})`);
+  }
+
+  private rateLimited(): void {
+    if (this.error === null) this.error = "rate";
+    this.emit();
+    if (this.rateTimer !== null) return;
+    const { set } = this.timers;
+    this.rateTimer = set(() => {
+      this.rateTimer = null;
+      if (this.closed) return;
+      if (this.error === "rate") this.error = null;
+      for (const p of this.pending.values()) this.transmit(p.msg);
+      this.emit();
+    }, LIMITS.rateWindowMs);
+  }
+
+  /** Forget the in-flight entry for a message the server has just acknowledged. */
+  private answered(match: (m: PutMsg | RemoveMsg) => boolean): void {
+    const i = this.inflight.findIndex((e) => match(e.msg));
+    if (i >= 0) this.inflight.splice(i, 1);
   }
 
   /** Swap in the server's (or the cache's) records, keeping my own unacknowledged edits. */
@@ -413,7 +444,7 @@ export class GroupSession {
       if (held && (mine || (held.version === env.version && held.iv === env.iv))) next.set(key, held);
       else {
         const opened = await this.decrypt(env);
-        if (opened) next.set(key, opened);
+        if (opened) next.set(key, this.compose(key, opened));
       }
     }
     for (const [key, held] of this.local) {
@@ -439,18 +470,30 @@ export class GroupSession {
 
   // Outgoing edits
 
-  private edit(key: string, apply: (r: Rec) => Rec | null): Promise<void> {
+  private edit(key: string, apply: Edit): Promise<void> {
     const held = this.local.get(key);
     const record = held ? apply(held.record) : null;
     if (!held || !record) return reject("nothing to edit, or the edit is invalid");
+    this.drafts.set(key, [...(this.drafts.get(key) ?? []), apply]);
     this.local.set(key, { ...held, record });
     this.emit();
     return this.run(async () => {
-      // Re-apply on top of whatever arrived while this edit waited its turn.
+      // Seal every edit shown so far, re-applied on top of whatever arrived meanwhile.
+      // Later queued edits find nothing left to seal.
+      const edits = this.drafts.get(key);
       const latest = this.local.get(key);
-      const next = latest ? apply(latest.record) : null;
-      if (next) await this.put(key, next);
+      if (!edits || !latest) return;
+      this.drafts.delete(key);
+      const next = edits.reduce<Rec>((r, e) => e(r) ?? r, latest.record);
+      await this.put(key, next);
     });
+  }
+
+  /** A record with my unsealed edits on top, so newer typing never disappears. */
+  private compose(key: string, held: Held): Held {
+    const edits = this.drafts.get(key);
+    if (!edits) return held;
+    return { ...held, record: edits.reduce<Rec>((r, e) => e(r) ?? r, held.record) };
   }
 
   private async put(key: string, record: Rec, tries = 1, floor = 0): Promise<void> {
@@ -472,7 +515,8 @@ export class GroupSession {
     );
     const msg: PutMsg = { t: "put", env, secret, secretHash: await this.hash(secret) };
     if (isGroup) msg.until = toIso(groupRange(record as GroupRecord).end);
-    this.local.set(key, { version, iv: env.iv, record });
+    // Edits made while sealing stay on screen; they are sealed by their own turn.
+    this.local.set(key, this.compose(key, { version, iv: env.iv, record }));
     this.pending.set(key, { t: "put", msg, record, tries });
     this.transmit(msg);
     this.emit();
@@ -527,7 +571,14 @@ export class GroupSession {
       this.secret = null;
       this.admin = null;
     }
-    if (error === "gone") saveCache(this.groupId, [], this.storage);
+    if (error === "gone" || error === "removed") {
+      // Nothing from this group is shown or kept any more.
+      saveCache(this.groupId, [], this.storage);
+      this.local.clear();
+      this.confirmed.clear();
+      this.pending.clear();
+      this.drafts.clear();
+    }
     this.close();
     this.error = error;
     this.emit();
