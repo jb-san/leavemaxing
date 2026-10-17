@@ -52,15 +52,9 @@ jobs:
       - name: Deploy to Cloudflare Pages
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          echo "Starting deployment..."
-          echo "Token length: ${#CLOUDFLARE_API_TOKEN}"
-          echo "Account ID length: ${#CLOUDFLARE_ACCOUNT_ID}"
-          echo "Wrangler version:"
-          npx wrangler@3.90.0 --version
-
           npx wrangler@3.90.0 pages deploy dist \
             --project-name=leavemaxing \
             --branch=main \
-            --commit-hash=${{ github.sha }}
+            --commit-hash=${{ github.sha }} \
+            --account-id=${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

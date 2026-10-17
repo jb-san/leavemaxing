@@ -76,17 +76,12 @@ jobs:
         if: steps.check-secrets.outputs.secrets_available == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          echo "Token length: ${#CLOUDFLARE_API_TOKEN}"
-          echo "Token hex (first 20 chars): $(echo -n "${CLOUDFLARE_API_TOKEN:0:20}" | xxd -p)"
-          echo "Account ID length: ${#CLOUDFLARE_ACCOUNT_ID}"
-          echo "Account ID hex (first 16 chars): $(echo -n "${CLOUDFLARE_ACCOUNT_ID:0:16}" | xxd -p)"
-
           npx wrangler@3.90.0 pages deploy dist \
             --project-name=leavemaxing \
             --branch=${{ github.head_ref }} \
-            --commit-hash=${{ github.sha }}
+            --commit-hash=${{ github.sha }} \
+            --account-id=${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Comment on PR (secrets missing)
         if: steps.check-secrets.outputs.secrets_available == 'false'
