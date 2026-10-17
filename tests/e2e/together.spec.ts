@@ -1,9 +1,19 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, type Page, test } from "@playwright/test";
+import { type Browser, type BrowserContext, expect, type Page, test } from "@playwright/test";
 
-// Keep test runs out of the real analytics.
-test.beforeEach(async ({ context }) => {
+/** Keep test runs out of the real analytics. Every context this spec uses goes through here. */
+async function blockAnalytics(context: BrowserContext): Promise<BrowserContext> {
   await context.route("**/analytics.vril.tech/**", (r) => r.abort());
+  return context;
+}
+
+/** A second browser, as another device would be, with analytics blocked. */
+function newContext(browser: Browser): Promise<BrowserContext> {
+  return browser.newContext().then(blockAnalytics);
+}
+
+test.beforeEach(async ({ context }) => {
+  await blockAnalytics(context);
 });
 
 async function createGroup(page: Page) {
@@ -123,7 +133,7 @@ test("the personal link opens the group on another device", async ({ page, brows
   await expect(page.getByRole("img", { name: /Scan to join Lisbon 2027/ })).toBeVisible();
   const personal = page.url();
   // A fresh context has nothing stored, so the group has to come from the server.
-  const other = await browser.newContext();
+  const other = await newContext(browser);
   const second = await other.newPage();
   await second.goto(personal);
   await expect(second.getByRole("heading", { name: "Lisbon 2027" })).toBeVisible();
