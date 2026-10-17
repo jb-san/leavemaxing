@@ -103,7 +103,7 @@ async function copyFreshAssets() {
   } catch (error) {
     console.log(
       "⚠️  No Fresh assets found (this is OK for static sites):",
-      error.message,
+      error instanceof Error ? error.message : String(error),
     );
   }
 }

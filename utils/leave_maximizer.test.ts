@@ -227,11 +227,11 @@ Deno.test("calculateOptimalLeave (Bridge) returns empty if no leave days", () =>
     launchYear: null,
     types: ["Public"],
   }];
-  assertEquals(calculateOptimalLeave(holidays, 0, 2024, "any"), []);
+  assertEquals(calculateOptimalLeave(holidays, 0, 2024, "any", null), []);
 });
 
 Deno.test("calculateOptimalLeave (Bridge) returns empty if no holidays", () => {
-  assertEquals(calculateOptimalLeave([], 5, 2024, "any"), []);
+  assertEquals(calculateOptimalLeave([], 5, 2024, "any", null), []);
 });
 
 Deno.test("calculateOptimalLeave (Bridge) suggests simple bridge Fri for Thu holiday", () => {
@@ -255,7 +255,7 @@ Deno.test("calculateOptimalLeave (Bridge) suggests simple bridge Fri for Thu hol
   // Bridge Fri(15): connects Thu(14) + Sat(16)+Sun(17). Cost=1, Benefit=1+1+2=4. Score=4/1=4.
   // Bridge Mon,Tue,Wed(11,12,13): connects Sat(9)+Sun(10) + Thu(14). Cost=3, Benefit=2+3+1=6. Score=6/3=2.
   // Best score is 4.
-  const result = calculateOptimalLeave(holidays, 1, year, "any");
+  const result = calculateOptimalLeave(holidays, 1, year, "any", null);
   assertEquals(result, ["2024-03-15"]);
 });
 
@@ -280,7 +280,7 @@ Deno.test("calculateOptimalLeave (Bridge) suggests simple bridge Mon for Tue hol
   // Bridge Mon(11): connects Sat(9)+Sun(10) + Tue(12). Cost=1, Benefit=2+1+1=4. Score=4/1=4.
   // Bridge Wed,Thu,Fri(13,14,15): connects Tue(12) + Sat(16)+Sun(17). Cost=3, Benefit=1+3+2=6. Score=6/3=2.
   // Best score is 4.
-  const result = calculateOptimalLeave(holidays, 1, year, "any");
+  const result = calculateOptimalLeave(holidays, 1, year, "any", null);
   assertEquals(result, ["2024-03-11"]);
 });
 
@@ -317,7 +317,7 @@ Deno.test("calculateOptimalLeave (Bridge) suggests bridge Wed between Tue/Thu ho
   ];
   // Highest scores are 4 (Mon or Fri). Algorithm picks Mon (shorter gap tiebreak - actually no, score is primary). It should pick Mon or Fri.
   // Let's assume stable sort keeps Mon first if scores equal.
-  const result1 = calculateOptimalLeave(holidays, 1, year, "any");
+  const result1 = calculateOptimalLeave(holidays, 1, year, "any", null);
   assert(
     result1.includes("2024-03-11") || result1.includes("2024-03-15"),
     "Should pick Mon or Fri for 1 day",
@@ -325,11 +325,11 @@ Deno.test("calculateOptimalLeave (Bridge) suggests bridge Wed between Tue/Thu ho
   assertEquals(result1.length, 1);
 
   // If 2 days available, it should pick Mon AND Fri (both score 4)
-  const result2 = calculateOptimalLeave(holidays, 2, year, "any");
+  const result2 = calculateOptimalLeave(holidays, 2, year, "any", null);
   assertEquals(result2.sort(), ["2024-03-11", "2024-03-15"].sort());
 
   // If 3 days available, it should pick Mon, Fri (score 4), AND Wed (score 3)
-  const result3 = calculateOptimalLeave(holidays, 3, year, "any");
+  const result3 = calculateOptimalLeave(holidays, 3, year, "any", null);
   assertEquals(
     result3.sort(),
     ["2024-03-11", "2024-03-13", "2024-03-15"].sort(),
@@ -364,21 +364,23 @@ Deno.test("calculateOptimalLeave (Bridge) handles multi-day gap", () => {
   // Score Gap3 (Mon-Fri): connect (2) + 5 + (2) = 9. Score = 9/5 = 1.8
 
   // Available = 1 day: Should pick Fri Dec 20 (Score 4)
-  assertEquals(calculateOptimalLeave(holidays, 1, year, "any"), ["2024-12-20"]);
+  assertEquals(calculateOptimalLeave(holidays, 1, year, "any", null), [
+    "2024-12-20",
+  ]);
   // Available = 2 days: Should pick Fri Dec 20 (Score 4). Cannot afford next best (Gap1, cost 3). Result is only Fri Dec 20.
   assertEquals(
-    calculateOptimalLeave(holidays, 2, year, "any").sort(),
+    calculateOptimalLeave(holidays, 2, year, "any", null).sort(),
     ["2024-12-20"].sort(),
     "Should pick Fri 20 only",
   );
   // Available = 4 days: Should pick Fri Dec 20 (1 day, score 4) + Mon,Tue,Wed Dec 16,17,18 (3 days, score 2)
   assertEquals(
-    calculateOptimalLeave(holidays, 4, year, "any").sort(),
+    calculateOptimalLeave(holidays, 4, year, "any", null).sort(),
     ["2024-12-16", "2024-12-17", "2024-12-18", "2024-12-20"].sort(),
   );
   // Available = 6 days: Should pick Gap2(1) + Gap1(3)
   assertEquals(
-    calculateOptimalLeave(holidays, 6, year, "any").sort(),
+    calculateOptimalLeave(holidays, 6, year, "any", null).sort(),
     ["2024-12-16", "2024-12-17", "2024-12-18", "2024-12-20"].sort(),
     "With 6 days, should pick Gap 2 + Gap 1",
   );
