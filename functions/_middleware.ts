@@ -1,6 +1,28 @@
 // Cloudflare Pages Functions middleware
 // Redirects www.leavemaxxing.com to leavemaxxing.com
 
+interface EventContext<
+  Env = unknown,
+  P extends string = string,
+  Data = Record<string, unknown>,
+> {
+  request: Request;
+  env: Env;
+  params: Record<P, string>;
+  data: Data;
+  next: () => Promise<Response>;
+  waitUntil: (promise: Promise<unknown>) => void;
+  passThroughOnException: () => void;
+}
+
+type PagesFunction<
+  Env = unknown,
+  P extends string = string,
+  Data = Record<string, unknown>,
+> = (
+  context: EventContext<Env, P, Data>,
+) => Response | Promise<Response>;
+
 export const onRequest: PagesFunction = async (context) => {
   const url = new URL(context.request.url);
 
