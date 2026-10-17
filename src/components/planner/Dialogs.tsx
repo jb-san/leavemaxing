@@ -90,7 +90,7 @@ export function ShareDialog({
             readOnly
             value={url}
             onFocus={(e) => e.currentTarget.select()}
-            className="input min-w-0 flex-1 text-sm"
+            className="input min-w-0 flex-1 sm:text-sm"
           />
           <button
             type="button"

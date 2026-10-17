@@ -216,7 +216,7 @@ export default function Compare({ years }: { years: number[] }) {
                   onChange={(e) =>
                     setPicks(picks.map((p, j) => (j === i ? { ...p, region: e.target.value || null } : p)))
                   }
-                  className="input text-sm"
+                  className="input sm:text-sm"
                 >
                   <option value="">Whole country</option>
                   {regions.map(([code, name]) => (
