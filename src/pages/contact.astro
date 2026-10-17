@@ -1,0 +1,94 @@
+---
+import Base from "~/layouts/Base.astro";
+
+const title = "Contact · leavemaxxing";
+const description = "Have feedback, found an error, or want to suggest a feature? We'd love to hear from you.";
+---
+
+<Base title={title} description={description}>
+  <div class="mx-auto max-w-3xl pb-10 pt-6">
+    <h1 class="text-[clamp(32px,4vw,48px)] font-extrabold leading-tight">Contact</h1>
+    <div class="prose mt-6 max-w-none">
+      <p class="text-lg text-muted">
+        Have feedback, found an error in holiday data, or want to suggest a feature? We'd love to hear from you.
+      </p>
+
+      <h2>Report an issue or suggest a feature</h2>
+      <p>
+        The best way to report data errors, bugs, or request features is through our GitHub issue tracker:
+      </p>
+      <p>
+        <a
+          href="https://github.com/jb-san/leavemaxing/issues"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-2 rounded-lg bg-card px-4 py-2 font-semibold text-ink no-underline hover:bg-line"
+        >
+          Report an issue on GitHub →
+        </a>
+      </p>
+      <p class="text-sm text-muted">
+        Please include:
+      </p>
+      <ul class="text-sm">
+        <li>Country and year if reporting a data error</li>
+        <li>What you expected vs. what you see</li>
+        <li>Any relevant screenshots</li>
+      </ul>
+
+      <h2>About our data</h2>
+      <p>
+        Holiday data is sourced from <a href="https://github.com/commenthol/date-holidays" target="_blank" rel="noopener">date-holidays</a> 
+        (CC BY 3.0) and supplemented with country-specific rules. We focus on nationwide public holidays and widely 
+        observed de facto days off.
+      </p>
+      <p>
+        If you notice incorrect holiday information for your country, please let us know through GitHub issues with:
+      </p>
+      <ul class="text-sm">
+        <li>The specific holiday and date</li>
+        <li>A link to an official government source</li>
+        <li>Whether it's a nationwide public holiday or regional</li>
+      </ul>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .prose {
+    --tw-prose-body: var(--ink);
+    --tw-prose-headings: var(--ink);
+    --tw-prose-links: var(--ink);
+    --tw-prose-bold: var(--ink);
+  }
+  
+  .prose h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+  }
+  
+  .prose p {
+    margin-bottom: 1rem;
+  }
+  
+  .prose ul {
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+    list-style-type: disc;
+  }
+  
+  .prose li {
+    margin-bottom: 0.5rem;
+  }
+  
+  .prose a {
+    color: var(--ink);
+    text-decoration: underline;
+  }
+  
+  .prose a:hover {
+    opacity: 0.8;
+  }
+</style>

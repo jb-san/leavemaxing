@@ -16,13 +16,38 @@ const popular = ["US", "GB", "DE", "FR", "ES", "IT", "NL", "IE", "MT", "AU", "CA
 
 const jsonLd = {
   "@context": "https://schema.org",
-  "@type": "WebApplication",
-  name: "leavemaxxing",
-  url: SITE.url,
-  description: SITE.description,
-  applicationCategory: "LifestyleApplication",
-  operatingSystem: "Any",
-  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+  "@graph": [
+    {
+      "@type": "WebSite",
+      name: "leavemaxxing",
+      url: SITE.url,
+      description: SITE.description,
+      potentialAction: {
+        "@type": "SearchAction",
+        target: {
+          "@type": "EntryPoint",
+          urlTemplate: `${SITE.url}/compare/?countries={search_term_string}`,
+        },
+        "query-input": "required name=search_term_string",
+      },
+    },
+    {
+      "@type": "Organization",
+      name: "leavemaxxing",
+      url: SITE.url,
+      logo: `${SITE.url}/apple-touch-icon.png`,
+      sameAs: [SITE.links.github, SITE.links.linkedin],
+    },
+    {
+      "@type": "WebApplication",
+      name: "leavemaxxing",
+      url: SITE.url,
+      description: SITE.description,
+      applicationCategory: "LifestyleApplication",
+      operatingSystem: "Any",
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    },
+  ],
 };
 
 const steps = [

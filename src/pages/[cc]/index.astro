@@ -3,6 +3,7 @@ import HolidayList from "~/components/HolidayList.astro";
 import Planner from "~/components/planner/Planner";
 import { countries, countryByCode, meta } from "~/data";
 import { buildToday, readHolidayFile, serverPlan } from "~/data/server";
+import { shouldIndexCountry } from "~/data/sitemap-config";
 import Base from "~/layouts/Base.astro";
 import { defaultSettings } from "~/lib/settings";
 
@@ -18,9 +19,10 @@ const { plan, files } = serverPlan(settings);
 const file = readHolidayFile(code, year)!;
 const title = `Best days to take off in ${country.name}: leave planner`;
 const description = `Plan your leave around ${country.name}'s public holidays. Find the bridge days that turn ${settings.budget} leave days into ${plan.stats.daysOff} days off this year.`;
+const noindex = !shouldIndexCountry(code);
 ---
 
-<Base title={title} description={description} image={`/og/${code.toLowerCase()}/${year}.png`} wide>
+<Base title={title} description={description} image={`/og/${code.toLowerCase()}/${year}.png`} wide noindex={noindex}>
   <div class="flex flex-col gap-2 pb-5 pt-2">
     <nav aria-label="Breadcrumb" class="text-sm font-semibold text-muted">
       <a href="/" class="hover:text-ink">Planner</a> / <span aria-current="page">{country.name}</span>
