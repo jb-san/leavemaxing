@@ -23,7 +23,7 @@ type PagesFunction<
   context: EventContext<Env, P, Data>,
 ) => Response | Promise<Response>;
 
-export const onRequest: PagesFunction = async (context) => {
+export const onRequest: PagesFunction = (context) => {
   const url = new URL(context.request.url);
 
   // Redirect www to apex domain
