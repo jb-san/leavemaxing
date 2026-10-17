@@ -122,10 +122,13 @@ export function SettingsPanel({
         <p className="text-xs text-muted">{STYLES.find((x) => x.id === s.style)?.hint}.</p>
       </div>
 
-      <details className="group rounded-3xl border border-line bg-card-2/60 open:bg-transparent">
+      <details className="smooth-details group rounded-3xl border border-line bg-card-2/60 transition-colors open:bg-transparent">
         <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-bold [&::-webkit-details-marker]:hidden">
           Fine-tune
-          <ChevronDown size={16} className="text-muted transition-transform group-open:rotate-180" />
+          <ChevronDown
+            size={16}
+            className="text-muted transition-transform duration-200 ease-[var(--ease-out)] group-open:rotate-180"
+          />
         </summary>
         <div className="flex flex-col gap-5 px-4 pb-4">
           <div className="grid grid-cols-2 gap-3">

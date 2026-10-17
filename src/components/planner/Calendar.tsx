@@ -129,7 +129,7 @@ export function Calendar({ months, kinds, breaks, holidays, today, pop, sundayFi
             aria-label="Previous month"
             onClick={() => go(-1)}
             disabled={index === 0}
-            className="grid size-10 place-items-center rounded-full border border-line bg-card disabled:opacity-40"
+            className="grid size-10 place-items-center rounded-full border border-line bg-card transition-transform duration-150 ease-[var(--ease-out)] active:scale-[0.94] disabled:opacity-40"
           >
             <ChevronLeft size={18} />
           </button>
@@ -138,7 +138,7 @@ export function Calendar({ months, kinds, breaks, holidays, today, pop, sundayFi
             aria-label="Next month"
             onClick={() => go(1)}
             disabled={index === months.length - 1}
-            className="grid size-10 place-items-center rounded-full border border-line bg-card disabled:opacity-40"
+            className="grid size-10 place-items-center rounded-full border border-line bg-card transition-transform duration-150 ease-[var(--ease-out)] active:scale-[0.94] disabled:opacity-40"
           >
             <ChevronRight size={18} />
           </button>
@@ -181,7 +181,10 @@ export function Calendar({ months, kinds, breaks, holidays, today, pop, sundayFi
         {months.map((m, i) => (
           <span
             key={`${m.year}-${m.month}`}
-            className={cx("h-1.5 rounded-full transition-all", i === index ? "w-5 bg-ink" : "w-1.5 bg-line")}
+            className={cx(
+              "h-1.5 rounded-full transition-[width,background-color] duration-200 ease-[var(--ease-out)]",
+              i === index ? "w-5 bg-ink" : "w-1.5 bg-line",
+            )}
           />
         ))}
       </div>

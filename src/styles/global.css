@@ -93,7 +93,11 @@
   --font-sans: "Plus Jakarta Sans Variable", "Avenir Next", "Segoe UI", system-ui, sans-serif;
   --radius-card: 28px;
   --radius-hero: 32px;
+  /* Playful overshoot, for small delight moments only (day pops, mascot). */
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 @layer base {
@@ -161,15 +165,16 @@
     font-size: 13px;
     font-weight: 600;
     transition:
-      background-color 0.15s,
-      border-color 0.15s,
-      transform 0.15s;
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease,
+      transform 160ms var(--ease-out);
   }
   .chip:hover {
     border-color: color-mix(in oklab, var(--lime) 60%, var(--line));
   }
   .chip:active {
-    transform: scale(0.96);
+    transform: scale(0.97);
   }
   .chip[aria-pressed="true"],
   .chip[aria-checked="true"] {
@@ -187,12 +192,13 @@
     font-weight: 700;
     font-size: 14px;
     transition:
-      transform 0.15s var(--ease-spring),
-      background-color 0.15s,
-      filter 0.15s;
+      transform 160ms var(--ease-out),
+      background-color 150ms ease,
+      border-color 150ms ease,
+      filter 150ms ease;
   }
   .btn:active {
-    transform: scale(0.96);
+    transform: scale(0.97);
   }
   .btn-primary {
     background: var(--lime);
@@ -303,10 +309,15 @@
     border-radius: 50%;
     display: grid;
     place-items: center;
-    transition: transform 0.2s var(--ease-spring);
+    transition: transform 160ms var(--ease-out);
   }
-  .day:hover .mk {
-    transform: scale(1.12);
+  @media (hover: hover) and (pointer: fine) {
+    .day:hover .mk {
+      transform: scale(1.1);
+    }
+  }
+  .day:active .mk {
+    transform: scale(0.92);
   }
   .day .mk svg {
     width: 15px;
@@ -372,14 +383,14 @@
     border-bottom-right-radius: 17px;
   }
   .day[data-pop] .mk {
-    animation: pop 0.5s var(--ease-spring) both;
-    animation-delay: calc(var(--i, 0) * 14ms);
+    animation: pop 320ms var(--ease-spring) backwards;
+    animation-delay: calc(min(var(--i, 0), 16) * 15ms);
   }
 }
 
 @keyframes pop {
   from {
-    transform: scale(0.35);
+    transform: scale(0.6);
     opacity: 0;
   }
   to {
@@ -388,14 +399,9 @@
   }
 }
 
-@keyframes rise {
+@keyframes fade-in {
   from {
-    transform: translateY(8px);
     opacity: 0;
-  }
-  to {
-    transform: none;
-    opacity: 1;
   }
 }
 
@@ -416,6 +422,10 @@
   animation: blink 5s infinite;
 }
 
+/*
+ * Sheets: a drawer that slides up on phones, a centred modal on wider screens,
+ * or a small popover that grows out of the tapped day. Each leaves the way it came.
+ */
 dialog.sheet {
   margin: auto auto 0;
   width: 100%;
@@ -427,26 +437,183 @@ dialog.sheet {
   background: var(--card);
   color: var(--ink);
   box-shadow: var(--shadow-lg);
+  transform: translateY(100%);
+  transition:
+    transform 300ms var(--ease-drawer),
+    opacity 300ms var(--ease-out),
+    display 300ms allow-discrete,
+    overlay 300ms allow-discrete;
 }
 dialog.sheet[open] {
-  animation: sheet-up 0.35s var(--ease-spring);
+  transform: none;
+  transition-duration: 450ms;
+}
+@starting-style {
+  dialog.sheet[open] {
+    transform: translateY(100%);
+  }
 }
 @media (min-width: 640px) {
   dialog.sheet {
     margin: auto;
     width: min(560px, calc(100% - 32px));
     border-radius: 28px;
+    opacity: 0;
+    transform: scale(0.96);
+    transition-duration: 200ms;
+  }
+  dialog.sheet[open] {
+    opacity: 1;
+    transform: none;
+    transition-duration: 250ms;
+  }
+  @starting-style {
+    dialog.sheet[open] {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+  }
+  /* Opened tens of times a session, so it stays quick and subtle. */
+  dialog.sheet[data-anchored] {
+    transform: scale(0.95);
+    transition-duration: 150ms;
+  }
+  dialog.sheet[data-anchored][open] {
+    transform: none;
+    transition-duration: 180ms;
+  }
+  @starting-style {
+    dialog.sheet[data-anchored][open] {
+      opacity: 0;
+      transform: scale(0.95);
+    }
   }
 }
 dialog.sheet::backdrop {
   background: rgb(10 14 20 / 0.45);
   backdrop-filter: blur(2px);
+  opacity: 0;
+  transition:
+    opacity 250ms var(--ease-out),
+    display 250ms allow-discrete,
+    overlay 250ms allow-discrete;
 }
-@keyframes sheet-up {
-  from {
-    transform: translateY(40px);
-    opacity: 0.4;
+dialog.sheet[open]::backdrop {
+  opacity: 1;
+}
+@starting-style {
+  dialog.sheet[open]::backdrop {
+    opacity: 0;
   }
+}
+.sheet-grab {
+  touch-action: none;
+}
+@media (prefers-reduced-transparency: reduce) {
+  dialog.sheet::backdrop {
+    background: rgb(10 14 20 / 0.6);
+    backdrop-filter: none;
+  }
+}
+
+/* Toasts rise from the bottom edge and sink back into it. */
+.toast {
+  transition:
+    opacity 400ms ease,
+    transform 400ms ease;
+}
+@starting-style {
+  .toast {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+}
+.toast[data-leaving] {
+  opacity: 0;
+  transform: translateY(100%);
+  transition-duration: 250ms;
+}
+
+/* A number that changed slides in, so the new value reads as new. */
+.tick {
+  display: inline-block;
+  transition:
+    opacity 220ms var(--ease-out),
+    transform 220ms var(--ease-out),
+    filter 220ms var(--ease-out);
+}
+@starting-style {
+  .tick {
+    opacity: 0;
+    transform: translateY(0.3em);
+    filter: blur(2px);
+  }
+}
+
+/* Icon swaps (copy -> copied, mascot moods) crossfade with a small scale. */
+.swap {
+  display: inline-grid;
+  transition:
+    opacity 200ms var(--ease-out),
+    transform 200ms var(--ease-out),
+    filter 200ms var(--ease-out);
+}
+@starting-style {
+  .swap {
+    opacity: 0;
+    transform: scale(0.6);
+    filter: blur(3px);
+  }
+}
+.swap-pop {
+  display: inline-grid;
+  transition: transform 300ms var(--ease-spring);
+}
+@starting-style {
+  .swap-pop {
+    transform: scale(0.85);
+  }
+}
+
+/* Dropdowns grow down from their trigger. */
+.dropdown {
+  transform-origin: top center;
+  transition:
+    opacity 180ms var(--ease-out),
+    transform 180ms var(--ease-out);
+}
+@starting-style {
+  .dropdown {
+    opacity: 0;
+    transform: scale(0.97) translateY(-4px);
+  }
+}
+
+/* <details> that opens smoothly where the browser can animate to auto height. */
+@supports (interpolate-size: allow-keywords) {
+  .smooth-details {
+    interpolate-size: allow-keywords;
+  }
+  .smooth-details::details-content {
+    height: 0;
+    opacity: 0;
+    overflow: clip;
+    transition:
+      height 220ms var(--ease-out),
+      opacity 220ms var(--ease-out),
+      content-visibility 220ms allow-discrete;
+  }
+  .smooth-details[open]::details-content {
+    height: auto;
+    opacity: 1;
+  }
+}
+
+/* The theme switch crossfades instead of flashing. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 200ms;
+  animation-timing-function: ease;
 }
 
 .no-scrollbar {
@@ -456,13 +623,41 @@ dialog.sheet::backdrop {
   display: none;
 }
 
+/*
+ * Reduced motion: no movement, but keep the fades that explain what changed.
+ */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+  }
+  dialog.sheet,
+  .toast,
+  .tick,
+  .swap,
+  .swap-pop,
+  .dropdown,
+  .day .mk {
+    transform: none !important;
+    filter: none !important;
+  }
+  .day[data-pop] .mk {
+    animation-name: fade-in !important;
+    animation-duration: 200ms !important;
+    animation-timing-function: ease !important;
+  }
+  dialog.sheet {
+    opacity: 0;
+  }
+  dialog.sheet[open] {
+    opacity: 1;
+  }
+  @starting-style {
+    dialog.sheet[open] {
+      opacity: 0;
+    }
   }
 }

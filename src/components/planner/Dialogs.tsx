@@ -102,7 +102,10 @@ export function ShareDialog({
               }
             }}
           >
-            {copied ? <Check size={16} /> : <Copy size={16} />} {copied ? "Copied" : "Copy"}
+            <span key={String(copied)} className="swap">
+              {copied ? <Check size={16} /> : <Copy size={16} />}
+            </span>{" "}
+            {copied ? "Copied" : "Copy"}
           </button>
         </div>
       </div>

@@ -42,7 +42,10 @@ export default function ThemeToggle() {
       if (p === "system") localStorage.removeItem(KEY);
       else localStorage.setItem(KEY, p);
     } catch {}
-    applyTheme(p);
+    // Crossfade the whole page rather than flashing between themes.
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (document.startViewTransition && !reduce) document.startViewTransition(() => applyTheme(p));
+    else applyTheme(p);
   };
 
   return (

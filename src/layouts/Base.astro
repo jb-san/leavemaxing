@@ -91,6 +91,8 @@ const ogImage = new URL(image, SITE.url).href;
     </main>
     <Footer />
     <script>
+      // iOS Safari only applies :active (our press feedback) once the page listens for touches.
+      document.addEventListener("touchstart", () => {}, { passive: true });
       if ("serviceWorker" in navigator && import.meta.env.PROD) {
         window.addEventListener("load", () => {
           navigator.serviceWorker.register("/sw.js").catch(() => {});
