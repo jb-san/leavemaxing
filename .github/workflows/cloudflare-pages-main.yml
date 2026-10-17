@@ -54,9 +54,21 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
+          # Verify env vars are set
+          if [[ -z "$CLOUDFLARE_API_TOKEN" ]]; then
+            echo "ERROR: CLOUDFLARE_API_TOKEN is empty!"
+            exit 1
+          fi
+          if [[ -z "$CLOUDFLARE_ACCOUNT_ID" ]]; then
+            echo "ERROR: CLOUDFLARE_ACCOUNT_ID is empty!"
+            exit 1
+          fi
+          
           # Trim whitespace
           export CLOUDFLARE_API_TOKEN="$(echo -n "$CLOUDFLARE_API_TOKEN" | tr -d '[:space:]')"
           export CLOUDFLARE_ACCOUNT_ID="$(echo -n "$CLOUDFLARE_ACCOUNT_ID" | tr -d '[:space:]')"
+          
+          echo "Deploying with token length: ${#CLOUDFLARE_API_TOKEN}"
           wrangler pages deploy dist \
             --project-name=leavemaxing \
             --branch=main \
