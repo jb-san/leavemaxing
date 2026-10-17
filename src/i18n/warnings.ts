@@ -72,6 +72,11 @@ const COPY: Record<string, WarningCopy> = {
     left: "V tomto roce zbývá jen {left} pracovních dní, takže {extra} dní se nevejde.",
     fit: "{n} dní se nevešlo do limitů přestávek a zůstalo neplánovaných. Zkuste kratší minimální přestávku.",
   },
+  uk: {
+    locked: "Зафіксовано {locked} днів, це більше за бюджет у {budget} днів.",
+    left: "У цьому відпускному році лишилося лише {left} робочих днів, тож {extra} днів уже не поставити.",
+    fit: "{n} днів не вклалися в межі перерв і лишилися без плану. Спробуй коротшу мінімальну перерву.",
+  },
 };
 
 const LOCKED = /^You've locked (\d+) days, more than your (\d+)-day budget\.$/;

@@ -11,6 +11,15 @@ interface RawDay {
 }
 
 /**
+ * date-holidays' Ukrainian gloss for a moved day off is the infinitive "замінити день".
+ * The calendar term is "перенесений вихідний". Dates stay as the source returned them.
+ */
+function nativeHolidayName(lang: string, name: string): string {
+  if (lang !== "uk") return name;
+  return name.replaceAll("(замінити день)", "(перенесений вихідний)");
+}
+
+/**
  * Country-specific de facto non-working days that aren't in date-holidays as public holidays.
  * These are days that are culturally/legally treated as days off but not marked as "public" type.
  */
@@ -62,7 +71,7 @@ function publicDays(hd: Holidays, year: number): RawDay[] {
     const names: Record<string, string> = {};
     for (const [lang, map] of byLang) {
       const translated = map.get(h.start.getTime());
-      if (translated && translated !== h.name) names[lang] = translated;
+      if (translated && translated !== h.name) names[lang] = nativeHolidayName(lang, translated);
     }
     const days = Math.max(1, Math.round(duration));
     for (let k = 0; k < days; k++) {

@@ -17,6 +17,7 @@ import { nlNL } from "./locales/nl-NL";
 import { plPL } from "./locales/pl-PL";
 import { ptPT } from "./locales/pt-PT";
 import { svSE } from "./locales/sv-SE";
+import { ukUA } from "./locales/uk-UA";
 import type { Copy } from "./types";
 
 export const catalogs: Record<string, Copy> = {
@@ -38,6 +39,7 @@ export const catalogs: Record<string, Copy> = {
   "it-IT": itIT,
   "pt-PT": ptPT,
   "cs-CZ": csCZ,
+  "uk-UA": ukUA,
 };
 
 export function normalizeLocale(code: string | undefined | null): string {

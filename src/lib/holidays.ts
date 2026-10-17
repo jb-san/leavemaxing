@@ -61,6 +61,7 @@ const HOLIDAY_LANGS: Record<string, string[]> = {
   "it-IT": ["it"],
   "pt-PT": ["pt"],
   "cs-CZ": ["cz", "cs"],
+  "uk-UA": ["uk"],
 };
 
 /** Holiday name for a UI locale. English keeps the source name. */
