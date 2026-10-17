@@ -2,14 +2,20 @@
 import { countryByCode } from "~/data";
 import { fromIso, MONTHS_LONG, parts, WEEKDAYS_LONG, weekdayMon0 } from "~/lib/dates";
 import type { HolidayFile } from "~/lib/holidays";
+import { regionCopy } from "~/lib/regionLabels";
 
 interface Props {
   file: HolidayFile;
+  /** Use German region names on localized pages. */
+  localizeRegions?: boolean;
 }
 
-const { file } = Astro.props;
+const { file, localizeRegions = false } = Astro.props;
 const country = countryByCode.get(file.country);
-const regionName = (code: string) => country?.regions[code] ?? code;
+const regionName = (code: string) => {
+  const source = country?.regions[code] ?? code;
+  return localizeRegions ? regionCopy(file.country, code, source).name : source;
+};
 
 const BRIDGE: Record<number, string> = {
   0: "Long weekend: Sat to Mon",

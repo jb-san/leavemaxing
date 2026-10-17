@@ -7,6 +7,8 @@ import { locales, replaceTokens, getLocale, isRegionalCountry } from "~/data/loc
 import { SITE } from "~/data/site";
 import Base from "~/layouts/Base.astro";
 import { formatRange } from "~/lib/dates";
+import { regionalPageAlternates } from "~/lib/hreflang";
+import { regionCopy } from "~/lib/regionLabels";
 import { defaultSettings } from "~/lib/settings";
 import { calculateBridgePlans, formatBreak } from "~/lib/bridgeDays";
 import { toPlanInput, yearsNeeded } from "~/lib/planInput";
@@ -26,20 +28,12 @@ export function getStaticPaths() {
     
     for (const year of years) {
       for (const regionCode of regionCodes) {
-        const regionSlug = country.regions[regionCode]
-          ?.toLowerCase()
-          .replace(/ä/g, 'ae')
-          .replace(/ö/g, 'oe')
-          .replace(/ü/g, 'ue')
-          .replace(/ß/g, 'ss')
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-|-$/g, '') || regionCode.toLowerCase();
-        
+        const copy = regionCopy(locale.country, regionCode, country.regions[regionCode] ?? regionCode);
         paths.push({
           params: {
             locale: localeCode.toLowerCase(),
             page: `${locale.slug}-${year}`,
-            region: regionSlug
+            region: copy.slug
           }
         });
       }
@@ -76,15 +70,7 @@ if (!country || !country.regional) {
 // Find region code from slug
 let regionCode: string | null = null;
 for (const [code, name] of Object.entries(country.regions)) {
-  const slug = name.toLowerCase()
-    .replace(/ä/g, 'ae')
-    .replace(/ö/g, 'oe')
-    .replace(/ü/g, 'ue')
-    .replace(/ß/g, 'ss')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-  
-  if (slug === regionSlug) {
+  if (regionCopy(locale.country, code, name).slug === regionSlug) {
     regionCode = code;
     break;
   }
@@ -94,7 +80,8 @@ if (!regionCode) {
   return Astro.redirect('/404');
 }
 
-const regionFullName = country.regions[regionCode];
+const region = regionCopy(locale.country, regionCode, country.regions[regionCode] ?? regionCode);
+const regionFullName = region.name;
 const settings = defaultSettings(locale.country, year);
 settings.region = regionCode;
 settings.budget = locale.defaultBudget;
@@ -131,30 +118,32 @@ const top = [...fullPlan.breaks]
   .slice(0, 3);
 
 // Build title and description
-const regionText = ` ${regionFullName}`;
 const title = replaceTokens(locale.translations.pageTitle, {
   year,
-  region: regionText,
+  region: region.titleRegion,
   leave: locale.defaultBudget,
   total: stats.daysOff
 });
 
 const description = replaceTokens(locale.translations.pageDescription, {
   year,
-  region: ` in ${regionFullName}`,
+  region: region.descriptionRegion,
   leave: locale.defaultBudget,
   total: stats.daysOff
 });
 
-const h1 = replaceTokens(locale.translations.h1Region, { year, region: regionFullName || '' });
+const h1 = replaceTokens(locale.translations.h1Region, { year, region: region.h1Region });
 
 const canonicalPath = `/${localeParam}/${page}/${regionSlug}/`;
 const canonicalUrl = new URL(canonicalPath, SITE.url).href;
 
-// Build hreflang links
-const hreflangs: Array<{ lang: string; url: string }> = [];
-hreflangs.push({ lang: locale.lang, url: canonicalUrl });
-hreflangs.push({ lang: 'x-default', url: `${SITE.url}/${locale.country.toLowerCase()}/${year}/` });
+// No English regional URLs exist yet, so x-default is the English country-year page.
+const hreflangs = regionalPageAlternates(
+  locale.code,
+  canonicalUrl,
+  null,
+  `${SITE.url}/${locale.country.toLowerCase()}/${year}/`,
+);
 
 // JSON-LD structured data
 const jsonLd = {
@@ -236,7 +225,7 @@ const regionalHolidays = file.holidays.filter(h =>
   </div>
 
   <!-- Interactive Planner -->
-  <Planner client:load initial={settings} files={files} today={buildToday} mode="page" years={[year]} />
+  <Planner client:load initial={settings} files={files} today={buildToday} mode="page" years={[year]} localizeRegions />
 
   <div class="mt-10 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
     <!-- Main content -->
@@ -271,7 +260,7 @@ const regionalHolidays = file.holidays.filter(h =>
       <!-- Holidays List -->
       <section>
         <h2 class="text-2xl font-bold mb-4">{replaceTokens(locale.translations.holidaysHeading, { year })}</h2>
-        <HolidayList file={file} />
+        <HolidayList file={file} localizeRegions />
       </section>
 
       <!-- FAQ Section -->
@@ -331,17 +320,11 @@ const regionalHolidays = file.holidays.filter(h =>
           <ul class="mt-3 flex flex-col gap-1 max-h-64 overflow-y-auto text-sm">
             {Object.entries(country.regions).map(([code, name]) => {
               if (code === regionCode) return null;
-              const slug = name.toLowerCase()
-                .replace(/ä/g, 'ae')
-                .replace(/ö/g, 'oe')
-                .replace(/ü/g, 'ue')
-                .replace(/ß/g, 'ss')
-                .replace(/[^a-z0-9]+/g, '-')
-                .replace(/^-|-$/g, '');
+              const other = regionCopy(locale.country, code, name);
               return (
                 <li>
-                  <a href={`/${localeParam}/${page}/${slug}/`} class="hover:text-lime-ink hover:underline">
-                    {name}
+                  <a href={`/${localeParam}/${page}/${other.slug}/`} class="hover:text-lime-ink hover:underline">
+                    {other.name}
                   </a>
                 </li>
               );

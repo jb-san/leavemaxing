@@ -7,6 +7,7 @@ import { locales, replaceTokens, getLocale } from "~/data/locales";
 import { SITE } from "~/data/site";
 import Base from "~/layouts/Base.astro";
 import { formatRange } from "~/lib/dates";
+import { localizedPageAlternates } from "~/lib/hreflang";
 import { defaultSettings } from "~/lib/settings";
 import { calculateBridgePlans, formatBreak } from "~/lib/bridgeDays";
 import { toPlanInput, yearsNeeded } from "~/lib/planInput";
@@ -109,10 +110,11 @@ const h1 = replaceTokens(locale.translations.h1, { year });
 const canonicalPath = `/${localeParam}/${page}/`;
 const canonicalUrl = new URL(canonicalPath, SITE.url).href;
 
-// Build hreflang links
-const hreflangs: Array<{ lang: string; url: string }> = [];
-hreflangs.push({ lang: locale.lang, url: canonicalUrl });
-hreflangs.push({ lang: 'x-default', url: `${SITE.url}/${locale.country.toLowerCase()}/${year}/` });
+const hreflangs = localizedPageAlternates(
+  locale.code,
+  canonicalUrl,
+  `${SITE.url}/${locale.country.toLowerCase()}/${year}/`,
+);
 
 // JSON-LD structured data
 const jsonLd = {
@@ -182,7 +184,7 @@ const jsonLd = {
   </div>
 
   <!-- Interactive Planner -->
-  <Planner client:load initial={settings} files={files} today={buildToday} mode="page" years={[year]} />
+  <Planner client:load initial={settings} files={files} today={buildToday} mode="page" years={[year]} localizeRegions />
 
   <div class="mt-10 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
     <!-- Main content -->
@@ -217,7 +219,7 @@ const jsonLd = {
       <!-- Holidays List -->
       <section>
         <h2 class="text-2xl font-bold mb-4">{replaceTokens(locale.translations.holidaysHeading, { year })}</h2>
-        <HolidayList file={file} />
+        <HolidayList file={file} localizeRegions />
       </section>
 
       <!-- FAQ Section -->

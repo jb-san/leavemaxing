@@ -3,6 +3,7 @@ import type { Dispatch } from "react";
 import { countries, countryByCode } from "~/data";
 import { leaveYearLabel, MONTHS_LONG, MONTHS_SHORT, WEEKDAYS_SHORT } from "~/lib/dates";
 import { STYLES } from "~/lib/planner/types";
+import { regionCopy } from "~/lib/regionLabels";
 import { MAX_BUDGET, type Settings } from "~/lib/settings";
 import { CountryPicker } from "./CountryPicker";
 import type { Action } from "./state";
@@ -13,11 +14,13 @@ export function SettingsPanel({
   dispatch,
   years,
   idPrefix,
+  localizeRegions = false,
 }: {
   settings: Settings;
   dispatch: Dispatch<Action>;
   years: number[];
   idPrefix: string;
+  localizeRegions?: boolean;
 }) {
   const set = (patch: Partial<Settings>) => dispatch({ type: "set", patch });
   const country = countryByCode.get(s.country);
@@ -49,7 +52,7 @@ export function SettingsPanel({
             <option value="">Whole country (national holidays)</option>
             {regions.map(([code, name]) => (
               <option key={code} value={code}>
-                {name}
+                {localizeRegions ? regionCopy(s.country, code, name).name : name}
               </option>
             ))}
           </select>

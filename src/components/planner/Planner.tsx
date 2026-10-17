@@ -16,6 +16,7 @@ import { runPlan } from "~/lib/planClient";
 import { toPlanInput, yearsNeeded } from "~/lib/planInput";
 import { classifyDays, plan as planSync } from "~/lib/planner/plan";
 import { type Plan, type PlanInput, STYLES } from "~/lib/planner/types";
+import { regionCopy } from "~/lib/regionLabels";
 import { defaultSettings, fromQuery, planPath, type Settings, shareUrl, toQuery } from "~/lib/settings";
 import { addPlan, loadLast, recordBest, saveLast } from "~/lib/storage";
 import { BreaksList } from "./BreaksList";
@@ -53,6 +54,8 @@ export interface PlannerProps {
   today: DayNum;
   mode: "home" | "page";
   years: number[];
+  /** Show German region names on localized pages. English pages keep the source names. */
+  localizeRegions?: boolean;
 }
 
 type Dialog = "settings" | "share" | "export" | "save" | null;
@@ -248,7 +251,11 @@ export default function Planner(props: PlannerProps) {
   const holidays = useMemo(() => holidayMap(shown.holidays), [shown.holidays]);
 
   const country = countryByCode.get(settings.country);
-  const place = placeName(settings.country, settings.region);
+  const sourcePlace = placeName(settings.country, settings.region);
+  const place =
+    props.localizeRegions && settings.region
+      ? regionCopy(settings.country, settings.region, sourcePlace).name
+      : sourcePlace;
   const yearLabel = leaveYearLabel(settings.year, settings.yearStart);
   const fileName = `leavemaxxing-${settings.country.toLowerCase()}-${settings.year}`;
   const origin = typeof window !== "undefined" ? window.location.origin : "https://leavemaxxing.com";
@@ -275,7 +282,13 @@ export default function Planner(props: PlannerProps) {
         aria-label="Plan settings"
         className="card hidden p-5 lg:sticky lg:top-4 lg:block lg:max-h-[calc(100dvh-32px)] lg:overflow-y-auto"
       >
-        <SettingsPanel settings={settings} dispatch={dispatch} years={years} idPrefix="d" />
+        <SettingsPanel
+          settings={settings}
+          dispatch={dispatch}
+          years={years}
+          idPrefix="d"
+          localizeRegions={props.localizeRegions}
+        />
       </aside>
 
       <div className="flex min-w-0 flex-col gap-5">
@@ -355,7 +368,13 @@ export default function Planner(props: PlannerProps) {
       </button>
 
       <Sheet open={dialog === "settings"} onClose={() => setDialog(null)} title="Plan settings">
-        <SettingsPanel settings={settings} dispatch={dispatch} years={years} idPrefix="m" />
+        <SettingsPanel
+          settings={settings}
+          dispatch={dispatch}
+          years={years}
+          idPrefix="m"
+          localizeRegions={props.localizeRegions}
+        />
         <button type="button" className="btn btn-primary" onClick={() => setDialog(null)}>
           Show my plan
         </button>
