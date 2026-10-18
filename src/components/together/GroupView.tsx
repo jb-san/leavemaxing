@@ -6,7 +6,8 @@ import { type HolidayFile, holidayMap, loadHolidayFile, resolveHolidays } from "
 import type { HolidayDay } from "~/lib/planner/types";
 import { shareUrl } from "~/lib/settings";
 import { loadLast } from "~/lib/storage";
-import { toggleDay, withVote, yearsOf } from "~/lib/together/calendar";
+import { withVote, yearsOf } from "~/lib/together/calendar";
+import { applyDayAction, type DayAction } from "~/lib/together/dayMenu";
 import { formatInvite } from "~/lib/together/link";
 import { limitToMonths } from "~/lib/together/member";
 import { withoutProposal, withProposal } from "~/lib/together/propose";
@@ -17,7 +18,7 @@ import type { GroupSession, GroupState } from "~/lib/together/session";
 import { planSettingsFor } from "~/lib/together/toPlan";
 import { Avatar } from "./Avatar";
 import { monthsPhrase, t } from "./copy";
-import { GroupCalendar } from "./GroupCalendar";
+import { focusDay, GroupCalendar } from "./GroupCalendar";
 import { MemberSheet } from "./MemberSheet";
 import { ProposeSheet } from "./ProposeSheet";
 import { ShareSheet } from "./ShareSheet";
@@ -94,6 +95,9 @@ export function GroupView({
   const [today] = useState<DayNum>(() => localToday());
   const [editing, setEditing] = useState(false);
   const [proposing, setProposing] = useState(false);
+  // The day "Propose dates from here" opened the sheet on, if it was opened from a day's menu.
+  const [proposeFrom, setProposeFrom] = useState<DayNum | undefined>();
+  const calendar = useRef<HTMLDivElement>(null);
   const inviteButton = useRef<HTMLButtonElement>(null);
   const proposeButton = useRef<HTMLButtonElement>(null);
   const wasSharing = useRef(sharing);
@@ -106,9 +110,13 @@ export function GroupView({
     wasSharing.current = sharing;
   }, [sharing]);
 
-  // Once the sheet has closed, focus goes back to the button that opened it.
+  // Once the sheet has closed, focus goes back to the button or the day that opened it.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only as the sheet closes
   useEffect(() => {
-    if (wasProposing.current && !proposing) proposeButton.current?.focus();
+    if (wasProposing.current && !proposing) {
+      if (proposeFrom === undefined) proposeButton.current?.focus();
+      else focusDay(calendar.current, proposeFrom);
+    }
     wasProposing.current = proposing;
   }, [proposing]);
 
@@ -153,12 +161,17 @@ export function GroupView({
       if (session.state.error !== "rate") push(t.saveFailed, "warn");
     });
   };
-  const toggle = (day: DayNum) => {
-    const blocked = limitToMonths({ ...me, blocked: toggleDay(me.blocked, day) }, group.months).blocked;
-    save(session.updateMe({ blocked }));
+  const markDay = (day: DayNum, action: Exclude<DayAction, "propose">) => {
+    const { blocked, customOff } = limitToMonths({ ...me, ...applyDayAction(me, day, action) }, group.months);
+    save(session.updateMe({ blocked, customOff }));
   };
-  const vote = (w: ScoredWindow) => (v: Vote | null) => {
-    save(session.updateMe({ votes: withVote(me.votes, w.key, v) }));
+  const voteOn = (key: WindowKey, v: Vote | null) => {
+    save(session.updateMe({ votes: withVote(me.votes, key, v) }));
+  };
+  const vote = (w: ScoredWindow) => (v: Vote | null) => voteOn(w.key, v);
+  const proposeFromDay = (day: DayNum) => {
+    setProposeFrom(day);
+    setProposing(true);
   };
   const propose = (key: WindowKey) => {
     save(session.updateMe({ proposals: withProposal(me.proposals, key) }));
@@ -250,13 +263,19 @@ export function GroupView({
         agreed={scored?.agreed ?? []}
         proposals={scored?.proposals ?? []}
         today={today}
-        onToggle={toggle}
+        rootRef={calendar}
+        onAction={markDay}
+        onPropose={proposeFromDay}
+        onVote={voteOn}
         action={
           <button
             ref={proposeButton}
             type="button"
             className="btn btn-soft shrink-0"
-            onClick={() => setProposing(true)}
+            onClick={() => {
+              setProposeFrom(undefined);
+              setProposing(true);
+            }}
           >
             <CalendarRange size={16} /> {t.proposeDates}
           </button>
@@ -286,6 +305,7 @@ export function GroupView({
         me={meScored}
         holidays={myHolidays}
         today={today}
+        start={proposeFrom}
         onPropose={propose}
       />
       <MemberSheet

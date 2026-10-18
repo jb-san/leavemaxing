@@ -151,13 +151,19 @@ export function WindowRow({
 }
 
 /** Works, maybe or can't: a radio group where tapping your current vote again clears it. */
-function VoteControl({
+export function VoteControl({
   value,
   counts,
+  label = t.yourVote,
+  full = false,
   onVote,
 }: {
   value: Vote | undefined;
   counts: Record<Vote, number>;
+  /** The radio group's accessible name, when there's more than one on screen. */
+  label?: string;
+  /** Stretch the options across the full width. */
+  full?: boolean;
   onVote: (vote: Vote | null) => void;
 }) {
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
@@ -174,8 +180,8 @@ function VoteControl({
   return (
     <div
       role="radiogroup"
-      aria-label={t.yourVote}
-      className="flex shrink-0 rounded-full border border-line bg-card-2 p-1"
+      aria-label={label}
+      className={cx("flex shrink-0 rounded-full border border-line bg-card-2 p-1", full && "w-full")}
     >
       {VOTES.map((v, i) => (
         <button
@@ -191,6 +197,7 @@ function VoteControl({
           onKeyDown={(e) => onKeyDown(e, i)}
           className={cx(
             "flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-bold transition-[transform,background-color,color] duration-150 ease-[var(--ease-out)] active:scale-[0.97]",
+            full && "flex-1 justify-center px-2",
             value === v ? CHECKED[v] : "text-ink hover:bg-card",
           )}
         >

@@ -4,6 +4,8 @@ import { windowKey } from "./score";
 
 /** The longest range a proposal can cover: the longest trip a group can set. */
 export const MAX_PROPOSAL = LIMITS.maxLength;
+/** The shortest range a proposal can cover: the shortest trip a group can set. */
+export const MIN_PROPOSAL = LIMITS.minLength;
 
 /** Dates being picked for a proposal. `end` is null until the second tap. */
 export interface Pick {
@@ -36,9 +38,14 @@ export function inPick(pick: Pick | null, day: DayNum): boolean {
   return day >= pick.start && day <= (pick.end ?? pick.start);
 }
 
-/** The window key for a finished pick, or null while it's still being picked. */
+/** A finished pick shorter than the shortest trip. */
+export function tooShort(pick: Pick | null): boolean {
+  return pick?.end != null && pick.end - pick.start + 1 < MIN_PROPOSAL;
+}
+
+/** The window key for a finished pick, or null while it's still being picked or is too short. */
 export function pickedKey(pick: Pick | null): WindowKey | null {
-  if (!pick || pick.end === null) return null;
+  if (!pick || pick.end === null || tooShort(pick)) return null;
   return windowKey(pick.start, pick.end);
 }
 

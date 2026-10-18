@@ -3,10 +3,12 @@ import { dayNum } from "../dates";
 import {
   inPick,
   MAX_PROPOSAL,
+  MIN_PROPOSAL,
   openPick,
   type Pick,
   pickDay,
   pickedKey,
+  tooShort,
   withoutProposal,
   withProposal,
 } from "./propose";
@@ -52,6 +54,20 @@ describe("pickDay", () => {
     const key = pickedKey(pickDay(pickDay(null, d(1)), d(31)));
     expect(key).toBe(k("01", "21"));
     expect(parseWindowKey(key as string)).toEqual({ start: d(1), end: d(21) });
+  });
+
+  it("gives no key for a range shorter than the shortest trip", () => {
+    expect(MIN_PROPOSAL).toBe(3);
+    const two = pickDay(pickDay(null, d(10)), d(11));
+    expect(tooShort(two)).toBe(true);
+    expect(pickedKey(two)).toBeNull();
+    expect(tooShort(pickDay(pickDay(null, d(10)), d(10)))).toBe(true);
+    const three = pickDay(pickDay(null, d(10)), d(12));
+    expect(tooShort(three)).toBe(false);
+    expect(parseWindowKey(pickedKey(three) as string)).toEqual({ start: d(10), end: d(12) });
+    // Nothing is too short until the range is complete.
+    expect(tooShort(pickDay(null, d(10)))).toBe(false);
+    expect(tooShort(null)).toBe(false);
   });
 });
 

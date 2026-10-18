@@ -1,9 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 import { MonthCarousel, MonthGrid } from "~/components/planner/MonthCards";
 import { Sheet } from "~/components/planner/ui";
 import { type DayNum, formatRange } from "~/lib/dates";
 import { bandsOf } from "~/lib/together/calendar";
-import { inPick, MAX_PROPOSAL, openPick, type Pick, pickDay, pickedKey } from "~/lib/together/propose";
+import {
+  inPick,
+  MAX_PROPOSAL,
+  openPick,
+  type Pick,
+  pickDay,
+  pickedKey,
+  tooShort,
+} from "~/lib/together/propose";
 import type { MemberRecord, WindowKey } from "~/lib/together/protocol";
 import { costFor, type ScoreMember } from "~/lib/together/score";
 import { t } from "./copy";
@@ -43,8 +51,9 @@ export function ProposeSheet({
   const [pick, setPick] = useState<Pick | null>(null);
   // Bumped on each open, so the carousel mounts once the sheet is showing and can scroll to this month.
   const [opened, setOpened] = useState(0);
+  // Before the first paint of an open, so the sheet never shows the last pick.
   // biome-ignore lint/correctness/useExhaustiveDependencies: the start day only applies as the sheet opens
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!open) return;
     setPick(openPick(start));
     setOpened((n) => n + 1);
@@ -63,6 +72,7 @@ export function ProposeSheet({
           key={opened}
           months={shared.sorted}
           today={today}
+          initial={start}
           label={t.proposeMonths}
           columns="sm:grid-cols-2"
         >
@@ -97,6 +107,7 @@ export function ProposeSheet({
               <p className="text-sm text-muted">
                 <span>{t.proposeCost(pick.end - pick.start + 1, costFor(me, pick.start, pick.end))}</span>
                 {pick.clamped && <span className="block">{t.proposeClamped(MAX_PROPOSAL, pick.end)}</span>}
+                {tooShort(pick) && <span className="block font-semibold text-ink">{t.proposeTooShort}</span>}
               </p>
             </>
           ) : (

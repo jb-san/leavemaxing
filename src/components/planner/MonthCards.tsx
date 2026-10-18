@@ -16,10 +16,13 @@ export function MonthCarousel({
   label,
   badge,
   columns = "sm:grid-cols-2 xl:grid-cols-3",
+  initial,
   children,
 }: {
   months: Month[];
   today: DayNum;
+  /** On phones, the carousel starts on this day's month. Defaults to today's. */
+  initial?: DayNum;
   /** The section's accessible name. */
   label: string;
   /** Grid columns from the `sm` breakpoint up, for a narrower container such as a sheet. */
@@ -33,9 +36,10 @@ export function MonthCarousel({
   const scroller = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
 
+  const from = initial ?? today;
   const todayIndex = months.findIndex((m) => {
     const first = dayNum(m.year, m.month, 1);
-    return today >= first && today < first + daysInMonth(m.year, m.month);
+    return from >= first && from < first + daysInMonth(m.year, m.month);
   });
 
   // On phones, start the carousel at the current month.

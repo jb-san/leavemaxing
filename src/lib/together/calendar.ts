@@ -41,7 +41,8 @@ export function overflow<T>(items: readonly T[], max: number): { shown: T[]; mor
   return { shown: items.slice(0, max), more: Math.max(0, items.length - max) };
 }
 
-export type Band = "ranked" | "agreed";
+/** A band's fill: soft lime for suggested dates, solid lime for agreed ones, red hatching for vetoed ones. */
+export type Band = "ranked" | "agreed" | "vetoed";
 
 /** The days covered by suggested windows, overlaps merged. A window everyone agreed on wins. */
 export function bandsOf(
@@ -55,7 +56,7 @@ export function bandsOf(
 }
 
 /** Whether a banded day starts or ends its run of the same band. */
-export function bandEdges(bands: ReadonlyMap<DayNum, Band>, day: DayNum): { start: boolean; end: boolean } {
+export function bandEdges<T>(bands: ReadonlyMap<DayNum, T>, day: DayNum): { start: boolean; end: boolean } {
   const band = bands.get(day);
   return { start: bands.get(day - 1) !== band, end: bands.get(day + 1) !== band };
 }
@@ -140,4 +141,148 @@ export function arrowVote(index: number, key: string): Vote | null {
   const step = ({ ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 } as Record<string, number>)[key];
   if (!step) return null;
   return VOTES[(index + step + VOTES.length) % VOTES.length] ?? null;
+}
+
+/** A window of dates as the calendar draws it. */
+export type Win = { key: WindowKey; start: DayNum; end: DayNum };
+
+/**
+ * Where a day stands with the group. Agreed: inside dates everyone said works. Open: inside dates
+ * nobody said they can't do. Vetoed: every window holding the day has at least one "Can't".
+ */
+export type Tone = "agreed" | "open" | "vetoed";
+
+/**
+ * A day's tone, with whether it keeps a suggested window's soft fill (`ranked`) and a proposal's
+ * dashed outline (`proposed`). Agreed days drop both. A vetoed day keeps the outline of a proposal.
+ */
+export interface DayTone {
+  tone: Tone;
+  ranked: boolean;
+  proposed: boolean;
+}
+
+const vetoedBy = (votes: Iterable<Pick<MemberRecord, "votes">>, key: WindowKey) => {
+  for (const m of votes) if (m.votes[key] === "no") return true;
+  return false;
+};
+const holds = (w: Win, day: DayNum) => day >= w.start && day <= w.end;
+
+function toneOf(
+  day: DayNum,
+  ranked: readonly Win[],
+  proposals: readonly Win[],
+  agreed: readonly Win[],
+  vetoed: (key: WindowKey) => boolean,
+): DayTone | null {
+  if (agreed.some((w) => holds(w, day))) return { tone: "agreed", ranked: false, proposed: false };
+  const r = ranked.filter((w) => holds(w, day));
+  const p = proposals.filter((w) => holds(w, day));
+  if (r.length === 0 && p.length === 0) return null;
+  const openRanked = r.some((w) => !vetoed(w.key));
+  const openProposed = p.some((w) => !vetoed(w.key));
+  if (openRanked || openProposed) return { tone: "open", ranked: openRanked, proposed: openProposed };
+  return { tone: "vetoed", ranked: false, proposed: p.length > 0 };
+}
+
+/** The tone of one day, decided for that day alone, from the windows holding it and everyone's votes. */
+export function dayTone(
+  day: DayNum,
+  ranked: readonly Win[],
+  proposals: readonly Win[],
+  agreed: readonly Win[],
+  votes: readonly Pick<MemberRecord, "votes">[],
+): DayTone | null {
+  return toneOf(day, ranked, proposals, agreed, (key) => vetoedBy(votes, key));
+}
+
+/** `dayTone` for every day inside any window. */
+export function dayTones(
+  ranked: readonly Win[],
+  proposals: readonly Win[],
+  agreed: readonly Win[],
+  votes: readonly Pick<MemberRecord, "votes">[],
+): Map<DayNum, DayTone> {
+  const vetoed = new Map<WindowKey, boolean>();
+  const isVetoed = (key: WindowKey) => {
+    let v = vetoed.get(key);
+    if (v === undefined) {
+      v = vetoedBy(votes, key);
+      vetoed.set(key, v);
+    }
+    return v;
+  };
+  const days = new Set<DayNum>();
+  for (const w of [...ranked, ...proposals, ...agreed]) for (let d = w.start; d <= w.end; d++) days.add(d);
+  const out = new Map<DayNum, DayTone>();
+  for (const d of [...days].sort((a, b) => a - b)) {
+    const tone = toneOf(d, ranked, proposals, agreed, isVetoed);
+    if (tone) out.set(d, tone);
+  }
+  return out;
+}
+
+/** Agreed windows, then ranked ones in rank order, then proposals, each key once. */
+function ordered<W extends Win>(ranked: readonly W[], proposals: readonly W[], agreed: readonly W[]): W[] {
+  const seen = new Set<WindowKey>();
+  const out: W[] = [];
+  for (const w of [...agreed, ...ranked, ...proposals]) {
+    if (seen.has(w.key)) continue;
+    seen.add(w.key);
+    out.push(w);
+  }
+  return out;
+}
+
+/** The windows holding a day: agreed first, then ranked in rank order, then proposals, once each. */
+export function windowsOn<W extends Win>(
+  day: DayNum,
+  ranked: readonly W[],
+  proposals: readonly W[],
+  agreed: readonly W[],
+): W[] {
+  return ordered(ranked, proposals, agreed).filter((w) => holds(w, day));
+}
+
+/** One member's vote on a window, or null if they haven't voted. */
+export interface MemberVote {
+  id: string;
+  vote: Vote | null;
+}
+
+/** Each member's vote on a window, in member order. */
+export function memberVotes(
+  members: Iterable<[string, Pick<MemberRecord, "votes">]>,
+  key: WindowKey,
+): MemberVote[] {
+  return [...members].map(([id, m]) => ({ id, vote: m.votes[key] ?? null }));
+}
+
+/** The votes drawn on a window's first day: members who voted first, then the rest, up to `max`. */
+export interface Cluster {
+  key: WindowKey;
+  shown: MemberVote[];
+  more: number;
+}
+
+/**
+ * A vote cluster on the first day of each window. When windows start on the same day, the
+ * higher-ranked one keeps it: agreed, then ranked in rank order, then proposals.
+ */
+export function startClusters(
+  ranked: readonly Win[],
+  proposals: readonly Win[],
+  agreed: readonly Win[],
+  members: Iterable<[string, Pick<MemberRecord, "votes">]>,
+  max = 3,
+): Map<DayNum, Cluster> {
+  const list = [...members];
+  const out = new Map<DayNum, Cluster>();
+  for (const w of ordered(ranked, proposals, agreed)) {
+    if (out.has(w.start)) continue;
+    const votes = memberVotes(list, w.key);
+    const sorted = [...votes.filter((v) => v.vote), ...votes.filter((v) => !v.vote)];
+    out.set(w.start, { key: w.key, ...overflow(sorted, max) });
+  }
+  return new Map([...out].sort(([a], [b]) => a - b));
 }

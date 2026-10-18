@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { dayNum } from "~/lib/dates";
-import { dayLabel, joinNames, monthsPhrase } from "./copy";
+import { dayLabel, joinNames, menuNote, monthsPhrase, votesPhrase } from "./copy";
 
 describe("monthsPhrase", () => {
   it("names a single month", () => {
@@ -61,5 +61,71 @@ describe("dayLabel", () => {
 
   it("calls an ordinary day a workday", () => {
     expect(dayLabel(dayNum(2027, 1, 12), "work", [], [])).toBe("Tue 12 Jan, workday.");
+  });
+
+  it("says your own day off is a day off", () => {
+    expect(dayLabel(dayNum(2027, 1, 12), "custom", [], [])).toBe("Tue 12 Jan, your day off.");
+  });
+
+  it("gives the votes on each window that holds the day", () => {
+    const sam = { name: "Sam", you: false };
+    expect(
+      dayLabel(
+        mon,
+        "work",
+        [],
+        [],
+        [],
+        [
+          {
+            start: dayNum(2027, 1, 9),
+            end: dayNum(2027, 1, 12),
+            votes: [
+              { ...sam, vote: "yes" },
+              { name: "Alex", you: false, vote: "no" },
+              { name: "Jo", you: false, vote: null },
+            ],
+          },
+          { start: dayNum(2027, 1, 11), end: dayNum(2027, 1, 20), votes: [{ ...sam, vote: "maybe" }] },
+        ],
+      ),
+    ).toBe(
+      "Mon 11 Jan, workday. In 9–12 Jan: Sam works, Alex can't, Jo hasn't voted. In 11–20 Jan: Sam says maybe.",
+    );
+  });
+});
+
+describe("votesPhrase", () => {
+  it("names each vote, with your own in the second person", () => {
+    expect(
+      votesPhrase(dayNum(2027, 11, 12), dayNum(2027, 11, 15), [
+        { name: "Sam", you: true, vote: "yes" },
+        { name: "Alex", you: false, vote: "no" },
+        { name: "Jo", you: false, vote: null },
+      ]),
+    ).toBe("In 12–15 Nov: you work, Alex can't, Jo hasn't voted.");
+    expect(
+      votesPhrase(dayNum(2027, 11, 12), dayNum(2027, 11, 15), [
+        { name: "Sam", you: true, vote: "maybe" },
+        { name: "Kim", you: false, vote: "maybe" },
+      ]),
+    ).toBe("In 12–15 Nov: you say maybe, Kim says maybe.");
+    expect(
+      votesPhrase(dayNum(2027, 11, 12), dayNum(2027, 11, 15), [{ name: "Sam", you: true, vote: null }]),
+    ).toBe("In 12–15 Nov: you haven't voted.");
+  });
+});
+
+describe("menuNote", () => {
+  it("says what the day is for you and who else can't", () => {
+    expect(menuNote("holiday", ["Epiphany", "Other"], ["Alex"])).toBe(
+      "Public holiday: Epiphany, Other. Alex can't.",
+    );
+    expect(menuNote("holiday", [], [])).toBe("Public holiday.");
+    expect(menuNote("weekend", [], ["Sam", "Alex"])).toBe("Weekend. Sam and Alex can't.");
+    expect(menuNote("blocked", [], [])).toBe("You can't do this day.");
+    expect(menuNote("custom", [], [])).toBe("Your day off. It costs no leave.");
+    expect(menuNote("work", [], ["Kim"])).toBe("Kim can't.");
+    expect(menuNote("work", [], [])).toBeNull();
   });
 });

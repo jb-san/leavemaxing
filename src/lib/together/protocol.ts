@@ -63,7 +63,6 @@ export const MEMBER_COLORS: readonly string[] = [
   "#db2777",
 ];
 
-const MAX_WINDOW_DAYS = 60;
 const MAX_NAME = 40;
 const MAX_GROUP_NAME = 60;
 const MAX_MONTHS = 24;
@@ -147,6 +146,7 @@ export function isGroupRecord(v: unknown): v is GroupRecord {
   );
 }
 
+/** A window key's first and last day, or null unless it's a valid trip of 3 to 21 days. */
 export function parseWindowKey(k: string): { start: number; end: number } | null {
   if (!WINDOW_KEY.test(k)) return null;
   const [a, b] = k.split("..") as [string, string];
@@ -154,7 +154,9 @@ export function parseWindowKey(k: string): { start: number; end: number } | null
   const end = fromIso(b);
   if (Number.isNaN(start) || Number.isNaN(end)) return null;
   if (toIso(start) !== a || toIso(end) !== b) return null;
-  if (end < start || end - start + 1 > MAX_WINDOW_DAYS) return null;
+  // Every window is a trip: suggested dates, proposals and votes alike.
+  const length = end - start + 1;
+  if (length < LIMITS.minLength || length > LIMITS.maxLength) return null;
   return { start, end };
 }
 

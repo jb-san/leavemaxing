@@ -6,16 +6,22 @@ import {
   bandsOf,
   blockedBy,
   clickedVote,
+  dayTone,
+  dayTones,
   groupHelps,
   memberDayKind,
+  memberVotes,
   overflow,
   proposedDays,
   runEdges,
+  startClusters,
   toggleDay,
   voteCounts,
+  windowsOn,
   withVote,
   yearsOf,
 } from "./calendar";
+import type { Vote, WindowKey } from "./protocol";
 
 const WORK_WEEK = [true, true, true, true, true, false, false];
 const sat = dayNum(2027, 1, 9);
@@ -200,5 +206,175 @@ describe("proposedDays and runEdges", () => {
     expect(runEdges(days, d(12))).toEqual({ start: false, end: false });
     expect(runEdges(days, d(14))).toEqual({ start: false, end: true });
     expect(runEdges(days, d(11))).toEqual({ start: false, end: false });
+  });
+});
+
+describe("vote tones and clusters", () => {
+  const d = (day: number) => dayNum(2027, 5, day);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const w = (a: number, b: number) => ({
+    key: `2027-05-${pad(a)}..2027-05-${pad(b)}` as WindowKey,
+    start: d(a),
+    end: d(b),
+  });
+  const votes = (...pairs: [{ key: WindowKey }, Vote][]) => ({
+    votes: Object.fromEntries(pairs.map(([x, v]) => [x.key, v])) as Record<WindowKey, Vote>,
+  });
+
+  describe("dayTone", () => {
+    it("is null outside every window", () => {
+      expect(dayTone(d(1), [w(10, 14)], [], [], [])).toBeNull();
+    });
+
+    it("is open inside a ranked window nobody can't do, with the soft fill", () => {
+      const r = w(10, 14);
+      expect(dayTone(d(12), [r], [], [], [votes([r, "yes"]), votes([r, "maybe"])])).toEqual({
+        tone: "open",
+        ranked: true,
+        proposed: false,
+      });
+    });
+
+    it("is open inside an open proposal, with the outline and no fill", () => {
+      const p = w(10, 14);
+      expect(dayTone(d(12), [], [p], [], [])).toEqual({ tone: "open", ranked: false, proposed: true });
+    });
+
+    it("is vetoed when every window holding the day has a can't", () => {
+      const r = w(10, 14);
+      const p = w(12, 16);
+      const all = [votes([r, "no"]), votes([p, "no"], [r, "yes"])];
+      expect(dayTone(d(13), [r], [p], [], all)).toEqual({ tone: "vetoed", ranked: false, proposed: true });
+      expect(dayTone(d(11), [r], [p], [], all)).toEqual({ tone: "vetoed", ranked: false, proposed: false });
+    });
+
+    it("stays open when one window holding the day is still open", () => {
+      const r = w(10, 14);
+      const p = w(12, 16);
+      const all = [votes([r, "no"])];
+      // The ranked window is vetoed, so the day keeps only the proposal's outline.
+      expect(dayTone(d(13), [r], [p], [], all)).toEqual({ tone: "open", ranked: false, proposed: true });
+      expect(dayTone(d(11), [r], [p], [], all)).toEqual({ tone: "vetoed", ranked: false, proposed: false });
+    });
+
+    it("lets agreed beat vetoed and open, day by day, and drops the outline", () => {
+      const a = w(10, 12);
+      const p = w(11, 15);
+      const r = w(9, 13);
+      const all = [votes([a, "yes"], [p, "no"]), votes([a, "yes"])];
+      expect(dayTone(d(11), [r, a], [p], [a], all)).toEqual({
+        tone: "agreed",
+        ranked: false,
+        proposed: false,
+      });
+      expect(dayTone(d(12), [r, a], [p], [a], all)).toEqual({
+        tone: "agreed",
+        ranked: false,
+        proposed: false,
+      });
+      // Past the agreed window, the open ranked window wins over the vetoed proposal.
+      expect(dayTone(d(13), [r, a], [p], [a], all)).toEqual({ tone: "open", ranked: true, proposed: false });
+      expect(dayTone(d(14), [r, a], [p], [a], all)).toEqual({
+        tone: "vetoed",
+        ranked: false,
+        proposed: true,
+      });
+    });
+
+    it("maps every day of every window", () => {
+      const r = w(10, 11);
+      const p = w(20, 22);
+      const tones = dayTones([r], [p], [], [votes([p, "no"])]);
+      expect([...tones.keys()]).toEqual([d(10), d(11), d(20), d(21), d(22)]);
+      expect(tones.get(d(21))?.tone).toBe("vetoed");
+      expect(tones.get(d(10))).toEqual(dayTone(d(10), [r], [p], [], [votes([p, "no"])]));
+    });
+  });
+
+  describe("windowsOn", () => {
+    it("lists agreed, then ranked in order, then proposals, once each", () => {
+      const a = w(10, 14);
+      const r1 = w(11, 15);
+      const r2 = w(9, 12);
+      const p = w(12, 14);
+      expect(windowsOn(d(12), [r1, a, r2], [p, a], [a]).map((x) => x.key)).toEqual([
+        a.key,
+        r1.key,
+        r2.key,
+        p.key,
+      ]);
+      expect(windowsOn(d(15), [r1, a, r2], [p, a], [a]).map((x) => x.key)).toEqual([r1.key]);
+      expect(windowsOn(d(1), [r1], [p], [a])).toEqual([]);
+    });
+  });
+
+  describe("memberVotes", () => {
+    it("gives each member's vote on a window, in member order", () => {
+      const r = w(10, 14);
+      expect(
+        memberVotes(
+          [
+            ["a", votes([r, "yes"])],
+            ["b", votes()],
+            ["c", votes([r, "no"])],
+          ],
+          r.key,
+        ),
+      ).toEqual([
+        { id: "a", vote: "yes" },
+        { id: "b", vote: null },
+        { id: "c", vote: "no" },
+      ]);
+    });
+  });
+
+  describe("startClusters", () => {
+    const members = (r: { key: WindowKey }): [string, { votes: Record<WindowKey, Vote> }][] => [
+      ["a", votes()],
+      ["b", votes([r, "no"])],
+      ["c", votes([r, "yes"])],
+      ["d", votes()],
+      ["e", votes([r, "maybe"])],
+    ];
+
+    it("puts each window's votes on its first day, voters first, up to three and a count", () => {
+      const r = w(10, 14);
+      const clusters = startClusters([r], [], [], members(r));
+      expect([...clusters.keys()]).toEqual([d(10)]);
+      expect(clusters.get(d(10))).toEqual({
+        key: r.key,
+        shown: [
+          { id: "b", vote: "no" },
+          { id: "c", vote: "yes" },
+          { id: "e", vote: "maybe" },
+        ],
+        more: 2,
+      });
+    });
+
+    it("shows everyone when there are three or fewer", () => {
+      const r = w(10, 14);
+      const clusters = startClusters([r], [], [], members(r).slice(0, 3));
+      expect(clusters.get(d(10))?.shown.map((v) => v.id)).toEqual(["b", "c", "a"]);
+      expect(clusters.get(d(10))?.more).toBe(0);
+    });
+
+    it("gives a shared first day to the higher-ranked window", () => {
+      const r1 = w(10, 14);
+      const r2 = w(10, 16);
+      const p = w(10, 13);
+      const a = w(10, 12);
+      const m = members(r1);
+      expect(startClusters([r1, r2], [p], [], m).get(d(10))?.key).toBe(r1.key);
+      expect(startClusters([r2, r1], [p], [], m).get(d(10))?.key).toBe(r2.key);
+      expect(startClusters([], [p], [], m).get(d(10))?.key).toBe(p.key);
+      expect(startClusters([r1, r2], [p], [a], m).get(d(10))?.key).toBe(a.key);
+    });
+
+    it("draws one cluster per window start", () => {
+      const r = w(10, 14);
+      const p = w(12, 16);
+      expect([...startClusters([r], [p], [], members(r)).keys()]).toEqual([d(10), d(12)]);
+    });
   });
 });

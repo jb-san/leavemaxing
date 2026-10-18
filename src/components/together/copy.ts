@@ -1,5 +1,7 @@
-import { type DayNum, formatShort } from "~/lib/dates";
+import { type DayNum, formatRange, formatShort } from "~/lib/dates";
 import type { MemberDayKind } from "~/lib/together/calendar";
+import type { MenuOption } from "~/lib/together/dayMenu";
+import type { Vote } from "~/lib/together/protocol";
 
 /** Together's own UI strings. Together v1 is English only, so these stay out of the i18n catalog. */
 export const t = {
@@ -73,7 +75,7 @@ export const t = {
   saveFailed: "Couldn't save that change. Try again.",
   leaveDays: (n: number) => `${n} leave ${n === 1 ? "day" : "days"}`,
   calendar: "Days you can't do",
-  calendarHint: "Tap the days you can't do. Everyone in the group sees them.",
+  calendarHint: "Tap a day to mark it, vote on dates or propose some. Everyone in the group sees it.",
   legend: "Legend",
   legendHoliday: "Public holiday",
   legendWeekend: "Weekend",
@@ -81,6 +83,8 @@ export const t = {
   legendOthersCant: "Others can't",
   legendBreak: "Suggested break",
   legendProposed: "Proposed",
+  legendDayOff: "Day off",
+  legendVetoed: "Someone can't",
   proposerYou: "you",
   worksForEveryone: "Works for everyone",
   proposed: "Proposed",
@@ -102,11 +106,25 @@ export const t = {
     `${length} ${length === 1 ? "day" : "days"}, costs you ${leave} leave`,
   proposeClamped: (max: number, end: DayNum) =>
     `Trips are ${max} days at most, so it ends on ${formatShort(end)}.`,
+  proposeTooShort: "Pick at least 3 days.",
   proposedBy: "Proposed by",
   withdraw: "Withdraw",
   addToPlan: "Add to my plan",
   theTrip: "The trip",
   remove: "Remove",
+  menu: {
+    cant: ["Can't do this day", "Everyone sees you're busy"],
+    dayOff: ["Day off anyway", "A company day off, it costs no leave"],
+    notFree: ["Not free", "You're busy even though it's a day off"],
+    propose: ["Propose dates from here", "Pick an end day next"],
+    canAgain: ["Can do this day again", "Back to a normal workday"],
+    freeAgain: ["Free again", "Back to a day off"],
+    removeDayOff: ["Remove day off", "Back to a normal workday"],
+  } satisfies Record<MenuOption, [string, string]>,
+  windowKinds: { agreed: "Works for everyone", suggested: "Suggested", proposed: "Proposed" },
+  everyonesVotes: "Everyone's votes",
+  voteOn: (dates: string) => `Your vote on ${dates}`,
+  voteWords: { yes: "Works", maybe: "Maybe", no: "Can't", none: "No vote yet" },
   removeAsk: (name: string) => `Remove ${name}?`,
   confirm: "Confirm",
   cancel: "Cancel",
@@ -125,9 +143,33 @@ const DAY_KIND: Record<Exclude<MemberDayKind, "holiday">, string> = {
   work: "workday",
 };
 
+/** A member's vote, named for a sentence. `you` is the reader. */
+export interface NamedVote {
+  name: string;
+  you: boolean;
+  vote: Vote | null;
+}
+
+const VOTE_VERB: Record<Vote | "none", [string, string]> = {
+  yes: ["works", "work"],
+  maybe: ["says maybe", "say maybe"],
+  no: ["can't", "can't"],
+  none: ["hasn't voted", "haven't voted"],
+};
+
+/** "In 12–15 Nov: Sam works, Alex can't, Jo hasn't voted." Your own vote reads "you work". */
+export function votesPhrase(start: DayNum, end: DayNum, votes: readonly NamedVote[]): string {
+  const each = votes.map((v) => {
+    const [they, you] = VOTE_VERB[v.vote ?? "none"];
+    return v.you ? `you ${you}` : `${v.name} ${they}`;
+  });
+  return `In ${formatRange(start, end)}: ${each.join(", ")}.`;
+}
+
 /**
  * A shared calendar day for screen readers: the date, what it is for you, who else can't do it,
- * and who proposed dates that cover it. "Sat 9 Jan, weekend. Sam and Alex can't. Proposed by Kim."
+ * who proposed dates that cover it, and the votes on each window that holds it.
+ * "Sat 9 Jan, weekend. Sam and Alex can't. Proposed by Kim. In 8–12 Jan: Sam works, Kim can't."
  */
 export function dayLabel(
   day: DayNum,
@@ -135,11 +177,38 @@ export function dayLabel(
   holidays: readonly string[],
   othersCant: readonly string[],
   proposedBy: readonly string[] = [],
+  windows: readonly { start: DayNum; end: DayNum; votes: readonly NamedVote[] }[] = [],
 ): string {
   const what = kind === "holiday" ? `public holiday ${holidays.join(", ")}` : DAY_KIND[kind];
   const who = othersCant.length > 0 ? ` ${joinNames(othersCant)} can't.` : "";
   const proposed = proposedBy.length > 0 ? ` Proposed by ${joinNames(proposedBy)}.` : "";
-  return `${formatShort(day)}, ${what}.${who}${proposed}`;
+  const votes = windows.map((w) => ` ${votesPhrase(w.start, w.end, w.votes)}`).join("");
+  return `${formatShort(day)}, ${what}.${who}${proposed}${votes}`;
+}
+
+const MENU_KIND: Record<MemberDayKind, string | null> = {
+  blocked: "You can't do this day.",
+  custom: "Your day off. It costs no leave.",
+  weekend: "Weekend.",
+  holiday: null,
+  work: null,
+};
+
+/** The note at the top of a day's menu: what the day is for you, and who else can't do it. */
+export function menuNote(
+  kind: MemberDayKind,
+  holidays: readonly string[],
+  othersCant: readonly string[],
+): string | null {
+  const what =
+    kind === "holiday"
+      ? holidays.length > 0
+        ? `Public holiday: ${holidays.join(", ")}.`
+        : "Public holiday."
+      : MENU_KIND[kind];
+  const who = othersCant.length > 0 ? `${joinNames(othersCant)} can't.` : null;
+  const note = [what, who].filter(Boolean).join(" ");
+  return note || null;
 }
 
 /** Names for MEMBER_COLORS, in the same order, for screen readers. */

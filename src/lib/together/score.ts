@@ -93,8 +93,10 @@ export function costFor(m: ScoreMember, start: DayNum, end: DayNum): number {
 }
 
 /**
- * The member's working days from `start` to `end`: the days a plan would take as leave. Unlike
- * `costFor`, days they can't do count as working days like any other.
+ * The member's working days from `start` to `end`: the days "Add to my plan" locks as leave. Blocked
+ * days make no difference here. A blocked workday is still a working day, and a blocked weekend or
+ * holiday is still not one. `costFor` instead charges every blocked day, so when the range holds a
+ * blocked weekend or holiday, `costFor` is more than this list's length.
  */
 export function workingDays(m: ScoreMember, start: DayNum, end: DayNum): DayNum[] {
   const days = daysOf(m);

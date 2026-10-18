@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import { type ReactNode, useEffect, useId, useRef, useState } from "react";
+import { type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { useI18n } from "~/i18n/context";
 
 const CLOSE: Record<string, string> = {
@@ -52,6 +52,7 @@ export function Sheet({
   children,
   anchor,
   wide = false,
+  fit = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -59,6 +60,11 @@ export function Sheet({
   children: ReactNode;
   anchor?: DOMRect | null;
   wide?: boolean;
+  /**
+   * Place an anchored popover by its measured height rather than a typical one, so a tall popover
+   * stays inside the window and scrolls instead of running off it.
+   */
+  fit?: boolean;
 }) {
   const close = closeLabel(useI18n().code);
   const ref = useRef<HTMLDialogElement>(null);
@@ -106,6 +112,21 @@ export function Sheet({
     }
     if (!open && d.open) d.close();
   }, [open, anchor]);
+
+  // Runs after every render while anchored, as the content's height can change while it's open.
+  useLayoutEffect(() => {
+    const d = ref.current;
+    if (!fit || !style || !anchor || !d?.open) return;
+    const h = d.offsetHeight;
+    const below = anchor.bottom + 8;
+    const above = anchor.top - 8 - h;
+    const flip = below + h > window.innerHeight - 16 && above >= 16;
+    const top = flip ? above : Math.max(16, Math.min(below, window.innerHeight - 16 - h));
+    const originX = style.transformOrigin?.toString().split(" ")[0] ?? "50%";
+    d.style.top = `${top}px`;
+    d.style.maxHeight = `${window.innerHeight - 32}px`;
+    d.style.transformOrigin = `${originX} ${flip ? "calc(100% + 8px)" : `${anchor.top + anchor.height / 2 - top}px`}`;
+  });
 
   useEffect(() => {
     const d = ref.current;

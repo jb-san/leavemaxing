@@ -93,12 +93,18 @@ describe("parseWindowKey", () => {
     });
   });
 
-  it("rejects malformed, reversed and overlong keys", () => {
+  it("rejects malformed and reversed keys", () => {
     expect(parseWindowKey("2027-04-11..2027-04-03")).toBeNull();
     expect(parseWindowKey("nope")).toBeNull();
     expect(parseWindowKey("2027-02-30..2027-03-02")).toBeNull();
-    expect(parseWindowKey("2027-04-01..2027-06-01")).toBeNull();
-    expect(parseWindowKey("2027-04-01..2027-05-30")).not.toBeNull();
+  });
+
+  it("accepts only trip lengths of 3 to 21 days", () => {
+    expect(parseWindowKey("2027-04-01..2027-04-02")).toBeNull();
+    expect(parseWindowKey("2027-04-01..2027-04-01")).toBeNull();
+    expect(parseWindowKey("2027-04-01..2027-04-03")).not.toBeNull();
+    expect(parseWindowKey("2027-04-01..2027-04-21")).not.toBeNull();
+    expect(parseWindowKey("2027-04-01..2027-04-22")).toBeNull();
   });
 });
 
@@ -167,6 +173,16 @@ describe("sanitizeMember", () => {
     expect(out?.blocked).toEqual([20001]);
     expect(out?.proposals).toEqual(["2027-04-03..2027-04-11"]);
     expect(out?.votes).toEqual({ "2027-04-03..2027-04-11": "yes" });
+  });
+
+  it("drops proposals and votes outside the 3 to 21 day trip length", () => {
+    const out = sanitizeMember({
+      ...member,
+      proposals: ["2027-04-03..2027-04-04", "2027-04-01..2027-04-22", "2027-04-01..2027-04-21"],
+      votes: { "2027-04-03..2027-04-04": "yes", "2027-04-01..2027-04-03": "no" },
+    });
+    expect(out?.proposals).toEqual(["2027-04-01..2027-04-21"]);
+    expect(out?.votes).toEqual({ "2027-04-01..2027-04-03": "no" });
   });
 
   it("returns null for invalid core fields", () => {

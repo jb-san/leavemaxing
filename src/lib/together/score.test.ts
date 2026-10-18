@@ -4,7 +4,7 @@ import type { HolidayDay } from "../planner/types";
 import { STANDARD_WEEK } from "../weekends";
 import type { GroupRecord, MemberRecord, WindowKey } from "./protocol";
 import { parseWindowKey, sanitizeMember } from "./protocol";
-import { costFor, groupRange, type ScoreMember, scoreWindows, TOP_N, windowKey } from "./score";
+import { costFor, groupRange, type ScoreMember, scoreWindows, TOP_N, windowKey, workingDays } from "./score";
 
 const d = (m: number, day: number) => dayNum(2027, m, day);
 const key = (a: number, b: number) => windowKey(d(5, a), d(5, b));
@@ -75,6 +75,22 @@ describe("costFor", () => {
     const m = member("a", { blocked: [d(5, 15), d(5, 14)] }, [friHoliday]);
     expect(costFor(m, d(5, 15), d(5, 16))).toBe(1);
     expect(costFor(m, d(5, 14), d(5, 14))).toBe(1);
+  });
+});
+
+describe("workingDays", () => {
+  it("lists the days a plan locks as leave, ignoring blocked days", () => {
+    const m = member("a", {}, [friHoliday]);
+    expect(workingDays(m, d(5, 10), d(5, 16))).toEqual([d(5, 10), d(5, 11), d(5, 12), d(5, 13)]);
+  });
+
+  it("can be fewer than costFor when a blocked weekend or holiday is in the range", () => {
+    // Blocked: Wednesday, the Friday holiday and Saturday.
+    const m = member("a", { blocked: [d(5, 12), d(5, 14), d(5, 15)] }, [friHoliday]);
+    // A blocked workday is still a working day, and a blocked day off is still off for the plan.
+    expect(workingDays(m, d(5, 10), d(5, 16))).toEqual([d(5, 10), d(5, 11), d(5, 12), d(5, 13)]);
+    // costFor charges every blocked day, so the proposal sheet's cost is higher.
+    expect(costFor(m, d(5, 10), d(5, 16))).toBe(6);
   });
 });
 
