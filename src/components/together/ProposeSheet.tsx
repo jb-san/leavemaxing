@@ -1,27 +1,20 @@
-import { useLayoutEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { MonthCarousel, MonthGrid } from "~/components/planner/MonthCards";
 import { Sheet } from "~/components/planner/ui";
 import { type DayNum, formatRange } from "~/lib/dates";
 import { bandsOf } from "~/lib/together/calendar";
-import {
-  inPick,
-  MAX_PROPOSAL,
-  openPick,
-  type Pick,
-  pickDay,
-  pickedKey,
-  tooShort,
-} from "~/lib/together/propose";
+import { inPick, MAX_PROPOSAL, type Pick, pickDay, pickedKey, tooShort } from "~/lib/together/propose";
 import type { MemberRecord, WindowKey } from "~/lib/together/protocol";
 import { costFor, type ScoreMember } from "~/lib/together/score";
 import { t } from "./copy";
-import { SharedDay, useShared } from "./GroupCalendar";
+import { SharedDay, useShared } from "./SharedDay";
 
 type Month = { year: number; month: number };
 
 /**
  * Pick a range of dates on the group's calendar and propose it to the group. Tap the first day,
- * then the last; the summary says what the range costs you.
+ * then the last; the summary says what the range costs you. The opener owns the pick: it seeds it
+ * when opening the sheet (with `openPick`) and clears it when closing.
  */
 export function ProposeSheet({
   open,
@@ -32,6 +25,9 @@ export function ProposeSheet({
   holidays,
   today,
   start,
+  opens,
+  pick,
+  onPick,
   onPropose,
 }: {
   open: boolean;
@@ -43,21 +39,15 @@ export function ProposeSheet({
   /** Your public holidays, by day. */
   holidays: Map<DayNum, string[]>;
   today: DayNum;
-  /** A day to open with as the start, so the next tap picks the end. */
+  /** The day the sheet opened on, if any. On phones the months start at its month. */
   start?: DayNum;
+  /** How many times the opener has opened the sheet, so the months mount afresh on each open. */
+  opens: number;
+  pick: Pick | null;
+  onPick: (pick: Pick) => void;
   onPropose: (key: WindowKey) => void;
 }) {
   const shared = useShared(months, members, me.id, holidays, today);
-  const [pick, setPick] = useState<Pick | null>(null);
-  // Bumped on each open, so the carousel mounts once the sheet is showing and can scroll to this month.
-  const [opened, setOpened] = useState(0);
-  // Before the first paint of an open, so the sheet never shows the last pick.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the start day only applies as the sheet opens
-  useLayoutEffect(() => {
-    if (!open) return;
-    setPick(openPick(start));
-    setOpened((n) => n + 1);
-  }, [open]);
 
   const bands = useMemo(
     () => bandsOf(pick ? [{ start: pick.start, end: pick.end ?? pick.start }] : [], []),
@@ -67,9 +57,9 @@ export function ProposeSheet({
 
   return (
     <Sheet open={open} onClose={onClose} title={t.proposeDates} wide>
-      {shared && opened > 0 && (
+      {shared && opens > 0 && (
         <MonthCarousel
-          key={opened}
+          key={opens}
           months={shared.sorted}
           today={today}
           initial={start}
@@ -90,7 +80,7 @@ export function ProposeSheet({
                   bands={bands}
                   pressed={() => inPick(pick, d)}
                   leave={inPick(pick, d)}
-                  onClick={() => setPick(pickDay(pick, d))}
+                  onClick={() => onPick(pickDay(pick, d))}
                 />
               )}
             />

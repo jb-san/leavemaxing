@@ -10,7 +10,7 @@ import { withVote, yearsOf } from "~/lib/together/calendar";
 import { applyDayAction, type DayAction } from "~/lib/together/dayMenu";
 import { formatInvite } from "~/lib/together/link";
 import { limitToMonths } from "~/lib/together/member";
-import { withoutProposal, withProposal } from "~/lib/together/propose";
+import { openPick, type Pick, withoutProposal, withProposal } from "~/lib/together/propose";
 import type { GroupRecord, MemberRecord, Vote, WindowKey } from "~/lib/together/protocol";
 import { type Scored, type ScoredWindow, type ScoreMember, scoreWindows } from "~/lib/together/score";
 import { sections } from "~/lib/together/sections";
@@ -18,9 +18,10 @@ import type { GroupSession, GroupState } from "~/lib/together/session";
 import { planSettingsFor } from "~/lib/together/toPlan";
 import { Avatar } from "./Avatar";
 import { monthsPhrase, t } from "./copy";
-import { focusDay, GroupCalendar } from "./GroupCalendar";
+import { GroupCalendar } from "./GroupCalendar";
 import { MemberSheet } from "./MemberSheet";
 import { ProposeSheet } from "./ProposeSheet";
+import { focusDay } from "./SharedDay";
 import { ShareSheet } from "./ShareSheet";
 import type { Push } from "./Together";
 import { type RowKind, WindowRow } from "./WindowRow";
@@ -97,6 +98,9 @@ export function GroupView({
   const [proposing, setProposing] = useState(false);
   // The day "Propose dates from here" opened the sheet on, if it was opened from a day's menu.
   const [proposeFrom, setProposeFrom] = useState<DayNum | undefined>();
+  // The dates being picked in the propose sheet, seeded as it opens and cleared as it closes.
+  const [pick, setPick] = useState<Pick | null>(null);
+  const [proposeOpens, setProposeOpens] = useState(0);
   const calendar = useRef<HTMLDivElement>(null);
   const inviteButton = useRef<HTMLButtonElement>(null);
   const proposeButton = useRef<HTMLButtonElement>(null);
@@ -169,13 +173,19 @@ export function GroupView({
     save(session.updateMe({ votes: withVote(me.votes, key, v) }));
   };
   const vote = (w: ScoredWindow) => (v: Vote | null) => voteOn(w.key, v);
-  const proposeFromDay = (day: DayNum) => {
-    setProposeFrom(day);
+  const openPropose = (from?: DayNum) => {
+    setProposeFrom(from);
+    setPick(openPick(from));
+    setProposeOpens((n) => n + 1);
     setProposing(true);
+  };
+  const closePropose = () => {
+    setProposing(false);
+    setPick(null);
   };
   const propose = (key: WindowKey) => {
     save(session.updateMe({ proposals: withProposal(me.proposals, key) }));
-    setProposing(false);
+    closePropose();
   };
   const withdraw = (w: ScoredWindow) => () => {
     save(session.updateMe({ proposals: withoutProposal(me.proposals, w.key) }));
@@ -265,17 +275,14 @@ export function GroupView({
         today={today}
         rootRef={calendar}
         onAction={markDay}
-        onPropose={proposeFromDay}
+        onPropose={openPropose}
         onVote={voteOn}
         action={
           <button
             ref={proposeButton}
             type="button"
             className="btn btn-soft shrink-0"
-            onClick={() => {
-              setProposeFrom(undefined);
-              setProposing(true);
-            }}
+            onClick={() => openPropose()}
           >
             <CalendarRange size={16} /> {t.proposeDates}
           </button>
@@ -299,13 +306,16 @@ export function GroupView({
 
       <ProposeSheet
         open={proposing}
-        onClose={() => setProposing(false)}
+        onClose={closePropose}
         months={group.months}
         members={members}
         me={meScored}
         holidays={myHolidays}
         today={today}
         start={proposeFrom}
+        opens={proposeOpens}
+        pick={pick}
+        onPick={setPick}
         onPropose={propose}
       />
       <MemberSheet

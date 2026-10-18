@@ -15,7 +15,6 @@ import {
   proposedDays,
   runEdges,
   startClusters,
-  toggleDay,
   voteCounts,
   windowsOn,
   withVote,
@@ -44,13 +43,6 @@ describe("memberDayKind", () => {
     const blocked = { ...me, blocked: [sat, mon] };
     expect(memberDayKind(sat, blocked, holidays)).toBe("blocked");
     expect(memberDayKind(mon, blocked, holidays)).toBe("blocked");
-  });
-});
-
-describe("toggleDay", () => {
-  it("adds a day in order and removes it again", () => {
-    expect(toggleDay([3, 9], 5)).toEqual([3, 5, 9]);
-    expect(toggleDay([3, 5, 9], 5)).toEqual([3, 9]);
   });
 });
 
@@ -272,13 +264,22 @@ describe("vote tones and clusters", () => {
         ranked: false,
         proposed: false,
       });
-      // Past the agreed window, the open ranked window wins over the vetoed proposal.
-      expect(dayTone(d(13), [r, a], [p], [a], all)).toEqual({ tone: "open", ranked: true, proposed: false });
+      // Past the agreed window, the open ranked window wins over the vetoed proposal, which keeps its outline.
+      expect(dayTone(d(13), [r, a], [p], [a], all)).toEqual({ tone: "open", ranked: true, proposed: true });
       expect(dayTone(d(14), [r, a], [p], [a], all)).toEqual({
         tone: "vetoed",
         ranked: false,
         proposed: true,
       });
+    });
+
+    it("outlines every day of a proposal that isn't agreed, even where an open ranked window wins", () => {
+      const r = w(10, 14);
+      const p = w(12, 18);
+      const all = [votes([p, "no"])];
+      const tones = [10, 11, 12, 13, 14, 15, 18].map((x) => dayTone(d(x), [r], [p], [], all));
+      expect(tones.map((x) => x?.proposed)).toEqual([false, false, true, true, true, true, true]);
+      expect(tones.map((x) => x?.tone)).toEqual(["open", "open", "open", "open", "open", "vetoed", "vetoed"]);
     });
 
     it("maps every day of every window", () => {

@@ -17,12 +17,6 @@ export function memberDayKind(
   return "work";
 }
 
-/** The days with the day added, or removed if it was there, in order. */
-export function toggleDay(days: readonly number[], day: number): number[] {
-  if (days.includes(day)) return days.filter((d) => d !== day);
-  return [...days, day].sort((a, b) => a - b);
-}
-
 /** For each day, the ids of the members who can't do it, in member order. */
 export function blockedBy(members: Iterable<[string, Pick<MemberRecord, "blocked">]>): Map<DayNum, string[]> {
   const out = new Map<DayNum, string[]>();
@@ -153,8 +147,9 @@ export type Win = { key: WindowKey; start: DayNum; end: DayNum };
 export type Tone = "agreed" | "open" | "vetoed";
 
 /**
- * A day's tone, with whether it keeps a suggested window's soft fill (`ranked`) and a proposal's
- * dashed outline (`proposed`). Agreed days drop both. A vetoed day keeps the outline of a proposal.
+ * A day's tone, with whether it keeps a suggested window's soft fill (`ranked`, only from a window
+ * nobody vetoed) and a proposal's dashed outline (`proposed`, on every day of any proposal). Agreed
+ * days drop both.
  */
 export interface DayTone {
   tone: Tone;
@@ -181,8 +176,10 @@ function toneOf(
   if (r.length === 0 && p.length === 0) return null;
   const openRanked = r.some((w) => !vetoed(w.key));
   const openProposed = p.some((w) => !vetoed(w.key));
-  if (openRanked || openProposed) return { tone: "open", ranked: openRanked, proposed: openProposed };
-  return { tone: "vetoed", ranked: false, proposed: p.length > 0 };
+  // A proposal's outline covers all of it that isn't agreed, whatever its votes.
+  const proposed = p.length > 0;
+  if (openRanked || openProposed) return { tone: "open", ranked: openRanked, proposed };
+  return { tone: "vetoed", ranked: false, proposed };
 }
 
 /** The tone of one day, decided for that day alone, from the windows holding it and everyone's votes. */

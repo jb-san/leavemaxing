@@ -74,7 +74,7 @@ export const t = {
   settings: "Settings",
   saveFailed: "Couldn't save that change. Try again.",
   leaveDays: (n: number) => `${n} leave ${n === 1 ? "day" : "days"}`,
-  calendar: "Days you can't do",
+  calendar: "Calendar",
   calendarHint: "Tap a day to mark it, vote on dates or propose some. Everyone in the group sees it.",
   legend: "Legend",
   legendHoliday: "Public holiday",

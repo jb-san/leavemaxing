@@ -113,10 +113,24 @@ export function Sheet({
     if (!open && d.open) d.close();
   }, [open, anchor]);
 
+  // Whether `fit` has moved the popover, so its inline position can be handed back to `style`.
+  const fitted = useRef(false);
   // Runs after every render while anchored, as the content's height can change while it's open.
   useLayoutEffect(() => {
     const d = ref.current;
-    if (!fit || !style || !anchor || !d?.open) return;
+    if (!d) return;
+    if (!fit || !style || !anchor || !open || !d.open) {
+      // Once a fitted popover has finished leaving, or the sheet opens unanchored, drop the fitted
+      // values so a later open starts from `style` alone.
+      if (fitted.current && (open || !mounted)) {
+        d.style.top = style?.top === undefined ? "" : `${style.top}px`;
+        d.style.maxHeight = "";
+        d.style.transformOrigin = style?.transformOrigin?.toString() ?? "";
+        fitted.current = false;
+      }
+      return;
+    }
+    fitted.current = true;
     const h = d.offsetHeight;
     const below = anchor.bottom + 8;
     const above = anchor.top - 8 - h;

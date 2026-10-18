@@ -273,9 +273,11 @@ test("a day marked in the shared calendar shows for the others", async ({ page, 
   const weekday = WEEKDAYS[new Date(Date.UTC(next.year, next.month - 1, 15)).getUTCDay()];
   const day = `${weekday} 15 ${SHORT[next.month - 1]}`;
 
+  await expect(page.getByRole("heading", { name: "Calendar", exact: true })).toBeVisible();
+  const calendar = page.getByRole("region", { name: "Calendar", exact: true });
   // Phones show one month at a time, starting with this one.
-  if (isMobile) await page.getByRole("button", { name: "Next month" }).click();
-  const mine = page.getByRole("button", { name: new RegExp(`^${day},`) });
+  if (isMobile) await calendar.getByRole("button", { name: "Next month" }).click();
+  const mine = calendar.getByRole("button", { name: new RegExp(`^${day},`) });
   await expect(mine).toHaveAttribute("aria-pressed", "false");
   // Tapping a day opens its menu. A weekday offers "Can't do this day", a weekend "Not free".
   await mine.click();
@@ -589,6 +591,11 @@ test("propose dates from a day", async ({ page, browser, isMobile }) => {
   const sheet = page.getByRole("dialog", { name: "Propose dates" });
   await expect(sheet).toBeVisible();
   await expect(sheet.getByText("Now tap the last day.")).toBeVisible();
+  // On phones the sheet opens on the start day's month.
+  if (isMobile) {
+    const month = new Date(next.year, next.month - 1).toLocaleString("en-GB", { month: "long" });
+    await expect(sheet.getByRole("heading", { name: `${month} ${next.year}` })).toBeVisible();
+  }
   await expect(sheet.getByRole("button", { name: new RegExp(`^${dayName(next, 8)},`) })).toHaveAttribute(
     "aria-pressed",
     "true",

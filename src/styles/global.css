@@ -27,6 +27,8 @@
   --red-soft: #fde2e3;
   /* The darker stripe of the hatching on dates someone in a group can't do. */
   --red-hatch: #f6c1c4;
+  /* The ring on day marks over that hatching: at least 3:1 against both its stripes. */
+  --red-ring: #c2333b;
   --violet: #7c6cf0;
   --sky: #2f9bd6;
   --hero: #1a2030;
@@ -57,6 +59,7 @@
   --red: #f2666e;
   --red-soft: rgb(242 102 110 / 0.18);
   --red-hatch: rgb(242 102 110 / 0.36);
+  --red-ring: #ff9aa0;
   --violet: #9d90fa;
   --sky: #5bb8ea;
   --hero: #0f1724;
@@ -470,9 +473,19 @@
   .hatch {
     background: repeating-linear-gradient(135deg, var(--red-hatch) 0 3px, var(--red-soft) 3px 7px);
   }
-  /* Stripes line up from one day to the next instead of restarting in each cell. */
+  /*
+   * The stripes line up from one day to the next: each day shows its column's slice of one
+   * row-wide pattern. `--col` is set on vetoed days, and the month grid is the container.
+   */
+  .cal:has(> .day[data-br="vetoed"]) {
+    container-type: inline-size;
+  }
   .day[data-br="vetoed"]::before {
-    background-attachment: fixed;
+    background-size: 100cqw 100%;
+    background-position-x: calc(var(--col, 0) * -100cqw / 7);
+  }
+  .day[data-br="vetoed"][data-s]::before {
+    background-position-x: calc(var(--col, 0) * -100cqw / 7 - 2px);
   }
   /*
    * Together: the votes on a window, on its first day. Sits over the top right of the day's mark,
@@ -524,6 +537,14 @@
   }
   .day:disabled .mk {
     transform: none;
+  }
+  /* Marks keep a clear edge against the hatching. */
+  .day[data-br="vetoed"] .mk {
+    box-shadow: inset 0 0 0 2px var(--red-ring);
+  }
+  .day[data-br="vetoed"][data-k="work"] .mk {
+    border-color: var(--red-ring);
+    box-shadow: none;
   }
   .day .dots {
     display: flex;

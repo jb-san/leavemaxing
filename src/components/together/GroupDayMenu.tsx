@@ -1,5 +1,4 @@
 import { Ban, CalendarRange, Sparkles, Undo2 } from "lucide-react";
-import { useRef } from "react";
 import { cx, Sheet } from "~/components/planner/ui";
 import { type DayNum, formatRange, formatShort, parts } from "~/lib/dates";
 import { type MemberVote, memberDayKind, voteCounts } from "~/lib/together/calendar";
@@ -13,7 +12,7 @@ import {
 import type { Vote, WindowKey } from "~/lib/together/protocol";
 import { Avatar } from "./Avatar";
 import { menuNote, t } from "./copy";
-import type { Shared } from "./GroupCalendar";
+import type { Shared } from "./SharedDay";
 import { VoteControl } from "./WindowRow";
 
 const ICON: Record<MenuOption, typeof Ban> = {
@@ -42,7 +41,8 @@ export interface MenuWindow {
  * window that holds it, with your own vote to change. A popover on wider screens, a sheet on phones.
  */
 export function GroupDayMenu({
-  day,
+  day: shown,
+  open,
   anchor,
   shared,
   windows,
@@ -51,8 +51,9 @@ export function GroupDayMenu({
   onVote,
   onClose,
 }: {
-  /** The day the menu is open on, or null when it's closed. */
+  /** The day the menu is open on, or was last open on so it can animate out. Null before the first open. */
   day: DayNum | null;
+  open: boolean;
   anchor: DOMRect | null;
   shared: Shared;
   windows: (day: DayNum) => MenuWindow[];
@@ -61,10 +62,6 @@ export function GroupDayMenu({
   onVote: (key: WindowKey, vote: Vote | null) => void;
   onClose: () => void;
 }) {
-  // The last day stays in the sheet while it animates out.
-  const last = useRef<DayNum | null>(null);
-  if (day !== null) last.current = day;
-  const shown = last.current;
   if (shown === null)
     return (
       <Sheet open={false} onClose={onClose}>
@@ -90,7 +87,7 @@ export function GroupDayMenu({
 
   return (
     <Sheet
-      open={day !== null}
+      open={open}
       onClose={onClose}
       anchor={anchor}
       fit

@@ -48,9 +48,16 @@ export function MonthCarousel({
     const el = scroller.current;
     if (!el || window.innerWidth >= 640) return;
     const i = Math.max(0, todayIndex);
-    el.scrollTo({ left: i * el.clientWidth });
     setIndex(i);
     target.current = i;
+    const scroll = () => el.scrollTo({ left: i * el.clientWidth });
+    if (el.clientWidth > 0) {
+      scroll();
+      return;
+    }
+    // Mounted inside a sheet that isn't showing yet: scroll once it has a width.
+    const frame = requestAnimationFrame(scroll);
+    return () => cancelAnimationFrame(frame);
   }, [months[0]?.year, months[0]?.month]);
 
   // Where the carousel is heading, so quick repeated taps don't use a stale index.
