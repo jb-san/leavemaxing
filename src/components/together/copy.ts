@@ -46,7 +46,24 @@ export const t = {
   invite: "Invite",
 
   loading: "Opening the group",
-  joinSoon: "Joining a group is coming soon.",
+  members: "Members",
+  invitedYou: (who: string, group: string) => `${who} invited you to ${group}`,
+  someone: "A friend",
+  alreadyIn: "Already in",
+  joinGroup: "Join group",
+  joining: "Joining",
+  joinFailed: "Couldn't join the group. Try again.",
+  joinHint: "Next you'll see the group. Mark the days you can't do there.",
+  slowDown: "Slow down a moment.",
+  tripSentence: (range: string, min: number, max: number) =>
+    `Planning for ${range}, trips of ${min === max ? `${min} days` : `${min} to ${max} days`}.`,
+  errors: {
+    incomplete: "This link is incomplete. Ask for the invite again.",
+    gone: "This group no longer exists",
+    removed: "You were removed from this group.",
+    full: "This group is full (20 people).",
+  },
+  startNew: "Start a new group",
   groupSoon: "The group view is coming soon.",
   youreIn: "You're in. Share the invite so others can add their days.",
 } as const;
@@ -62,3 +79,30 @@ export const COLOR_NAMES: readonly string[] = [
   "Purple",
   "Pink",
 ];
+
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+/** "June 2027", "June to November 2027" or "November 2027 to February 2028". */
+export function monthsPhrase(months: { year: number; month: number }[]): string {
+  const sorted = [...months].sort((a, b) => a.year * 12 + a.month - (b.year * 12 + b.month));
+  const first = sorted[0];
+  const last = sorted[sorted.length - 1];
+  if (!first || !last) return "";
+  const name = (m: { month: number }) => MONTH_NAMES[m.month - 1] ?? "";
+  if (first.year === last.year && first.month === last.month) return `${name(first)} ${first.year}`;
+  if (first.year === last.year) return `${name(first)} to ${name(last)} ${first.year}`;
+  return `${name(first)} ${first.year} to ${name(last)} ${last.year}`;
+}

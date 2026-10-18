@@ -155,3 +155,36 @@ for (const scheme of ["light", "dark"] as const) {
     expect(await serious(page)).toEqual([]);
   });
 }
+
+test("join via invite", async ({ page, browser }) => {
+  await createGroup(page);
+  const sheet = page.getByRole("dialog");
+  await expect(sheet.getByRole("img", { name: /Scan to join/ })).toBeVisible();
+  const invite = await sheet.getByLabel("Link").inputValue();
+  expect(invite).toContain("/together/#");
+
+  const other = await newContext(browser);
+  const second = await other.newPage();
+  await second.goto(invite);
+  await expect(second.getByRole("heading", { name: "Sam invited you to Lisbon 2027" })).toBeVisible();
+  expect(await serious(second)).toEqual([]);
+  await second.getByLabel("Your name").fill("Alex");
+  await second.getByRole("button", { name: "Join group" }).click();
+  await expect(second.getByRole("heading", { name: "Lisbon 2027" })).toBeVisible();
+  // The address is now Alex's own link, not the invite.
+  expect(new URL(second.url()).hash.slice(1).split(".").length).toBeGreaterThanOrEqual(4);
+
+  for (const p of [page, second]) {
+    await p.keyboard.press("Escape");
+    const members = p.getByRole("list", { name: "Members" });
+    await expect(members.getByRole("listitem").filter({ hasText: "Sam" })).toBeVisible();
+    await expect(members.getByRole("listitem").filter({ hasText: "Alex" })).toBeVisible();
+  }
+  await other.close();
+});
+
+test("broken link", async ({ page }) => {
+  await page.goto("/together/#abc");
+  await expect(page.getByText("This link is incomplete. Ask for the invite again.")).toBeVisible();
+  expect(await serious(page)).toEqual([]);
+});

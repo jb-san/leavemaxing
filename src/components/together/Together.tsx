@@ -1,9 +1,13 @@
 import { Share2, Smartphone } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Toasts, useToasts } from "~/components/planner/ui";
 import { formatInvite, formatPersonal, parseFragment } from "~/lib/together/link";
-import { GroupSession, type SessionError } from "~/lib/together/session";
+import { GroupSession } from "~/lib/together/session";
+import { Avatar } from "./Avatar";
 import { CreateGroup } from "./CreateGroup";
 import { t } from "./copy";
+import { ErrorScreen } from "./ErrorScreen";
+import { JoinGroup } from "./JoinGroup";
 import { ShareSheet } from "./ShareSheet";
 import { useGroup } from "./useGroup";
 
@@ -65,24 +69,41 @@ export default function Together() {
     setSharing(true);
   };
 
+  // Joining turns the invite in the address bar into the member's own link.
+  const onJoined = () => {
+    const personal = current.current?.personalLink();
+    if (personal) history.replaceState(null, "", formatPersonal(location.origin, personal));
+    shown.current = location.hash;
+  };
+
   if (!ready) return null;
   if (!session) return <CreateGroup onCreated={onCreated} />;
-  return <GroupScreen session={session} sharing={sharing} setSharing={setSharing} />;
+  return <GroupScreen session={session} sharing={sharing} setSharing={setSharing} onJoined={onJoined} />;
 }
 
 function GroupScreen({
   session,
   sharing,
   setSharing,
+  onJoined,
 }: {
   session: GroupSession;
   sharing: boolean;
   setSharing: (open: boolean) => void;
+  onJoined: () => void;
 }) {
   const state = useGroup(session);
   const [personalOpen, setPersonalOpen] = useState(false);
   const inviteButton = useRef<HTMLButtonElement>(null);
   const wasSharing = useRef(sharing);
+  const { toasts, push } = useToasts();
+  const limited = state.error === "rate";
+
+  // A rate limit passes on its own, so it is a toast rather than a screen.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `push` is new on every render
+  useEffect(() => {
+    if (limited) push(t.slowDown, "warn");
+  }, [limited]);
 
   // The invite sheet opens straight after creating, when the form that had focus is gone.
   // Closing it hands focus to the Invite button instead of dropping it on the page.
@@ -91,10 +112,17 @@ function GroupScreen({
     wasSharing.current = sharing;
   }, [sharing]);
 
-  // "rate" passes on its own; it becomes a toast with the join screen.
-  if (state.error && state.error !== "rate") return <Placeholder text={ERRORS[state.error]} />;
-  if (!state.me) return <Placeholder text={state.loaded ? t.joinSoon : t.loading} />;
-  if (!state.members.has(state.me)) return <Placeholder text={state.loaded ? t.joinSoon : t.loading} />;
+  if (state.error && state.error !== "rate") return <ErrorScreen error={state.error} />;
+  if (!state.loaded) return <Placeholder text={t.loading} />;
+  // Whoever has no record in the group yet joins it first. `me` can be known before the record is.
+  if (!state.me || !state.members.has(state.me)) {
+    return (
+      <>
+        <JoinGroup session={session} onJoined={onJoined} />
+        <Toasts toasts={toasts} />
+      </>
+    );
+  }
 
   const personal = session.personalLink();
   const origin = location.origin;
@@ -120,7 +148,16 @@ function GroupScreen({
       <div className="card p-5 sm:p-6">
         <p className="font-semibold">{t.youreIn}</p>
         <p className="text-sm text-muted">{t.groupSoon}</p>
+        <ul aria-label={t.members} className="mt-4 flex flex-wrap gap-x-5 gap-y-3">
+          {[...state.members].map(([id, m]) => (
+            <li key={id} className="flex items-center gap-2 font-semibold">
+              <Avatar name={m.name} color={m.color} />
+              {m.name}
+            </li>
+          ))}
+        </ul>
       </div>
+      <Toasts toasts={toasts} />
       {personal && (
         <>
           <ShareSheet
@@ -144,14 +181,7 @@ function GroupScreen({
   );
 }
 
-const ERRORS: Record<Exclude<SessionError, "rate" | null>, string> = {
-  incomplete: "This link is incomplete. Ask for the invite again.",
-  gone: "This group no longer exists",
-  removed: "You were removed from this group.",
-  full: "This group is full (20 people).",
-};
-
-/** Stands in for the join and group screens until they exist. */
+/** Stands in for the group screen until it exists, and while the group opens. */
 function Placeholder({ text }: { text: string }) {
   return (
     <div className="flex flex-col gap-2 pb-6 pt-3">

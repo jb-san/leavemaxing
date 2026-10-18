@@ -5,6 +5,7 @@ import { cx, Stepper } from "~/components/planner/ui";
 import { countries, countryByCode } from "~/data";
 import { detectCountry } from "~/lib/detect";
 import { loadLast } from "~/lib/storage";
+import { textOn } from "~/lib/together/member";
 import { MEMBER_COLORS, type MemberRecord } from "~/lib/together/protocol";
 import { defaultWorkWeek } from "~/lib/weekends";
 import { COLOR_NAMES, t } from "./copy";
@@ -138,9 +139,9 @@ export function MemberForm({
                   aria-checked={value.color === c}
                   aria-label={COLOR_NAMES[i]}
                   onClick={() => set({ color: c })}
-                  style={{ backgroundColor: c }}
+                  style={{ backgroundColor: c, color: textOn(c) }}
                   className={cx(
-                    "grid size-9 place-items-center rounded-full text-white ring-offset-2 ring-offset-card transition-transform duration-150 ease-[var(--ease-out)] active:scale-[0.92]",
+                    "grid size-9 place-items-center rounded-full ring-offset-2 ring-offset-card transition-transform duration-150 ease-[var(--ease-out)] active:scale-[0.92]",
                     value.color === c && "ring-2 ring-ink",
                   )}
                 >
