@@ -112,6 +112,26 @@ export function pluralText(locale: string, n: number, forms: Plural): string {
   return forms.many;
 }
 
+/** Fill `{n}` and `{count}` in the plural form for `n`. */
+export function countText(locale: string, n: number, forms: Plural): string {
+  return pluralText(locale, n, forms).replaceAll("{n}", String(n)).replaceAll("{count}", String(n));
+}
+
+/** `{n} ${noun}` when the plural forms are the noun alone. */
+export function countNoun(locale: string, n: number, forms: Plural): string {
+  return `${n} ${pluralText(locale, n, forms)}`;
+}
+
+/** English noun for `n`. Zero and anything past 1 use the plural form. */
+export function englishNoun(n: number, one: string, many: string): string {
+  return pluralText("en", n, { one, few: many, many });
+}
+
+/** English `{n} ${noun}`. */
+export function englishCount(n: number, one: string, many: string): string {
+  return countText("en", n, { one: `{n} ${one}`, few: `{n} ${many}`, many: `{n} ${many}` });
+}
+
 const names = new Map<string, Intl.DisplayNames>();
 
 /** Country name in the page language. English keeps the dataset name. */

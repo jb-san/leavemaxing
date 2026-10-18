@@ -2,6 +2,16 @@
  * Localization data for bridge-day pages across multiple countries.
  * Each locale has a language code, native term for "bridge days", and translations.
  */
+import type { Plural } from "~/i18n/types";
+
+/** Count phrase. `few` defaults to `many` for languages without a paucal form. */
+function unit(one: string, many = one, few = many): Plural {
+  return { one: `{n} ${one}`, few: `{n} ${few}`, many: `{n} ${many}` };
+}
+
+/** English Ukraine pages. Localized pages use `translations.notice`. */
+export const UKRAINE_MARTIAL_LAW_NOTICE =
+  "Under martial law, public holidays are currently working days in Ukraine. This plan shows the statutory calendar for when they apply again.";
 
 export interface LocaleConfig {
   /** Language code (e.g., "de-DE", "sv-SE") */
@@ -35,10 +45,10 @@ export interface Translations {
   howItWorksHeading: string;
   faqHeading: string;
 
-  // Bridge plans
-  leaveDays: string; // e.g., "Urlaubstage"
-  daysOff: string; // e.g., "Freie Tage"
-  totalDays: string; // e.g., "Tage frei"
+  // Bridge plans. Forms include `{n}` and are chosen with Intl.PluralRules.
+  leaveDays: Plural;
+  daysOff: Plural;
+  totalDays: Plural;
   bookTheseDays: string; // e.g., "Diese Tage nehmen"
   result: string; // e.g., "Ergebnis"
 
@@ -91,9 +101,9 @@ export const locales: Record<string, LocaleConfig> = {
       bestPlansHeading: "Die besten Urlaubspläne {year}",
       howItWorksHeading: "So nutzt du Brückentage optimal",
       faqHeading: "Häufig gestellte Fragen",
-      leaveDays: "Urlaubstage",
-      daysOff: "Freie Tage",
-      totalDays: "Tage frei",
+      leaveDays: unit("Urlaubstag", "Urlaubstage"),
+      daysOff: unit("freier Tag", "freie Tage"),
+      totalDays: unit("Tag frei", "Tage frei"),
       bookTheseDays: "Diese Tage nehmen",
       result: "Ergebnis",
       intro:
@@ -154,9 +164,9 @@ export const locales: Record<string, LocaleConfig> = {
       bestPlansHeading: "Die besten Urlaubspläne {year}",
       howItWorksHeading: "So nutzt du Fenstertage optimal",
       faqHeading: "Häufig gestellte Fragen",
-      leaveDays: "Urlaubstage",
-      daysOff: "Freie Tage",
-      totalDays: "Tage frei",
+      leaveDays: unit("Urlaubstag", "Urlaubstage"),
+      daysOff: unit("freier Tag", "freie Tage"),
+      totalDays: unit("Tag frei", "Tage frei"),
       bookTheseDays: "Diese Tage nehmen",
       result: "Ergebnis",
       intro:
@@ -212,9 +222,9 @@ export const locales: Record<string, LocaleConfig> = {
       bestPlansHeading: "De bästa semesterplanerna {year}",
       howItWorksHeading: "Så utnyttjar du klämdagar optimalt",
       faqHeading: "Vanliga frågor",
-      leaveDays: "Semesterdagar",
-      daysOff: "Lediga dagar",
-      totalDays: "dagar ledigt",
+      leaveDays: unit("semesterdag", "semesterdagar"),
+      daysOff: unit("ledig dag", "lediga dagar"),
+      totalDays: unit("dag ledigt", "dagar ledigt"),
       bookTheseDays: "Ta ledigt dessa dagar",
       result: "Resultat",
       intro:
@@ -275,9 +285,9 @@ export const locales: Record<string, LocaleConfig> = {
       bestPlansHeading: "De beste ferieplanene {year}",
       howItWorksHeading: "Slik utnytter du inneklemte dager",
       faqHeading: "Ofte stilte spørsmål",
-      leaveDays: "Feriedager",
-      daysOff: "Ledige dager",
-      totalDays: "dager fri",
+      leaveDays: unit("feriedag", "feriedager"),
+      daysOff: unit("ledig dag", "ledige dager"),
+      totalDays: unit("dag fri", "dager fri"),
       bookTheseDays: "Ta fri disse dagene",
       result: "Resultat",
       intro:
@@ -328,9 +338,9 @@ export const locales: Record<string, LocaleConfig> = {
       bestPlansHeading: "De bedste ferieplaner {year}",
       howItWorksHeading: "Sådan udnytter du klemmedage optimalt",
       faqHeading: "Ofte stillede spørgsmål",
-      leaveDays: "Feriedage",
-      daysOff: "Fridage",
-      totalDays: "dage fri",
+      leaveDays: unit("feriedag", "feriedage"),
+      daysOff: unit("fridag", "fridage"),
+      totalDays: unit("dag fri", "dage fri"),
       bookTheseDays: "Hold fri disse dage",
       result: "Resultat",
       intro:
@@ -381,9 +391,9 @@ export const locales: Record<string, LocaleConfig> = {
       bestPlansHeading: "Parhaat lomasuunnitelmat {year}",
       howItWorksHeading: "Näin hyödynnät välipäivät optimaalisesti",
       faqHeading: "Usein kysytyt kysymykset",
-      leaveDays: "Lomapäivät",
-      daysOff: "Vapaapäivät",
-      totalDays: "päivää vapaata",
+      leaveDays: unit("lomapäivä", "lomapäivää"),
+      daysOff: unit("vapaapäivä", "vapaapäivää"),
+      totalDays: unit("päivä vapaata", "päivää vapaata"),
       bookTheseDays: "Pidä vapaata näinä päivinä",
       result: "Tulos",
       intro:
@@ -434,9 +444,9 @@ export const locales: Record<string, LocaleConfig> = {
       bestPlansHeading: "Najlepsze plany urlopowe {year}",
       howItWorksHeading: "Jak optymalnie wykorzystać długie weekendy",
       faqHeading: "Najczęściej zadawane pytania",
-      leaveDays: "Dni urlopu",
-      daysOff: "Dni wolnych",
-      totalDays: "dni wolnych",
+      leaveDays: unit("dzień urlopu", "dni urlopu"),
+      daysOff: unit("dzień wolny", "dni wolnych", "dni wolne"),
+      totalDays: unit("dzień wolny", "dni wolnych", "dni wolne"),
       bookTheseDays: "Weź wolne w te dni",
       result: "Wynik",
       intro:
@@ -492,9 +502,9 @@ export const locales: Record<string, LocaleConfig> = {
       bestPlansHeading: "De beste vakantieplannen {year}",
       howItWorksHeading: "Zo benut je brugdagen optimaal",
       faqHeading: "Veelgestelde vragen",
-      leaveDays: "Vakantiedagen",
-      daysOff: "Vrije dagen",
-      totalDays: "dagen vrij",
+      leaveDays: unit("vakantiedag", "vakantiedagen"),
+      daysOff: unit("vrije dag", "vrije dagen"),
+      totalDays: unit("dag vrij", "dagen vrij"),
       bookTheseDays: "Neem vrij op deze dagen",
       result: "Resultaat",
       intro:
@@ -550,9 +560,9 @@ export const locales: Record<string, LocaleConfig> = {
       bestPlansHeading: "Die besten Ferienpläne {year}",
       howItWorksHeading: "So nutzt du Brückentage optimal",
       faqHeading: "Häufig gestellte Fragen",
-      leaveDays: "Ferientage",
-      daysOff: "Freie Tage",
-      totalDays: "Tage frei",
+      leaveDays: unit("Ferientag", "Ferientage"),
+      daysOff: unit("freier Tag", "freie Tage"),
+      totalDays: unit("Tag frei", "Tage frei"),
       bookTheseDays: "Diese Tage nehmen",
       result: "Ergebnis",
       intro:
@@ -603,9 +613,9 @@ export const locales: Record<string, LocaleConfig> = {
       bestPlansHeading: "Les meilleurs plans {year}",
       howItWorksHeading: "Comment faire le pont",
       faqHeading: "Questions fréquentes",
-      leaveDays: "jours de congés",
-      daysOff: "jours de repos",
-      totalDays: "jours de repos",
+      leaveDays: unit("jour de congé", "jours de congés"),
+      daysOff: unit("jour de repos", "jours de repos"),
+      totalDays: unit("jour de repos", "jours de repos"),
       bookTheseDays: "Jours à poser",
       result: "Résultat",
       intro:
@@ -667,9 +677,9 @@ export const locales: Record<string, LocaleConfig> = {
       bestPlansHeading: "Les meilleurs plans {year}",
       howItWorksHeading: "Comment faire le pont",
       faqHeading: "Questions fréquentes",
-      leaveDays: "jours de congé",
-      daysOff: "jours de repos",
-      totalDays: "jours de repos",
+      leaveDays: unit("jour de congé", "jours de congé"),
+      daysOff: unit("jour de repos", "jours de repos"),
+      totalDays: unit("jour de repos", "jours de repos"),
       bookTheseDays: "Jours à poser",
       result: "Résultat",
       intro:
@@ -731,9 +741,9 @@ export const locales: Record<string, LocaleConfig> = {
       bestPlansHeading: "De beste plannen {year}",
       howItWorksHeading: "Zo pak je een brugdag aan",
       faqHeading: "Veelgestelde vragen",
-      leaveDays: "verlofdagen",
-      daysOff: "vrije dagen",
-      totalDays: "dagen vrij",
+      leaveDays: unit("verlofdag", "verlofdagen"),
+      daysOff: unit("vrije dag", "vrije dagen"),
+      totalDays: unit("dag vrij", "dagen vrij"),
       bookTheseDays: "Neem deze dagen op",
       result: "Resultaat",
       intro:
@@ -795,9 +805,9 @@ export const locales: Record<string, LocaleConfig> = {
       bestPlansHeading: "Les meilleurs plans {year}",
       howItWorksHeading: "Comment faire le pont",
       faqHeading: "Questions fréquentes",
-      leaveDays: "jours de congé",
-      daysOff: "jours de repos",
-      totalDays: "jours de repos",
+      leaveDays: unit("jour de congé", "jours de congé"),
+      daysOff: unit("jour de repos", "jours de repos"),
+      totalDays: unit("jour de repos", "jours de repos"),
       bookTheseDays: "Jours à poser",
       result: "Résultat",
       intro:
@@ -854,9 +864,9 @@ export const locales: Record<string, LocaleConfig> = {
       bestPlansHeading: "Los mejores planes {year}",
       howItWorksHeading: "Cómo aprovechar los puentes",
       faqHeading: "Preguntas frecuentes",
-      leaveDays: "días de vacaciones",
-      daysOff: "días libres",
-      totalDays: "días libres",
+      leaveDays: unit("día de vacaciones", "días de vacaciones"),
+      daysOff: unit("día libre", "días libres"),
+      totalDays: unit("día libre", "días libres"),
       bookTheseDays: "Días que conviene coger",
       result: "Resultado",
       intro:
@@ -918,9 +928,9 @@ export const locales: Record<string, LocaleConfig> = {
       bestPlansHeading: "I piani migliori {year}",
       howItWorksHeading: "Come si fa un ponte",
       faqHeading: "Domande frequenti",
-      leaveDays: "giorni di ferie",
-      daysOff: "giorni liberi",
-      totalDays: "giorni liberi",
+      leaveDays: unit("giorno di ferie", "giorni di ferie"),
+      daysOff: unit("giorno libero", "giorni liberi"),
+      totalDays: unit("giorno libero", "giorni liberi"),
       bookTheseDays: "Giorni da prendere",
       result: "Risultato",
       intro:
@@ -982,9 +992,9 @@ export const locales: Record<string, LocaleConfig> = {
       bestPlansHeading: "Os melhores planos {year}",
       howItWorksHeading: "Como fazer a ponte",
       faqHeading: "Perguntas frequentes",
-      leaveDays: "dias de férias",
-      daysOff: "dias de descanso",
-      totalDays: "dias de descanso",
+      leaveDays: unit("dia de férias", "dias de férias"),
+      daysOff: unit("dia de descanso", "dias de descanso"),
+      totalDays: unit("dia de descanso", "dias de descanso"),
       bookTheseDays: "Dias a marcar",
       result: "Resultado",
       intro:
@@ -1046,9 +1056,9 @@ export const locales: Record<string, LocaleConfig> = {
       bestPlansHeading: "Nejlepší plány {year}",
       howItWorksHeading: "Jak si prodloužit víkend",
       faqHeading: "Časté otázky",
-      leaveDays: "dny dovolené",
-      daysOff: "volné dny",
-      totalDays: "volných dnů",
+      leaveDays: unit("den dovolené", "dnů dovolené", "dny dovolené"),
+      daysOff: unit("volný den", "volných dnů", "volné dny"),
+      totalDays: unit("volný den", "volných dnů", "volné dny"),
       bookTheseDays: "Dny, které se vyplatí vzít",
       result: "Výsledek",
       intro:
@@ -1110,15 +1120,15 @@ export const locales: Record<string, LocaleConfig> = {
       bestPlansHeading: "Найкращі плани відпустки {year}",
       howItWorksHeading: "Як зібрати довгі вихідні",
       faqHeading: "Часті запитання",
-      leaveDays: "дні відпустки",
-      daysOff: "вільні дні",
-      totalDays: "вільних днів",
+      leaveDays: unit("день відпустки", "днів відпустки", "дні відпустки"),
+      daysOff: unit("вільний день", "вільних днів", "вільні дні"),
+      totalDays: unit("вільний день", "вільних днів", "вільні дні"),
       bookTheseDays: "Ці дні варто взяти",
       result: "Результат",
       intro:
         "У {year} році довгі вихідні вирішують, куди класти відпустку. З {budget} днів на правильних датах виходить до {total} вільних днів, тобто {multiplier}×.",
       notice:
-        "Поки діє воєнний стан, частина цих дат може лишатися робочою: чи давати вихідний, вирішує роботодавець. У календарі ці дні залишено, бо вони й далі стоять у переліку державних свят.",
+        "Під час воєнного стану державні свята наразі є робочими днями в Україні. План показує календар, передбачений законом, на час, коли ці норми знову діятимуть.",
       faq: [
         {
           question: "Що таке довгі вихідні?",
@@ -1133,7 +1143,7 @@ export const locales: Record<string, LocaleConfig> = {
         {
           question: "Чи всі ці дати справді вихідні?",
           answer:
-            "Календар показує державні свята з відкритих даних і не прибирає дні, які зараз можуть не бути вихідними. Поки діє воєнний стан, норма про святкові вихідні може не застосовуватися, тож частину дат роботодавець лишає робочими. Перед відпусткою звіряй дати з ним.",
+            "Календар показує державні свята так, як їх записано в законі. Під час воєнного стану ці дні наразі є робочими. План лишає їх тут на час, коли ці норми знову діятимуть.",
         },
         {
           question: "А якщо свято припало на вихідні?",
@@ -1183,6 +1193,15 @@ export function replaceTokens(text: string, tokens: Record<string, string | numb
     result = result.replace(new RegExp(`\\{${key}\\}`, "g"), String(value));
   }
   return result;
+}
+
+/**
+ * Sidebar headings keep the shorter label. Fill `{year}`, then drop a year that
+ * the template placed at the end (`De bästa semesterplanerna {year}`).
+ */
+export function sidebarHeading(template: string, year: number): string {
+  const filled = replaceTokens(template, { year });
+  return filled.replace(new RegExp(`\\s*${year}\\s*$`), "").trim();
 }
 
 /** Get regions for countries with regional holidays */

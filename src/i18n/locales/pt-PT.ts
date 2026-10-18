@@ -1,6 +1,6 @@
 import type { Copy } from "../types";
 
-const p = (one: string, many: string) => ({ one, few: many, many });
+const p = (one: string, many = one) => ({ one, few: many, many });
 
 export const ptPT: Copy = {
   chrome: {
@@ -80,7 +80,7 @@ export const ptPT: Copy = {
     regionalHint: "Alguns feriados só valem em certas regiões. Escolhe a tua para um plano certo.",
     year: "Ano",
     leaveYouHave: "Dias de férias que tens",
-    leaveUnit: "dias de férias",
+    leaveUnit: p("dia de férias", "dias de férias"),
     fewer: "Menos {label}",
     more: "Mais {label}",
     style: "Estilo",
@@ -94,7 +94,7 @@ export const ptPT: Copy = {
     shortest: "Descanso mais curto",
     longestBreak: "Descanso mais longo",
     noLimit: "Sem limite",
-    nDays: "{n} dias",
+    nDays: p("{n} dia", "{n} dias"),
     favouriteMonths: "Meses preferidos",
     monthsHint: "O planeador inclina os descansos para estes meses.",
     workDays: "Dias em que trabalhas",
@@ -102,9 +102,9 @@ export const ptPT: Copy = {
     yourDays: "Os teus dias",
     yourDaysHint:
       "Toca num dia do calendário para o manter como férias, bloqueá-lo ou marcá-lo como descanso sem gastar férias (um encerramento da empresa, por exemplo).",
-    kept: "{n} fixos",
-    blockedCount: "{n} bloqueados",
-    daysOffCount: "{n} livres",
+    kept: p("{n} fixo", "{n} fixos"),
+    blockedCount: p("{n} bloqueado", "{n} bloqueados"),
+    daysOffCount: p("{n} livre", "{n} livres"),
     clearAll: "Limpar tudo",
     edit: "Editar",
     showPlan: "Ver o meu plano",
@@ -113,7 +113,7 @@ export const ptPT: Copy = {
     updating: "A atualizar",
     heroLeave: p("{n} dia de férias", "{n} dias de férias"),
     heroBecome: p("passa a", "passam a"),
-    heroOff: "{n} dias de descanso",
+    heroOff: p("{n} dia de descanso", "{n} dias de descanso"),
     heroEmpty: "Ainda não há férias planeadas",
     quipNone: "Indica os dias de férias nas definições para veres onde caem os descansos.",
     quipRatio: "São {ratio} dias de descanso por cada dia de férias.",
@@ -133,9 +133,9 @@ export const ptPT: Copy = {
     usedOf: "{used} de {budget} usados",
     now: "agora",
     tomorrow: "amanhã",
-    inDays: "daqui a {n} dias",
-    inWeeks: "daqui a {n} semanas",
-    inMonths: "daqui a {n} meses",
+    inDays: p("daqui a {n} dia", "daqui a {n} dias"),
+    inWeeks: p("daqui a {n} semana", "daqui a {n} semanas"),
+    inMonths: p("daqui a {n} mês", "daqui a {n} meses"),
     legend: "Legenda",
     legendLeave: "Férias",
     legendLocked: "Fixo",
@@ -145,7 +145,7 @@ export const ptPT: Copy = {
     calendar: "Calendário",
     prevMonth: "Mês anterior",
     nextMonth: "Mês seguinte",
-    leaveCount: "{n} de férias",
+    leaveCount: p("{n} de férias"),
     tapDay: "Toca num dia para o mudar",
     kindWork: "dia útil",
     kindWeekend: "fim de semana",
@@ -225,7 +225,7 @@ export const ptPT: Copy = {
   },
   holiday: {
     title: "Feriados em {country} em {year}",
-    intro: "{count} feriados nacionais",
+    intro: p("{count} feriado nacional", "{count} feriados nacionais"),
     regional: ", mais os locais",
     bridgeNote: "Um feriado à terça ou à quinta é a melhor ponte.",
     table: "Tabela de feriados",

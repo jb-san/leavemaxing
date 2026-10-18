@@ -1,6 +1,14 @@
 import { createContext, type ReactNode, useContext, useMemo } from "react";
 import type { DayNum } from "~/lib/dates";
-import { calendarLabels, countryName, formatRangeLocale, formatShortLocale, pluralText } from "./format";
+import {
+  calendarLabels,
+  countNoun,
+  countryName,
+  countText,
+  formatRangeLocale,
+  formatShortLocale,
+  pluralText,
+} from "./format";
 import { type Copy, fill, getCopy, intlLocale, normalizeLocale } from "./index";
 import type { Plural } from "./types";
 
@@ -17,6 +25,8 @@ export interface I18n {
   text: (template: string, tokens?: Record<string, string | number>) => string;
   plural: (n: number, forms: Plural) => string;
   count: (n: number, forms: Plural) => string;
+  /** Plural form with `{n}` and `{count}` filled in. */
+  countText: (n: number, forms: Plural) => string;
   place: (country: string, fallback: string) => string;
 }
 
@@ -35,7 +45,8 @@ export function makeI18n(code?: string | null): I18n {
     formatRange: (start, end) => formatRangeLocale(locale, start, end),
     text: fill,
     plural: (n, forms) => pluralText(locale, n, forms),
-    count: (n, forms) => `${n} ${pluralText(locale, n, forms)}`,
+    count: (n, forms) => countNoun(locale, n, forms),
+    countText: (n, forms) => countText(locale, n, forms),
     place: (country, fallback) => countryName(country, locale, fallback),
   };
 }

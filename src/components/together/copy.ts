@@ -1,3 +1,4 @@
+import { englishCount } from "~/i18n/format";
 import { type DayNum, formatRange, formatShort } from "~/lib/dates";
 import type { MemberDayKind } from "~/lib/together/calendar";
 import type { MenuOption } from "~/lib/together/dayMenu";
@@ -24,7 +25,7 @@ export const t = {
   longest: "Longest trip",
   shortestAria: "days in the shortest trip",
   longestAria: "days in the longest trip",
-  nDays: (n: number) => `${n} days`,
+  nDays: (n: number) => englishCount(n, "day", "days"),
 
   you: "You",
   yourName: "Your name",
@@ -63,7 +64,7 @@ export const t = {
   joinHint: "Next you'll see the group. Mark the days you can't do there.",
   slowDown: "Slow down a moment.",
   tripSentence: (range: string, min: number, max: number) =>
-    `Planning for ${range}, trips of ${min === max ? `${min} days` : `${min} to ${max} days`}.`,
+    `Planning for ${range}, trips of ${min === max ? englishCount(min, "day", "days") : `${englishCount(min, "day", "days")} to ${englishCount(max, "day", "days")}`}.`,
   errors: {
     incomplete: "This link is incomplete. Ask for the invite again.",
     gone: "This group no longer exists",
@@ -83,7 +84,7 @@ export const t = {
   edit: "Edit",
   settings: "Settings",
   saveFailed: "Couldn't save that change. Try again.",
-  leaveDays: (n: number) => `${n} leave ${n === 1 ? "day" : "days"}`,
+  leaveDays: (n: number) => englishCount(n, "leave day", "leave days"),
   calendar: "Calendar",
   calendarHint: "Tap a day to mark it, vote on dates or propose some. Everyone in the group sees it.",
   legend: "Legend",
@@ -106,7 +107,7 @@ export const t = {
   votedOn: "Voted on",
   saving: "Saving…",
   savingOffline: "Offline. Changes will save when you're back.",
-  daysOff: (n: number) => `${n} days off`,
+  daysOff: (n: number) => englishCount(n, "day off", "days off"),
   leave: (n: number) => `${n} leave`,
   cantDo: (name: string) => `${name} can't do these dates`,
   savesFor: (who: string) => `, saves leave for ${who}`,

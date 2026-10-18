@@ -4,12 +4,13 @@ import SeasonalIntro from "~/components/SeasonalIntro.astro";
 import Planner from "~/components/planner/Planner";
 import { countries, countryByCode, meta, ogYear } from "~/data";
 import { buildToday, readHolidayFile, serverPlan } from "~/data/server";
-import { locales } from "~/data/locales";
+import { locales, UKRAINE_MARTIAL_LAW_NOTICE } from "~/data/locales";
 import { SITE } from "~/data/site";
 import { englishCountryAlternates } from "~/lib/hreflang";
 import { shouldIndexCountry, shouldIndexYear } from "~/data/sitemap-config";
 import Base from "~/layouts/Base.astro";
 import { formatRange } from "~/lib/dates";
+import { englishCount } from "~/i18n/format";
 import { bridgeLinkLabel, bridgePath, localizedSeasonal, pageJsonLd } from "~/lib/seasonalSeo";
 import { defaultSettings } from "~/lib/settings";
 
@@ -102,6 +103,7 @@ const jsonLd = pageJsonLd({
     <h1 class="text-[clamp(28px,4vw,44px)] font-extrabold leading-tight">
       {country.flag} Best days to take off in {country.name} {year}
     </h1>
+    {code === "UA" && <p class="mt-3 text-sm text-muted">{UKRAINE_MARTIAL_LAW_NOTICE}</p>}
   </div>
 
   {
@@ -134,7 +136,7 @@ const jsonLd = pageJsonLd({
                   <span class="text-sm">
                     <span class="block font-bold">{formatRange(b.start, b.end)}</span>
                     <span class="text-muted">
-                      {b.leave} leave days for {b.length} days off
+                      {englishCount(b.leave, "leave day", "leave days")} for {englishCount(b.length, "day off", "days off")}
                     </span>
                   </span>
                 </li>

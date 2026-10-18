@@ -81,7 +81,8 @@ export interface Copy {
     regionalHint: string;
     year: string;
     leaveYouHave: string;
-    leaveUnit: string;
+    /** Bare noun. The stepper announces `{n} ${form}`. */
+    leaveUnit: Plural;
     fewer: string;
     more: string;
     style: string;
@@ -95,16 +96,16 @@ export interface Copy {
     shortest: string;
     longestBreak: string;
     noLimit: string;
-    nDays: string;
+    nDays: Plural;
     favouriteMonths: string;
     monthsHint: string;
     workDays: string;
     yearStarts: string;
     yourDays: string;
     yourDaysHint: string;
-    kept: string;
-    blockedCount: string;
-    daysOffCount: string;
+    kept: Plural;
+    blockedCount: Plural;
+    daysOffCount: Plural;
     clearAll: string;
     edit: string;
     showPlan: string;
@@ -113,7 +114,7 @@ export interface Copy {
     updating: string;
     heroLeave: Plural;
     heroBecome: Plural;
-    heroOff: string;
+    heroOff: Plural;
     heroEmpty: string;
     quipNone: string;
     quipRatio: string;
@@ -133,9 +134,9 @@ export interface Copy {
     usedOf: string;
     now: string;
     tomorrow: string;
-    inDays: string;
-    inWeeks: string;
-    inMonths: string;
+    inDays: Plural;
+    inWeeks: Plural;
+    inMonths: Plural;
     legend: string;
     legendLeave: string;
     legendLocked: string;
@@ -145,7 +146,7 @@ export interface Copy {
     calendar: string;
     prevMonth: string;
     nextMonth: string;
-    leaveCount: string;
+    leaveCount: Plural;
     tapDay: string;
     kindWork: string;
     kindWeekend: string;
@@ -224,7 +225,7 @@ export interface Copy {
   };
   holiday: {
     title: string;
-    intro: string;
+    intro: Plural;
     regional: string;
     bridgeNote: string;
     table: string;

@@ -1,6 +1,6 @@
 import type { Copy, Plural } from "../types";
 
-const p = (one: string, few: string, many: string): Plural => ({ one, few, many });
+const p = (one: string, few = one, many = few): Plural => ({ one, few, many });
 
 export const plPL: Copy = {
   chrome: {
@@ -81,7 +81,7 @@ export const plPL: Copy = {
       "Część świąt obowiązuje tylko w wybranych regionach. Wybierz swój, jeśli plan ma być dokładny.",
     year: "Rok",
     leaveYouHave: "Dni urlopu, które masz",
-    leaveUnit: "dni urlopu",
+    leaveUnit: p("dzień urlopu", "dni urlopu", "dni urlopu"),
     fewer: "Mniej: {label}",
     more: "Więcej: {label}",
     style: "Styl",
@@ -95,7 +95,7 @@ export const plPL: Copy = {
     shortest: "Najkrótszy odcinek",
     longestBreak: "Najdłuższy odcinek",
     noLimit: "Bez limitu",
-    nDays: "{n} dni",
+    nDays: p("{n} dzień", "{n} dni", "{n} dni"),
     favouriteMonths: "Ulubione miesiące",
     monthsHint: "Planer woli wolne w tych miesiącach.",
     workDays: "Dni, w które pracujesz",
@@ -103,9 +103,9 @@ export const plPL: Copy = {
     yourDays: "Twoje dni",
     yourDaysHint:
       "Stuknij dzień w kalendarzu, żeby zatrzymać go jako urlop, zablokować albo oznaczyć jako wolny bez zużycia urlopu (na przykład przestój w firmie).",
-    kept: "{n} zatrzymane",
-    blockedCount: "{n} zablokowane",
-    daysOffCount: "{n} wolne",
+    kept: p("{n} zatrzymany", "{n} zatrzymane", "{n} zatrzymanych"),
+    blockedCount: p("{n} zablokowany", "{n} zablokowane", "{n} zablokowanych"),
+    daysOffCount: p("{n} wolny", "{n} wolne", "{n} wolnych"),
     clearAll: "Wyczyść",
     edit: "Zmień",
     showPlan: "Pokaż plan",
@@ -114,7 +114,7 @@ export const plPL: Copy = {
     updating: "Aktualizacja",
     heroLeave: p("{n} dzień urlopu", "{n} dni urlopu", "{n} dni urlopu"),
     heroBecome: p("daje", "dają", "daje"),
-    heroOff: "{n} dni wolnych",
+    heroOff: p("{n} dzień wolny", "{n} dni wolne", "{n} dni wolnych"),
     heroEmpty: "Urlopu jeszcze nie ułożono",
     quipNone: "Wpisz dni urlopu w ustawieniach, żeby zobaczyć, gdzie padną wolne odcinki.",
     quipRatio: "To {ratio} dnia wolnego na każdy dzień urlopu.",
@@ -134,9 +134,9 @@ export const plPL: Copy = {
     usedOf: "{used} z {budget} wykorzystane",
     now: "teraz",
     tomorrow: "jutro",
-    inDays: "za {n} dni",
-    inWeeks: "za {n} tyg.",
-    inMonths: "za {n} mies.",
+    inDays: p("za {n} dzień", "za {n} dni", "za {n} dni"),
+    inWeeks: p("za {n} tydzień", "za {n} tygodnie", "za {n} tygodni"),
+    inMonths: p("za {n} miesiąc", "za {n} miesiące", "za {n} miesięcy"),
     legend: "Legenda",
     legendLeave: "Urlop",
     legendLocked: "Zatrzymany",
@@ -146,7 +146,7 @@ export const plPL: Copy = {
     calendar: "Kalendarz",
     prevMonth: "Poprzedni miesiąc",
     nextMonth: "Następny miesiąc",
-    leaveCount: "{n} urlopu",
+    leaveCount: p("{n} urlopu"),
     tapDay: "Stuknij dzień, żeby go zmienić",
     kindWork: "dzień roboczy",
     kindWeekend: "weekend",
@@ -227,7 +227,7 @@ export const plPL: Copy = {
   },
   holiday: {
     title: "Święta w kraju {country} w {year}",
-    intro: "{count} świąt ogólnokrajowych",
+    intro: p("{count} święto ogólnokrajowe", "{count} święta ogólnokrajowe", "{count} świąt ogólnokrajowych"),
     regional: ", plus regionalne",
     bridgeNote: "Święta we wtorek albo w czwartek dają najlepsze długie weekendy.",
     table: "Tabela świąt",

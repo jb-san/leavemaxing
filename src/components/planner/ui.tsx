@@ -352,6 +352,7 @@ export function Stepper({
   min,
   max,
   label,
+  valueName,
   big = false,
   size,
   format,
@@ -361,7 +362,10 @@ export function Stepper({
   onChange: (n: number) => void;
   min: number;
   max: number;
+  /** Fewer/more button name, usually the plural noun ("leave days"). */
   label: string;
+  /** Accessible name of the number itself, including the count ("1 leave day"). */
+  valueName?: string;
   big?: boolean;
   /** "field": exactly as tall as an `.input`, to line up with text fields in a form row. */
   size?: "field";
@@ -401,7 +405,7 @@ export function Stepper({
           id={id}
           type="number"
           inputMode="numeric"
-          aria-label={label}
+          aria-label={valueName ?? label}
           min={min}
           max={max}
           value={value}

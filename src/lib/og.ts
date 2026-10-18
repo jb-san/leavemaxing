@@ -3,6 +3,7 @@ import { createRequire } from "node:module";
 import { Resvg } from "@resvg/resvg-js";
 import satori from "satori";
 import { mascotSvg, moodFor } from "~/components/Mascot";
+import { englishCount } from "~/i18n/format";
 import { type DayNum, MONTHS_SHORT } from "./dates";
 import type { Plan } from "./planner/types";
 
@@ -191,7 +192,7 @@ export async function renderOg({ title, subtitle, plan, range }: OgInput): Promi
             ? h(
                 "div",
                 { fontFamily: "Display", fontSize: 60, lineHeight: 1.05, color: C.lime, marginTop: 6 },
-                `${plan.stats.leaveUsed} leave ${plan.stats.leaveUsed === 1 ? "day" : "days"}, ${plan.stats.daysOff} days off`,
+                `${englishCount(plan.stats.leaveUsed, "leave day", "leave days")}, ${englishCount(plan.stats.daysOff, "day off", "days off")}`,
               )
             : h(
                 "div",

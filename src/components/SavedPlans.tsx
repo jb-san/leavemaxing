@@ -1,6 +1,7 @@
 import { ArrowRight, Pencil, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { countryByCode } from "~/data";
+import { englishCount } from "~/i18n/format";
 import { planPath, toQuery } from "~/lib/settings";
 import { loadPlans, type SavedPlan, savePlans } from "~/lib/storage";
 import { forgetGroup, listMemberships, type Membership } from "~/lib/together/store";
@@ -116,9 +117,11 @@ export default function SavedPlans() {
               <div className="flex items-end justify-between rounded-2xl bg-hero p-4 text-hero-ink">
                 <div>
                   <p className="font-display text-2xl font-extrabold leading-tight">
-                    <span className="text-lime">{p.summary.leaveUsed} leave days</span>
+                    <span className="text-lime">
+                      {englishCount(p.summary.leaveUsed, "leave day", "leave days")}
+                    </span>
                     <br />
-                    {p.summary.daysOff} days off
+                    {englishCount(p.summary.daysOff, "day off", "days off")}
                   </p>
                   <p className="text-xs text-hero-muted">Saved {new Date(p.savedAt).toLocaleDateString()}</p>
                 </div>

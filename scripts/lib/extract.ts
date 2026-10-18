@@ -3,6 +3,39 @@ import type { HolidayEntry, HolidayFile } from "../../src/lib/holidays";
 
 const DAY_MS = 86_400_000;
 
+/** Sunday = 0. First `weekday` on or after the given month-day, as YYYY-MM-DD in UTC. */
+export function weekdayOnOrAfter(year: number, month: number, day: number, weekday: number): string {
+  const start = Date.UTC(year, month - 1, day);
+  const delta = (weekday - new Date(start).getUTCDay() + 7) % 7;
+  return new Date(start + delta * DAY_MS).toISOString().slice(0, 10);
+}
+
+/**
+ * date-holidays' "weekday after MM-DD" is inclusive: when MM-DD is already that weekday the
+ * holiday lands on it. That matches a window that starts on MM-DD (Swedish midsummer, All Saints).
+ * It does not match a window that starts the next day (Icelandic First Day of Summer is the
+ * Thursday from 19 to 25 April, but the rule "thursday after 04-18" returns 18 April).
+ * Our own Midsummer Eve helper had the same class of mistake: it searched for a Saturday in
+ * 19–25 June, so 2027 (19 June is a Saturday) became 18 June instead of Friday 25 June.
+ */
+const FLOATING_FIXES: Record<string, Array<{ name: string; date: (year: number) => string }>> = {
+  SE: [
+    { name: "Midsummer Eve", date: (year) => weekdayOnOrAfter(year, 6, 19, 5) },
+    { name: "Midsummer Day", date: (year) => weekdayOnOrAfter(year, 6, 20, 6) },
+    { name: "All Saints' Day", date: (year) => weekdayOnOrAfter(year, 10, 31, 6) },
+  ],
+  FI: [
+    { name: "Midsummer Eve", date: (year) => weekdayOnOrAfter(year, 6, 19, 5) },
+    { name: "Midsummer Day", date: (year) => weekdayOnOrAfter(year, 6, 20, 6) },
+    { name: "All Saints' Day", date: (year) => weekdayOnOrAfter(year, 10, 31, 6) },
+  ],
+  AX: [
+    { name: "Midsummer Eve", date: (year) => weekdayOnOrAfter(year, 6, 19, 5) },
+    { name: "Midsummer Day", date: (year) => weekdayOnOrAfter(year, 6, 20, 6) },
+  ],
+  IS: [{ name: "First Day of Summer", date: (year) => weekdayOnOrAfter(year, 4, 19, 4) }],
+};
+
 interface RawDay {
   date: string;
   name: string;
@@ -28,8 +61,6 @@ const DE_FACTO_HOLIDAYS: Record<
   Array<{ month: number; day: number; name: string; local?: string }>
 > = {
   SE: [
-    // Midsummer Eve: Friday before Midsummer Day (between June 19-25)
-    // We'll add it dynamically in extractCountryYear since it moves
     { month: 12, day: 24, name: "Christmas Eve", local: "Julafton" },
     { month: 12, day: 31, name: "New Year's Eve", local: "Nyårsafton" },
   ],
@@ -95,19 +126,6 @@ export function listRegions(country: string): Record<string, string> {
   return new Holidays().getStates(country, "en") ?? {};
 }
 
-/** Calculate Midsummer Eve for Sweden: Friday before Midsummer Day (which is between June 19-25) */
-function getMidsummerEve(year: number): string | null {
-  for (let day = 19; day <= 25; day++) {
-    const date = new Date(year, 5, day);
-    if (date.getDay() === 6) {
-      const eve = new Date(date);
-      eve.setDate(eve.getDate() - 1);
-      return eve.toISOString().slice(0, 10);
-    }
-  }
-  return null;
-}
-
 /** Build the data file for one country and year, merging national and regional holidays. */
 export function extractCountryYear(country: string, year: number, regions: string[]): HolidayFile {
   const key = (d: RawDay) => `${d.date}|${d.name}`;
@@ -144,16 +162,20 @@ export function extractCountryYear(country: string, year: number, regions: strin
     }
   }
 
+  // Midsommarafton is a bank holiday, not type "public", but the Annual Leave Act treats it as a Sunday.
   if (country === "SE") {
-    const midsummerEve = getMidsummerEve(year);
-    if (midsummerEve) {
-      const raw: RawDay = {
-        date: midsummerEve,
-        name: "Midsummer Eve",
-        local: "Midsommarafton",
-        names: { sv: "Midsommarafton" },
-      };
-      entries.set(key(raw), { day: raw, national: true, regions: new Set() });
+    const raw: RawDay = {
+      date: weekdayOnOrAfter(year, 6, 19, 5),
+      name: "Midsummer Eve",
+      local: "Midsommarafton",
+      names: { sv: "Midsommarafton" },
+    };
+    entries.set(key(raw), { day: raw, national: true, regions: new Set() });
+  }
+
+  for (const fix of FLOATING_FIXES[country] ?? []) {
+    for (const entry of entries.values()) {
+      if (entry.day.name === fix.name) entry.day.date = fix.date(year);
     }
   }
 
