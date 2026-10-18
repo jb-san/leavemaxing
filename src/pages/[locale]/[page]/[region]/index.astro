@@ -1,5 +1,6 @@
 ---
 import HolidayList from "~/components/HolidayList.astro";
+import SeasonalIntro from "~/components/SeasonalIntro.astro";
 import Planner from "~/components/planner/Planner";
 import { countryByCode } from "~/data";
 import { readHolidayFile, filesFor, buildToday } from "~/data/server";
@@ -13,6 +14,7 @@ import { regionalPageAlternates } from "~/lib/hreflang";
 import { regionCopy } from "~/lib/regionLabels";
 import { defaultSettings } from "~/lib/settings";
 import { calculateBridgePlans } from "~/lib/bridgeDays";
+import { bridgeLinkLabel, localizedSeasonal, pageJsonLd, regionPlace, whereFor } from "~/lib/seasonalSeo";
 import { toPlanInput, yearsNeeded } from "~/lib/planInput";
 import { plan } from "~/lib/planner/plan";
 
@@ -122,20 +124,31 @@ const top = [...fullPlan.breaks]
   .sort((a, b) => b.length / b.leave - a.length / a.leave)
   .slice(0, 3);
 
-// Build title and description
-const title = replaceTokens(locale.translations.pageTitle, {
+const place = regionPlace(locale.country, regionCode, country.regions[regionCode] ?? regionCode);
+const seasonal = localizedSeasonal({
+  localeCode: locale.code,
   year,
-  region: region.titleRegion,
-  leave: locale.defaultBudget,
-  total: stats.daysOff
+  where: whereFor(locale.code, place),
+  regional: true,
+  file,
+  country: locale.country,
+  region: regionCode,
+  budget: locale.defaultBudget,
+  daysOff: stats.daysOff,
+  multiplier: stats.multiplier,
+  breaks: fullPlan.breaks,
+  uiLocale,
 });
-
-const description = replaceTokens(locale.translations.pageDescription, {
-  year,
-  region: region.descriptionRegion,
-  leave: locale.defaultBudget,
-  total: stats.daysOff
-});
+const title = seasonal.title;
+const description = seasonal.description;
+const otherYear = year === 2027 ? 2028 : 2027;
+const otherFile = readHolidayFile(locale.country, otherYear);
+const otherPublished = otherFile
+  ? publishedRegionCodes(locale.country, Object.keys(country.regions), otherFile)
+  : [];
+const otherHref = otherPublished.includes(regionCode)
+  ? `/${localeParam}/${slug}-${otherYear}/${regionSlug}/`
+  : `/${localeParam}/${slug}-${otherYear}/`;
 
 const h1 = replaceTokens(locale.translations.h1Region, { year, region: region.h1Region });
 
@@ -150,41 +163,22 @@ const hreflangs = regionalPageAlternates(
   `${SITE.url}/${locale.country.toLowerCase()}/${year}/`,
 );
 
-// JSON-LD structured data
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "WebApplication",
-      name: `leavemaxxing: ${locale.bridgeTerm} ${year} ${regionFullName}`,
-      url: canonicalUrl,
-      applicationCategory: "LifestyleApplication",
-      operatingSystem: "Any",
-      inLanguage: locale.lang,
-      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-    },
-    {
-      "@type": "BreadcrumbList",
-      itemListElement: [
-        { "@type": "ListItem", position: 1, name: "leavemaxxing", item: SITE.url },
-        { "@type": "ListItem", position: 2, name: country.name, item: `${SITE.url}/${locale.country.toLowerCase()}/` },
-        { "@type": "ListItem", position: 3, name: `${locale.bridgeTerm} ${year}`, item: `${SITE.url}/${localeParam}/${page}/` },
-        { "@type": "ListItem", position: 4, name: regionFullName, item: canonicalUrl },
-      ],
-    },
-    {
-      "@type": "FAQPage",
-      mainEntity: locale.translations.faq.map(item => ({
-        "@type": "Question",
-        name: item.question,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: item.answer
-        }
-      }))
-    }
+const homeLabel = locale.translations.home ?? countryLabel;
+const jsonLd = pageJsonLd({
+  title,
+  description,
+  url: canonicalUrl,
+  inLanguage: locale.lang,
+  applicationName: `leavemaxxing: ${locale.bridgeTerm} ${year} ${regionFullName}`,
+  dateModified: seasonal.updatedDate,
+  breadcrumbs: [
+    { name: homeLabel, item: `${SITE.url}/${localeParam}/` },
+    { name: countryLabel, item: `${SITE.url}/${localeParam}/${slug}-${year}/` },
+    { name: `${locale.bridgeTerm} ${year}`, item: `${SITE.url}/${localeParam}/${page}/` },
+    { name: regionFullName, item: canonicalUrl },
   ],
-};
+  faq: seasonal.faq,
+});
 
 const publishedRegions = publishedRegionCodes(locale.country, Object.keys(country.regions), file);
 const regionalHolidays = file.holidays.filter(h => 
@@ -215,22 +209,19 @@ const regionalHolidays = file.holidays.filter(h =>
     </h1>
   </div>
 
-  <div class="prose prose-slate max-w-none mb-8">
-    {locale.translations.notice && <p class="mb-3 text-sm text-muted">{locale.translations.notice}</p>}
-    <p class="text-lg">
-      {replaceTokens(locale.translations.intro, {
-        year,
-        budget: locale.defaultBudget,
-        total: stats.daysOff,
-        multiplier: stats.multiplier.toFixed(1)
-      })}
-    </p>
+  <SeasonalIntro
+    sentences={seasonal.intro}
+    links={[{ href: otherHref, label: bridgeLinkLabel(locale.code, otherYear) }]}
+    updatedLabel={seasonal.updatedLabel}
+    updatedDate={seasonal.updatedDate}
+  >
+    {locale.translations.notice && <p class="mt-3 text-sm text-muted">{locale.translations.notice}</p>}
     {regionalHolidays.length > 0 && (
-      <p class="text-muted">
+      <p class="mt-3 text-sm text-muted">
         {replaceTokens(locale.translations.extraRegional ?? "In {region} gelten {count} zusätzliche regionale Feiertage.", { region: regionFullName, count: regionalHolidays.length })}
       </p>
     )}
-  </div>
+  </SeasonalIntro>
 
   <!-- Interactive Planner -->
   <Planner client:load initial={settings} files={files} today={buildToday} mode="page" years={[year]} localizeRegions locale={locale.code} />
@@ -273,7 +264,15 @@ const regionalHolidays = file.holidays.filter(h =>
       <!-- FAQ Section -->
       <section class="card p-5 sm:p-6">
         <h2 class="text-2xl font-bold mb-4">{locale.translations.faqHeading}</h2>
-        <div class="space-y-6">
+        <div class="space-y-6" data-seasonal-faq>
+          {seasonal.faq.map((item) => (
+            <div>
+              <h3 class="font-bold text-lg mb-2">{item.question}</h3>
+              <p class="text-muted">{item.answer}</p>
+            </div>
+          ))}
+        </div>
+        <div class="mt-6 space-y-6">
           {locale.translations.faq.map((item) => (
             <div>
               <h3 class="font-bold text-lg mb-2">{item.question}</h3>
