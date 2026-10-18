@@ -1,9 +1,9 @@
 name = "leavemaxxing-together"
 main = "src/index.ts"
 compatibility_date = "2026-10-01"
-# Only reachable through the site's own route, not a separate workers.dev address.
+# Not public on its own: the site's Pages Function at /api/together/* reaches it through a
+# service binding (see the root wrangler.toml), so it needs no route or workers.dev address.
 workers_dev = false
-routes = [{ pattern = "leavemaxxing.com/api/together/*", zone_name = "leavemaxxing.com" }]
 
 [[durable_objects.bindings]]
 name = "GROUP"

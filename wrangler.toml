@@ -2,3 +2,9 @@ name = "leavemaxing"
 compatibility_date = "2024-01-01"
 
 pages_build_output_dir = "dist"
+
+# /api/together/* (functions/api/together) forwards to the Together worker, whose own config is
+# worker/wrangler.toml. A service binding needs no route on the zone and works on previews too.
+[[services]]
+binding = "TOGETHER"
+service = "leavemaxxing-together"
