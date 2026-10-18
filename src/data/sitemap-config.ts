@@ -78,6 +78,13 @@ export function shouldIndexYear(year: number): boolean {
   return SITEMAP_YEARS.includes(year);
 }
 
+const SEASONAL_YEAR = /(?:\/|-)(2027|2028)(?:\/|$)/;
+
+/** 2027 and 2028 pages, including localized slugs and regional URLs. */
+export function isSeasonalYearUrl(url: string): boolean {
+  return SEASONAL_YEAR.test(url);
+}
+
 /**
  * Determine if a page should be indexed based on URL
  */

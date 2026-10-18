@@ -1,5 +1,6 @@
 ---
 import HolidayList from "~/components/HolidayList.astro";
+import SeasonalIntro from "~/components/SeasonalIntro.astro";
 import Planner from "~/components/planner/Planner";
 import { countries, countryByCode, meta, ogYear } from "~/data";
 import { buildToday, readHolidayFile, serverPlan } from "~/data/server";
@@ -9,6 +10,7 @@ import { englishCountryAlternates } from "~/lib/hreflang";
 import { shouldIndexCountry, shouldIndexYear } from "~/data/sitemap-config";
 import Base from "~/layouts/Base.astro";
 import { formatRange } from "~/lib/dates";
+import { bridgeLinkLabel, bridgePath, localizedSeasonal, pageJsonLd } from "~/lib/seasonalSeo";
 import { defaultSettings } from "~/lib/settings";
 
 export function getStaticPaths() {
@@ -24,12 +26,50 @@ const file = readHolidayFile(code, year)!;
 const { stats } = plan;
 const top = [...plan.breaks].filter((b) => b.leave > 0).sort((a, b) => b.length / b.leave - a.length / a.leave).slice(0, 3);
 
-const title = `${country.name} ${year}: turn ${settings.budget} leave days into ${stats.daysOff} days off`;
-const description = `The best days to take off in ${country.name} in ${year}. ${settings.budget} leave days around ${country.name}'s public holidays give ${stats.daysOff} days off (${stats.multiplier.toFixed(1)}×). Change the days, region and style to plan your own.`;
+const canonicalUrl = new URL(Astro.url.pathname, SITE.url).href;
+const seasonal =
+  year === 2027 || year === 2028
+    ? localizedSeasonal({
+        localeCode: "en",
+        year,
+        where: `in ${country.name}`,
+        regional: false,
+        file,
+        country: code,
+        region: null,
+        budget: settings.budget,
+        daysOff: stats.daysOff,
+        multiplier: stats.multiplier,
+        breaks: plan.breaks,
+        uiLocale: "en",
+        fit: true,
+      })
+    : null;
+const title = seasonal
+  ? seasonal.title
+  : `${country.name} ${year}: turn ${settings.budget} leave days into ${stats.daysOff} days off`;
+const description = seasonal
+  ? seasonal.description
+  : `The best days to take off in ${country.name} in ${year}. ${settings.budget} leave days around ${country.name}'s public holidays give ${stats.daysOff} days off (${stats.multiplier.toFixed(1)}×). Change the days, region and style to plan your own.`;
 const otherYears = meta.years.filter((y) => y !== year);
 const noindex = !shouldIndexCountry(code) || !shouldIndexYear(year);
+const otherSeasonalYear = year === 2027 ? 2028 : year === 2028 ? 2027 : null;
+const introLinks = [
+  ...(otherSeasonalYear
+    ? [
+        {
+          href: `/${code.toLowerCase()}/${otherSeasonalYear}/`,
+          label: `Bridge days ${otherSeasonalYear} in ${country.name}`,
+        },
+      ]
+    : []),
+  ...Object.values(locales)
+    .filter((locale) => locale.country === code)
+    .sort((a, b) => a.code.localeCompare(b.code))
+    .map((locale) => ({ href: bridgePath(locale, year), label: bridgeLinkLabel(locale.code, year) })),
+];
 
-const englishUrl = `${SITE.url}/${code.toLowerCase()}/${year}/`;
+const englishUrl = canonicalUrl;
 const localizedAlternates = Object.entries(locales)
   .filter(([, locale]) => locale.country === code && (year === 2027 || year === 2028))
   .map(([localeCode, locale]) => ({
@@ -38,27 +78,20 @@ const localizedAlternates = Object.entries(locales)
   }));
 const hreflangs = englishCountryAlternates(localizedAlternates, englishUrl);
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "WebApplication",
-      name: `leavemaxxing: ${country.name} ${year}`,
-      url: new URL(Astro.url.pathname, SITE.url).href,
-      applicationCategory: "LifestyleApplication",
-      operatingSystem: "Any",
-      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-    },
-    {
-      "@type": "BreadcrumbList",
-      itemListElement: [
-        { "@type": "ListItem", position: 1, name: "leavemaxxing", item: SITE.url },
-        { "@type": "ListItem", position: 2, name: country.name, item: `${SITE.url}/${code.toLowerCase()}/` },
-        { "@type": "ListItem", position: 3, name: String(year), item: new URL(Astro.url.pathname, SITE.url).href },
-      ],
-    },
+const jsonLd = pageJsonLd({
+  title,
+  description,
+  url: canonicalUrl,
+  inLanguage: "en",
+  applicationName: `leavemaxxing: ${country.name} ${year}`,
+  dateModified: seasonal?.updatedDate,
+  breadcrumbs: [
+    { name: "Planner", item: `${SITE.url}/` },
+    { name: country.name, item: `${SITE.url}/${code.toLowerCase()}/` },
+    { name: String(year), item: canonicalUrl },
   ],
-};
+  faq: seasonal?.faq,
+});
 ---
 
 <Base title={title} description={description} image={`/og/${code.toLowerCase()}/${ogYear(year)}.png`} jsonLd={jsonLd} hreflangs={hreflangs} wide noindex={noindex}>
@@ -70,6 +103,17 @@ const jsonLd = {
       {country.flag} Best days to take off in {country.name} {year}
     </h1>
   </div>
+
+  {
+    seasonal && (
+      <SeasonalIntro
+        sentences={seasonal.intro}
+        links={introLinks}
+        updatedLabel={seasonal.updatedLabel}
+        updatedDate={seasonal.updatedDate}
+      />
+    )
+  }
 
   <Planner client:load initial={settings} files={files} today={buildToday} mode="page" years={meta.years} />
 
@@ -115,4 +159,20 @@ const jsonLd = {
       </section>
     </aside>
   </div>
+
+  {
+    seasonal && (
+      <section class="card mt-5 p-5 sm:p-6">
+        <h2 class="text-2xl font-bold mb-4">Common questions</h2>
+        <div class="space-y-6" data-seasonal-faq>
+          {seasonal.faq.map((item) => (
+            <div>
+              <h3 class="font-bold text-lg mb-2">{item.question}</h3>
+              <p class="text-muted">{item.answer}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+    )
+  }
 </Base>

@@ -11,6 +11,7 @@ import { homeAlternates, localizedBestYears } from "~/i18n/routes";
 import Base from "~/layouts/Base.astro";
 import { shellAlternates } from "~/lib/hreflang";
 import { regionCopy } from "~/lib/regionLabels";
+import { bridgeLinkLabel, bridgePath } from "~/lib/seasonalSeo";
 import { publishedRegionCodes } from "~/lib/regionSets";
 import { defaultSettings } from "~/lib/settings";
 
@@ -95,6 +96,16 @@ const jsonLd = {
       <p class="mb-6 max-w-[70ch] text-sm text-muted">{locale.translations.notice}</p>
     )
   }
+
+  <p class="mb-6 flex flex-wrap gap-x-4 gap-y-2 text-sm font-semibold">
+    {
+      [2027, 2028].map((item) => (
+        <a href={bridgePath(locale, item)} class="underline decoration-lime decoration-2 underline-offset-4">
+          {bridgeLinkLabel(locale.code, item)}
+        </a>
+      ))
+    }
+  </p>
 
   <Planner
     client:load

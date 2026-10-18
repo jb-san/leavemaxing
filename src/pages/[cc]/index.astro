@@ -2,9 +2,11 @@
 import HolidayList from "~/components/HolidayList.astro";
 import Planner from "~/components/planner/Planner";
 import { countries, countryByCode, meta } from "~/data";
+import { locales } from "~/data/locales";
 import { buildToday, readHolidayFile, serverPlan } from "~/data/server";
 import { shouldIndexCountry } from "~/data/sitemap-config";
 import Base from "~/layouts/Base.astro";
+import { bridgeLinkLabel, bridgePath } from "~/lib/seasonalSeo";
 import { defaultSettings } from "~/lib/settings";
 
 export function getStaticPaths() {
@@ -17,6 +19,16 @@ const year = new Date().getFullYear();
 const settings = defaultSettings(code, year);
 const { plan, files } = serverPlan(settings);
 const file = readHolidayFile(code, year)!;
+const seasonalLinks = [
+  { href: `/${code.toLowerCase()}/2027/`, label: `Bridge days 2027 in ${country.name}` },
+  { href: `/${code.toLowerCase()}/2028/`, label: `Bridge days 2028 in ${country.name}` },
+  ...Object.values(locales)
+    .filter((locale) => locale.country === code)
+    .sort((a, b) => a.code.localeCompare(b.code))
+    .flatMap((locale) =>
+      [2027, 2028].map((item) => ({ href: bridgePath(locale, item), label: bridgeLinkLabel(locale.code, item) })),
+    ),
+];
 const title = `Best days to take off in ${country.name}: leave planner`;
 const description = `Plan your leave around ${country.name}'s public holidays. Find the bridge days that turn ${settings.budget} leave days into ${plan.stats.daysOff} days off this year.`;
 const noindex = !shouldIndexCountry(code);
@@ -31,6 +43,16 @@ const noindex = !shouldIndexCountry(code);
       {country.flag} Leave planner for {country.name}
     </h1>
   </div>
+
+  <p class="mb-6 flex flex-wrap gap-x-4 gap-y-2 text-sm font-semibold">
+    {
+      seasonalLinks.map((link) => (
+        <a href={link.href} class="underline decoration-lime decoration-2 underline-offset-4">
+          {link.label}
+        </a>
+      ))
+    }
+  </p>
 
   <Planner client:load initial={settings} files={files} today={buildToday} mode="page" years={meta.years} />
 

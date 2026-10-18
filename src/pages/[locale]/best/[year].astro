@@ -2,6 +2,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Mascot } from "~/components/Mascot";
+import { countryByCode } from "~/data";
 import { locales } from "~/data/locales";
 import { SITE } from "~/data/site";
 import { getCopy, intlLocale } from "~/i18n";
@@ -9,6 +10,7 @@ import { countryName } from "~/i18n/format";
 import { bestAlternates, localizedBestYears } from "~/i18n/routes";
 import Base from "~/layouts/Base.astro";
 import { shellAlternates } from "~/lib/hreflang";
+import { bestPageText, bridgeLinkLabel, bridgePath, pageJsonLd, whereFor } from "~/lib/seasonalSeo";
 
 interface Row {
   code: string;
@@ -52,12 +54,32 @@ const tables = data.budgets.map((budget) => ({
 }));
 const top = tables.find((t) => t.budget === DEFAULT)?.rows[0];
 const other = localizedBestYears().find((item) => item !== year);
-const title = b.title.replaceAll("{year}", String(year));
-const description = b.description
-  .replaceAll("{year}", String(year))
-  .replaceAll("{count}", String(data.rows.length))
-  .replaceAll("{days}", String(DEFAULT));
+const country = countryByCode.get(locale.country);
+const place = countryName(locale.country, ui, country?.name ?? locale.country);
+const mine = data.rows.find((row) => row.code === locale.country);
+const seasonal = bestPageText({
+  localeCode: locale.code,
+  year,
+  where: whereFor(locale.code, null),
+  place,
+  countries: data.rows.length,
+  days: DEFAULT,
+  off: mine?.results[DEFAULT]?.daysOff ?? 0,
+  topName: top ? countryName(top.code, ui, top.name) : place,
+  topOff: top?.results[DEFAULT]?.daysOff ?? 0,
+  isTop: top?.code === locale.country,
+  uiLocale: ui,
+});
+const title = seasonal.title;
+const description = seasonal.description;
 const canonical = `${SITE.url}/${param}/best/${year}/`;
+const jsonLd = pageJsonLd({
+  title,
+  description,
+  url: canonical,
+  inLanguage: locale.lang,
+  dateModified: seasonal.updatedDate,
+});
 const hreflangs = shellAlternates(bestAlternates(SITE.url, year));
 
 const text = (template: string, tokens: Record<string, string | number>) => {
@@ -70,6 +92,7 @@ const text = (template: string, tokens: Record<string, string | number>) => {
 <Base
   title={title}
   description={description}
+  jsonLd={jsonLd}
   wide
   locale={locale.code}
   lang={locale.code}
@@ -80,7 +103,16 @@ const text = (template: string, tokens: Record<string, string | number>) => {
   <div class="flex flex-col gap-3 pb-6 pt-2 sm:flex-row sm:items-end sm:justify-between">
     <div>
       <h1 class="text-[clamp(28px,4vw,44px)] font-extrabold leading-tight">{text(b.h1, { year })}</h1>
-      <p class="mt-1 max-w-2xl text-muted">{b.intro}</p>
+      {seasonal.intro.map((sentence) => <p class="mt-1 max-w-2xl text-muted">{sentence}</p>)}
+      <p class="mt-2 text-sm text-muted">
+        <time datetime={seasonal.updatedDate}>{seasonal.updatedLabel}</time>
+      </p>
+      <a
+        href={bridgePath(locale, year)}
+        class="mt-2 inline-block text-sm font-semibold underline decoration-lime decoration-2 underline-offset-4"
+      >
+        {bridgeLinkLabel(locale.code, year)}
+      </a>
     </div>
     {other && <a href={`/${param}/best/${other}/`} class="chip shrink-0 bg-card">{text(b.seeYear, { year: other })}</a>}
   </div>
