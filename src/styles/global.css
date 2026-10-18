@@ -63,6 +63,10 @@
   --sun-soft: #fff0c4;
   --red: #e5484f;
   --red-soft: #fde2e3;
+  /* The darker stripe of the hatching on dates someone in a group can't do. */
+  --red-hatch: #f6c1c4;
+  /* The ring on day marks over that hatching: at least 3:1 against both its stripes. */
+  --red-ring: #c2333b;
   --violet: #7c6cf0;
   --sky: #2f9bd6;
   --hero: #1a2030;
@@ -92,6 +96,8 @@
   --sun-soft: rgb(255 207 77 / 0.16);
   --red: #f2666e;
   --red-soft: rgb(242 102 110 / 0.18);
+  --red-hatch: rgb(242 102 110 / 0.36);
+  --red-ring: #ff9aa0;
   --violet: #9d90fa;
   --sky: #5bb8ea;
   --hero: #0f1724;
@@ -200,6 +206,34 @@
     border-radius: var(--radius-card);
     border: 1px solid var(--line);
     box-shadow: 0 2px 0 var(--line);
+  }
+  /* The mascot talking: a card with a tail pointing down-left at it. */
+  .bubble {
+    position: relative;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 22px 22px 22px 6px;
+    box-shadow: 0 2px 0 var(--line);
+    padding: 12px 16px;
+  }
+  /* Tail: a line-coloured triangle with a card-coloured one inset 1px, so the border carries round it. */
+  .bubble::before,
+  .bubble::after {
+    content: "";
+    position: absolute;
+    bottom: 8px;
+    width: 12px;
+    height: 14px;
+    clip-path: polygon(100% 0, 0 100%, 100% 100%);
+  }
+  .bubble::before {
+    left: -12px;
+    background: var(--line);
+  }
+  .bubble::after {
+    left: -10px;
+    bottom: 9px;
+    background: var(--card);
   }
   .field-label {
     font-size: 13px;
@@ -412,6 +446,13 @@
   .day[data-past] {
     opacity: 0.42;
   }
+  /* A month that is over fades as a whole, so its days don't fade twice. */
+  .card[data-past] {
+    opacity: 0.5;
+  }
+  .card[data-past] .day[data-past] {
+    opacity: 1;
+  }
   .day[data-br]::before {
     content: "";
     position: absolute;
@@ -437,6 +478,128 @@
   .day[data-pop] .mk {
     animation: pop 320ms var(--ease-spring) backwards;
     animation-delay: calc(min(var(--i, 0), 16) * 15ms);
+  }
+  /* Together: dates the whole group agreed on, and the coloured dots of others who can't do a day. */
+  .day[data-br="agreed"]::before {
+    background: var(--lime);
+  }
+  /* Together: proposed dates, a dashed outline that sits over any band fill and under the marks. */
+  .day[data-pr]::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -3px;
+    height: 34px;
+    border-block: 2px dashed var(--lime-strong);
+    pointer-events: none;
+  }
+  .day[data-pr-s]::after {
+    left: 2px;
+    border-left: 2px dashed var(--lime-strong);
+    border-top-left-radius: 17px;
+    border-bottom-left-radius: 17px;
+  }
+  .day[data-pr-e]::after {
+    right: 2px;
+    border-right: 2px dashed var(--lime-strong);
+    border-top-right-radius: 17px;
+    border-bottom-right-radius: 17px;
+  }
+  /* Together: dates someone can't do, hatched in red under the marks. */
+  .day[data-br="vetoed"]::before,
+  .hatch {
+    background: repeating-linear-gradient(135deg, var(--red-hatch) 0 3px, var(--red-soft) 3px 7px);
+  }
+  /*
+   * The stripes line up from one day to the next: each day shows its column's slice of one
+   * row-wide pattern. `--col` is set on vetoed days, and the month grid is the container.
+   */
+  .cal:has(> .day[data-br="vetoed"]) {
+    container-type: inline-size;
+  }
+  .day[data-br="vetoed"]::before {
+    background-size: 100cqw 100%;
+    background-position-x: calc(var(--col, 0) * -100cqw / 7);
+  }
+  .day[data-br="vetoed"][data-s]::before {
+    background-position-x: calc(var(--col, 0) * -100cqw / 7 - 2px);
+  }
+  /*
+   * Together: the votes on a window, on its first day. Sits over the top right of the day's mark,
+   * outside the flow, so the grid doesn't move. On the last column it grows leftwards instead.
+   */
+  .day .cl {
+    position: absolute;
+    z-index: 2;
+    bottom: 20px;
+    left: calc(50% + 3px);
+    display: flex;
+    pointer-events: none;
+  }
+  .day .cl[data-flip] {
+    left: auto;
+    right: -3px;
+  }
+  .day .cl > span {
+    display: grid;
+    place-items: center;
+    width: 14px;
+    height: 14px;
+    margin-left: -4px;
+    border-radius: 7px;
+    box-shadow: 0 0 0 1px var(--card);
+    font-size: 9px;
+    font-weight: 800;
+    line-height: 1;
+  }
+  .day .cl > span:first-child {
+    margin-left: 0;
+  }
+  .day .cl > span[data-none] {
+    opacity: 0.45;
+  }
+  .day .cl > .more {
+    width: auto;
+    padding: 0 3px;
+    background: var(--card);
+    color: var(--ink);
+    box-shadow: 0 0 0 1px var(--line);
+  }
+  .day .cl svg {
+    width: 9px;
+    height: 9px;
+  }
+  .day:disabled {
+    cursor: default;
+  }
+  .day:disabled .mk {
+    transform: none;
+  }
+  /* Marks keep a clear edge against the hatching. */
+  .day[data-br="vetoed"] .mk {
+    box-shadow: inset 0 0 0 2px var(--red-ring);
+  }
+  .day[data-br="vetoed"][data-k="work"] .mk {
+    border-color: var(--red-ring);
+    box-shadow: none;
+  }
+  .day .dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    height: 7px;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--muted);
+  }
+  .day .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px var(--card);
   }
 }
 

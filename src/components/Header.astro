@@ -28,6 +28,7 @@ const links = [
   { href: home, label: c.navPlanner, id: "planner" },
   { href: "/compare/", label: c.navCompare, id: "compare" },
   { href: bestHref, label: c.navBest, id: "best" },
+  { href: "/together/", label: c.navTogether, id: "together" },
   { href: "/plans/", label: c.navPlans, id: "plans" },
 ];
 const path = Astro.url.pathname;
@@ -39,6 +40,7 @@ const isActive = (id: string) => {
   }
   if (id === "compare") return path.startsWith("/compare");
   if (id === "best") return path.includes("/best/");
+  if (id === "together") return path.startsWith("/together");
   return path.startsWith("/plans");
 };
 const languages = switcherLinks(path);
@@ -56,14 +58,14 @@ const themeLabels = {
     <span class="font-display text-[22px] font-extrabold tracking-[-0.03em]">leavema<span class="text-lime-strong">xx</span>ing</span>
   </a>
 
-  <nav aria-label={c.navMain} class="hidden items-center gap-1 rounded-full bg-card p-1 shadow-card md:flex">
+  <nav aria-label={c.navMain} class="hidden items-center gap-1 rounded-full bg-card p-1 shadow-card lg:flex">
     {
       links.map((l) => (
         <a
           href={l.href}
           aria-current={isActive(l.id) ? "page" : undefined}
           class:list={[
-            "rounded-full px-4 py-2 text-sm font-semibold transition-colors",
+            "whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition-colors",
             isActive(l.id) ? "bg-ink text-card" : "text-muted hover:text-ink",
           ]}
         >
@@ -76,7 +78,7 @@ const themeLabels = {
   <div class="flex items-center gap-2">
     <LangSwitch links={languages} label={c.langLabel} />
     <ThemeToggle client:idle labels={themeLabels} />
-    <details class="relative md:hidden">
+    <details class="relative lg:hidden">
       <summary
         class="grid size-10 list-none place-items-center rounded-full bg-card shadow-card [&::-webkit-details-marker]:hidden"
         aria-label={c.navMenu}

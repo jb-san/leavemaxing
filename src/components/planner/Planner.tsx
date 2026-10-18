@@ -10,6 +10,7 @@ import {
   leaveYearMonths,
   leaveYearRange,
   localToday,
+  weekdayMon0,
 } from "~/lib/dates";
 import { detectCountry } from "~/lib/detect";
 import { type HolidayFile, holidayMap, loadHolidayFile } from "~/lib/holidays";
@@ -20,6 +21,7 @@ import type { Plan, PlanInput, Style } from "~/lib/planner/types";
 import { regionCopy } from "~/lib/regionLabels";
 import { defaultSettings, fromQuery, planPath, type Settings, shareUrl, toQuery } from "~/lib/settings";
 import { addPlan, loadLast, recordBest, saveLast } from "~/lib/storage";
+import { SUNDAY_FIRST } from "~/lib/weekends";
 import { BreaksList } from "./BreaksList";
 import { Calendar, CalendarPlaceholder, Legend } from "./Calendar";
 import { DayMenu } from "./DayMenu";
@@ -28,24 +30,6 @@ import { HeroCard } from "./HeroCard";
 import { SettingsPanel } from "./SettingsPanel";
 import { type Action, carryPreferences, type DayAction, reducer } from "./state";
 import { Sheet, Toasts, useToasts } from "./ui";
-
-/** Countries where calendars usually start on Sunday. */
-const SUNDAY_FIRST = new Set([
-  "US",
-  "CA",
-  "MX",
-  "BR",
-  "JP",
-  "PH",
-  "IL",
-  "KR",
-  "TW",
-  "HK",
-  "ZA",
-  "AR",
-  "CO",
-  "PE",
-]);
 
 export interface PlannerProps {
   initial: Settings;
@@ -305,6 +289,7 @@ function PlannerApp(props: PlannerProps) {
     dispatch({ type: "day", day, action });
   };
   const menuKind = menu ? (kinds.get(menu.day) ?? null) : null;
+  const menuOff = menu ? holidays.has(menu.day) || !(shown.workWeek[weekdayMon0(menu.day)] ?? true) : false;
   const editable = menu ? menu.day >= range.start && menu.day <= range.end && menu.day >= shown.today : false;
   const loading = input === null || input !== result.input;
   const styleLabel = styleName(settings.style);
@@ -456,6 +441,7 @@ function PlannerApp(props: PlannerProps) {
         day={menu?.day ?? null}
         kind={menuKind}
         holidays={menu ? (holidays.get(menu.day) ?? []) : []}
+        naturallyOff={menuOff}
         anchor={menu?.rect ?? null}
         editable={editable}
         onAction={onDayAction}

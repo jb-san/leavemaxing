@@ -5,9 +5,9 @@ import Base from "~/layouts/Base.astro";
 <Base title="Privacy policy · leavemaxxing" description="What leavemaxxing stores, what it measures, and what it never collects.">
   <article class="card mx-auto mt-2 max-w-3xl p-6 sm:p-10">
     <h1 class="text-3xl font-extrabold sm:text-4xl">Privacy policy</h1>
-    <p class="mt-2 text-sm text-muted">Last updated 17 October 2026</p>
+    <p class="mt-2 text-sm text-muted">Last updated 18 October 2026</p>
     <div class="prose-lm mt-6">
-      <p>leavemaxxing has no accounts and no server that receives your plans. Here is everything the site does with data.</p>
+      <p>leavemaxxing has no accounts and no server that can read your plans. Here is everything the site does with data.</p>
 
       <h2>What stays in your browser</h2>
       <p>The site uses your browser's local storage for:</p>
@@ -21,11 +21,20 @@ import Base from "~/layouts/Base.astro";
         share its link or image yourself.
       </p>
 
+      <h2>Together</h2>
+      <p>
+        If you plan with a group in Together, the group's plan is encrypted in your browser. The key stays in the link and
+        never reaches us. Our server stores only the encrypted data, a hash of each write secret and random ids for the
+        group and its members. It sees your IP address and when you connect, as any server does. Groups are deleted
+        automatically 60 days after the group's last month, or after 180 days without changes.
+      </p>
+
       <h2>Analytics</h2>
       <p>
         We count page views with <a href="https://rybbit.io">Rybbit</a>, which we host ourselves. It doesn't use cookies,
         doesn't build a profile of you, and records pages visited, referrers, and rough location from your IP address,
-        which isn't stored.
+        which isn't stored. When you start or join a Together group, we count that as an event, with nothing about the group
+        attached.
       </p>
 
       <h2>Offline use</h2>

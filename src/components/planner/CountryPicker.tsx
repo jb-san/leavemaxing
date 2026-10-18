@@ -12,12 +12,15 @@ export function CountryPicker({
   onChange,
   label,
   exclude = [],
+  className,
 }: {
   countries: CountryInfo[];
   value: string | null;
   onChange: (code: string) => void;
   label?: string;
   exclude?: string[];
+  /** Extra classes for the field button, e.g. a fixed height to line up with other inputs. */
+  className?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -78,7 +81,7 @@ export function CountryPicker({
           setOpen((o) => !o);
           setActive(0);
         }}
-        className="input flex items-center justify-between gap-2 text-left"
+        className={cx("input flex items-center justify-between gap-2 text-left", className)}
       >
         <span className="flex min-w-0 items-center gap-2.5">
           <span className="text-lg leading-none">{current?.flag ?? "🌍"}</span>

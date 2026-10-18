@@ -15,6 +15,7 @@ export interface Copy {
     navPlanner: string;
     navCompare: string;
     navBest: string;
+    navTogether: string;
     navPlans: string;
     navMenu: string;
     navMain: string;
@@ -175,6 +176,11 @@ export interface Copy {
     cantTakeNote: string;
     allowAgain: string;
     allowAgainHint: string;
+    notFree: string;
+    notFreeHint: string;
+    notFreeNote: string;
+    freeAgain: string;
+    freeAgainHint: string;
     customNote: string;
     removeDayOff: string;
     removeDayOffHint: string;

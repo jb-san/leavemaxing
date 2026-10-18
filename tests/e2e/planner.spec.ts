@@ -40,6 +40,21 @@ test("locking a day updates the plan and the link", async ({ page, isMobile }) =
   await expect(page.locator('.day[data-k="locked"]')).toHaveCount(1);
 });
 
+test("a weekend day can be marked as not free and back", async ({ page }) => {
+  await page.goto("/de/2027/?d=10");
+  await expect(hero(page)).toContainText("10 leave days");
+  const sat = page.getByRole("button", { name: /^Sat 9 Jan, weekend/ });
+  await sat.click();
+  await page.getByRole("button", { name: /I'm not free this day/ }).click();
+  await expect(page).toHaveURL(/bk=/);
+  const blocked = page.getByRole("button", { name: /^Sat 9 Jan, blocked/ });
+  await expect(blocked).toHaveAttribute("data-k", "blocked");
+  await blocked.click();
+  await expect(page.getByText("You're not free this day, so it counts as a workday.")).toBeVisible();
+  await page.getByRole("button", { name: /I'm free after all/ }).click();
+  await expect(page.getByRole("button", { name: /^Sat 9 Jan, weekend/ })).toBeVisible();
+});
+
 test("calendar export downloads an .ics file", async ({ page }) => {
   await page.goto("/mt/2027/");
   await page.getByRole("button", { name: "Add to calendar" }).click();
@@ -52,7 +67,11 @@ test("calendar export downloads an .ics file", async ({ page }) => {
 
 test("saved plans show up under My plans", async ({ page }) => {
   await page.goto("/mt/2027/");
-  await page.getByRole("button", { name: "Save plan" }).click();
+  // A click that lands before the planner hydrates does nothing, so retry until the dialog opens.
+  await expect(async () => {
+    await page.getByRole("button", { name: "Save plan" }).click();
+    await expect(page.getByLabel("Name")).toBeVisible({ timeout: 1000 });
+  }).toPass();
   await page.getByLabel("Name").fill("Summer in Malta");
   await page.getByRole("dialog").getByRole("button", { name: "Save plan" }).click();
   await page.goto("/plans/");

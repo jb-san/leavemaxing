@@ -39,3 +39,21 @@ export function defaultWorkWeek(country: string): boolean[] {
 export function sameWeek(a: boolean[], b: boolean[]): boolean {
   return a.length === b.length && a.every((v, i) => v === b[i]);
 }
+
+/** Countries where calendars usually start on Sunday. */
+export const SUNDAY_FIRST = new Set([
+  "US",
+  "CA",
+  "MX",
+  "BR",
+  "JP",
+  "PH",
+  "IL",
+  "KR",
+  "TW",
+  "HK",
+  "ZA",
+  "AR",
+  "CO",
+  "PE",
+]);

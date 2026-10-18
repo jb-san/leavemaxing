@@ -3,7 +3,7 @@ import { extractCountryYear, listRegions } from "../../../scripts/lib/extract";
 import { type DayNum, dayNum, fromIso, leaveYearRange, toIso, weekdayMon0 } from "../dates";
 import { resolveHolidays } from "../holidays";
 import { defaultWorkWeek } from "../weekends";
-import { breakValue, plan } from "./plan";
+import { breakValue, classifyDays, plan } from "./plan";
 import type { PlanInput, Style } from "./types";
 
 function holidaysFor(country: string, region: string | null, years: number[]) {
@@ -36,6 +36,7 @@ function input(overrides: Partial<PlanInput> = {}): PlanInput {
 }
 
 function isFree(i: PlanInput, d: DayNum): boolean {
+  if (i.blocked.includes(d)) return false;
   return (
     !(i.workWeek[weekdayMon0(d)] ?? true) || i.holidays.some((h) => h.day === d) || i.customOff.includes(d)
   );
@@ -199,7 +200,9 @@ describe("plan", () => {
       "2027-05-28",
     ].map(fromIso);
     const blocked: DayNum[] = [];
-    for (let d = range.start; d <= range.end; d++) if (!open.includes(d)) blocked.push(d);
+    // Only workdays: blocking a weekend or holiday would make it a workday too.
+    for (let d = range.start; d <= range.end; d++)
+      if (!open.includes(d) && !isFree(input(), d)) blocked.push(d);
 
     for (const style of ["weekends", "balanced", "long"] as Style[]) {
       for (const budget of [2, 3, 4]) {
@@ -244,3 +247,26 @@ function* combinations<T>(items: T[], k: number, start = 0, acc: T[] = []): Gene
     acc.pop();
   }
 }
+
+describe("blocking a weekend or holiday", () => {
+  // Easter weekend in Bavaria: Good Friday 26 Mar, Easter Monday 29 Mar 2027.
+  const sat = dayNum(2027, 3, 27);
+  const goodFriday = dayNum(2027, 3, 26);
+
+  it("splits breaks at a blocked Saturday", () => {
+    const p = plan(input({ blocked: [sat] }));
+    expect(p.breaks.some((b) => b.start <= sat && b.end >= sat)).toBe(false);
+  });
+
+  it("splits breaks at a blocked public holiday", () => {
+    const p = plan(input({ blocked: [goodFriday] }));
+    expect(p.breaks.some((b) => b.start <= goodFriday && b.end >= goodFriday)).toBe(false);
+  });
+
+  it("shows blocked weekend and holiday days as blocked", () => {
+    const i = input({ blocked: [sat, goodFriday] });
+    const kinds = classifyDays(i, plan(i), goodFriday, sat);
+    expect(kinds.get(sat)).toBe("blocked");
+    expect(kinds.get(goodFriday)).toBe("blocked");
+  });
+});

@@ -10,9 +10,19 @@ export default defineConfig({
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },
     { name: "phone", use: { ...devices["Pixel 7"] } },
   ],
-  webServer: {
-    command: "pnpm astro preview --port 4322 --ignore-lock",
-    url: "http://localhost:4322/",
-    reuseExistingServer: !process.env.CI,
-  },
+  webServer: [
+    {
+      command: "pnpm astro preview --port 4322 --ignore-lock",
+      url: "http://localhost:4322/",
+      reuseExistingServer: !process.env.CI,
+    },
+    {
+      // The Together worker. SIGTERM lets wrangler stop workerd, which a hard kill would leave holding the port.
+      command: "pnpm worker:dev",
+      url: "http://localhost:8787/api/together/health",
+      reuseExistingServer: !process.env.CI,
+      gracefulShutdown: { signal: "SIGTERM", timeout: 5_000 },
+      timeout: 120_000,
+    },
+  ],
 });

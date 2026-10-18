@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import { type ReactNode, useEffect, useId, useRef, useState } from "react";
+import { type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { useI18n } from "~/i18n/context";
 
 const CLOSE: Record<string, string> = {
@@ -52,6 +52,7 @@ export function Sheet({
   children,
   anchor,
   wide = false,
+  fit = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -59,6 +60,11 @@ export function Sheet({
   children: ReactNode;
   anchor?: DOMRect | null;
   wide?: boolean;
+  /**
+   * Place an anchored popover by its measured height rather than a typical one, so a tall popover
+   * stays inside the window and scrolls instead of running off it.
+   */
+  fit?: boolean;
 }) {
   const close = closeLabel(useI18n().code);
   const ref = useRef<HTMLDialogElement>(null);
@@ -106,6 +112,35 @@ export function Sheet({
     }
     if (!open && d.open) d.close();
   }, [open, anchor]);
+
+  // Whether `fit` has moved the popover, so its inline position can be handed back to `style`.
+  const fitted = useRef(false);
+  // Runs after every render while anchored, as the content's height can change while it's open.
+  useLayoutEffect(() => {
+    const d = ref.current;
+    if (!d) return;
+    if (!fit || !style || !anchor || !open || !d.open) {
+      // Once a fitted popover has finished leaving, or the sheet opens unanchored, drop the fitted
+      // values so a later open starts from `style` alone.
+      if (fitted.current && (open || !mounted)) {
+        d.style.top = style?.top === undefined ? "" : `${style.top}px`;
+        d.style.maxHeight = "";
+        d.style.transformOrigin = style?.transformOrigin?.toString() ?? "";
+        fitted.current = false;
+      }
+      return;
+    }
+    fitted.current = true;
+    const h = d.offsetHeight;
+    const below = anchor.bottom + 8;
+    const above = anchor.top - 8 - h;
+    const flip = below + h > window.innerHeight - 16 && above >= 16;
+    const top = flip ? above : Math.max(16, Math.min(below, window.innerHeight - 16 - h));
+    const originX = style.transformOrigin?.toString().split(" ")[0] ?? "50%";
+    d.style.top = `${top}px`;
+    d.style.maxHeight = `${window.innerHeight - 32}px`;
+    d.style.transformOrigin = `${originX} ${flip ? "calc(100% + 8px)" : `${anchor.top + anchor.height / 2 - top}px`}`;
+  });
 
   useEffect(() => {
     const d = ref.current;
@@ -318,6 +353,7 @@ export function Stepper({
   max,
   label,
   big = false,
+  size,
   format,
 }: {
   id: string;
@@ -327,15 +363,18 @@ export function Stepper({
   max: number;
   label: string;
   big?: boolean;
+  /** "field": exactly as tall as an `.input`, to line up with text fields in a form row. */
+  size?: "field";
   format?: (n: number) => string;
 }) {
   const i18n = useI18n();
   const clamp = (n: number) => Math.min(max, Math.max(min, n));
+  const field = size === "field";
   return (
     <div
       className={cx(
-        "flex items-center justify-between rounded-[18px] border border-line bg-card-2",
-        big ? "p-1.5" : "p-1",
+        "flex items-center justify-between border border-line bg-card-2",
+        field ? "h-[46px] rounded-[16px] px-[6px]" : big ? "rounded-[18px] p-1.5" : "rounded-[18px] p-1",
       )}
     >
       <button
