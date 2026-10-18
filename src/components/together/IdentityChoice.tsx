@@ -32,8 +32,12 @@ export function IdentityChoice({
   const pick = async (keep: "stored" | "link") => {
     if (busy) return;
     setBusy(true);
-    await session.choose(keep);
-    if (keep === "stored") onStayed();
+    try {
+      await session.choose(keep);
+      if (keep === "stored") onStayed();
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (

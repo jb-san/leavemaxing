@@ -669,9 +669,12 @@ export class GroupSession {
       const latest = this.local.get(key);
       if (!edits || !latest) return;
       const next = this.applyAll(key, latest.record, edits);
-      // A put still unanswered is replaced by this one, so this one carries its patches too.
+      // A put still unanswered is replaced by this one, so this one carries its patches too, and
+      // the server version they were applied to: a newer one still sends them through `rebase`.
       const p = this.pending.get(key);
-      await this.put(key, next, [...(p?.t === "put" ? p.patches : []), ...edits]);
+      const unanswered = p?.t === "put" ? p : null;
+      const base = unanswered?.base ?? this.confirmed.get(key)?.version ?? 0;
+      await this.put(key, next, [...(unanswered?.patches ?? []), ...edits], 1, 0, base);
     });
   }
 

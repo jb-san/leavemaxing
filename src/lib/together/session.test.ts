@@ -25,7 +25,7 @@ import {
   socketUrl,
   Unreachable,
 } from "./session";
-import { loadCache, loadMembership, loadPending, type StorageLike, saveMembership } from "./store";
+import { loadCache, loadMembership, loadPending, type StorageLike, saveCache, saveMembership } from "./store";
 
 const GROUP: GroupRecord = {
   name: "Lisbon 2027",
@@ -860,6 +860,43 @@ describe("saving", () => {
     await until(() => expect(a.state.members.get(personal.memberId)?.name).toBe("Offline edit"));
     await until(() => expect(d.state.saving).toBe(false));
     expect(loadPending(personal.groupId, storage)).toEqual([]);
+  });
+
+  it("keeps the other device's change when a reload finds it cached under an unsent edit", async () => {
+    const server = new FakeServer();
+    const { a, b } = await createAndJoin(server);
+    const personal = b.personalLink() as PersonalLink;
+    const storage = memoryStorage();
+    const c = server.session(personal, { storage, timers: manualTimers().timers });
+    await until(() => expect(c.state.members.has(personal.memberId)).toBe(true));
+    server.up = false;
+    server.drop(server.all.at(-1) as FakeSocket);
+    await until(() => expect(c.state.status).toBe("connecting"));
+    await c.updateMe({ name: "Offline edit" });
+    c.close();
+
+    // My other device votes, and this device's cache caught that newer record before it closed.
+    server.up = true;
+    await b.updateMe({ votes: { [KEY]: "yes" } });
+    await until(() => expect(a.state.members.get(personal.memberId)?.votes).toEqual({ [KEY]: "yes" }));
+    saveCache(personal.groupId, [...server.room.envs.values()], storage);
+
+    // Reopened offline, edited again, then back online.
+    server.up = false;
+    const timers = manualTimers();
+    const d = server.session(personal, { storage, timers: timers.timers });
+    await until(() => expect(d.state.members.has(personal.memberId)).toBe(true));
+    await d.updateMe({ allowance: 9 });
+    server.up = true;
+    timers.runNext();
+
+    await until(() =>
+      expect(a.state.members.get(personal.memberId)).toMatchObject({
+        name: "Offline edit",
+        allowance: 9,
+        votes: { [KEY]: "yes" },
+      }),
+    );
   });
 
   it("resolves create only once the server has the group", async () => {
