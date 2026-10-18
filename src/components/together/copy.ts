@@ -2,6 +2,7 @@ import { type DayNum, formatRange, formatShort } from "~/lib/dates";
 import type { MemberDayKind } from "~/lib/together/calendar";
 import type { MenuOption } from "~/lib/together/dayMenu";
 import type { Vote } from "~/lib/together/protocol";
+import type { Status } from "~/lib/together/session";
 
 /** Together's own UI strings. Together v1 is English only, so these stay out of the i18n catalog. */
 export const t = {
@@ -35,9 +36,10 @@ export const t = {
   allowanceAria: "leave days for this trip",
 
   create: "Create group",
-  creating: "Creating",
+  creating: "Creating…",
   createHint: "Next you'll get a link and a QR code to invite people.",
   createFailed: "Couldn't create the group. Try again.",
+  createOffline: "Can't reach the server. Check your connection and try again.",
 
   inviteTitle: "Invite your group",
   scanToJoin: (name: string) => `Scan to join ${name}`,
@@ -70,6 +72,14 @@ export const t = {
   },
   startNew: "Start a new group",
 
+  linkBelongsTo: (name: string) => `This link belongs to ${name}.`,
+  onThisDevice: (name: string) => `On this device you're ${name}.`,
+  losesAdmin: "You'll lose admin rights on this device unless you saved your personal link.",
+  stayAs: (name: string) => `Stay as ${name}`,
+  switchTo: (name: string) => `Switch to ${name}`,
+  someoneElse: "someone else",
+  anotherMember: "another member",
+
   edit: "Edit",
   settings: "Settings",
   saveFailed: "Couldn't save that change. Try again.",
@@ -90,6 +100,12 @@ export const t = {
   proposed: "Proposed",
   suggested: "Suggested dates",
   noWindows: "No dates work for everyone in these months. Widen the months or the trip length.",
+  noWindowsAsk: (who: string) =>
+    `No dates work for everyone in these months. Ask ${who} to widen the months or the trip length.`,
+  whoeverStarted: "whoever started the group",
+  votedOn: "Voted on",
+  saving: "Saving…",
+  savingOffline: "Offline. Changes will save when you're back.",
   daysOff: (n: number) => `${n} days off`,
   leave: (n: number) => `${n} leave`,
   cantDo: (name: string) => `${name} can't do these dates`,
@@ -121,7 +137,12 @@ export const t = {
     freeAgain: ["Free again", "Back to a day off"],
     removeDayOff: ["Remove day off", "Back to a normal workday"],
   } satisfies Record<MenuOption, [string, string]>,
-  windowKinds: { agreed: "Works for everyone", suggested: "Suggested", proposed: "Proposed" },
+  windowKinds: {
+    agreed: "Works for everyone",
+    suggested: "Suggested",
+    proposed: "Proposed",
+    voted: "Voted on",
+  },
   everyonesVotes: "Everyone's votes",
   voteOn: (dates: string) => `Your vote on ${dates}`,
   voteWords: { yes: "Works", maybe: "Maybe", no: "Can't", none: "No vote yet" },
@@ -129,6 +150,17 @@ export const t = {
   confirm: "Confirm",
   cancel: "Cancel",
 } as const;
+
+/** The empty list's note: the admin can widen the months, everyone else is told who can. */
+export function noWindowsNote(isAdmin: boolean, creator: string | null): string {
+  return isAdmin ? t.noWindows : t.noWindowsAsk(creator ?? t.whoeverStarted);
+}
+
+/** The save status line: nothing once everything has reached the server. */
+export function saveNote(status: Status, saving: boolean): string | null {
+  if (!saving) return null;
+  return status === "online" ? t.saving : t.savingOffline;
+}
 
 /** "Sam", "Sam and Alex", "Sam, Alex and Kim". */
 export function joinNames(names: readonly string[]): string {

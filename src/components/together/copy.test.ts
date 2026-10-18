@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { dayNum } from "~/lib/dates";
-import { dayLabel, joinNames, menuNote, monthsPhrase, votesPhrase } from "./copy";
+import { dayLabel, joinNames, menuNote, monthsPhrase, noWindowsNote, saveNote, t, votesPhrase } from "./copy";
 
 describe("monthsPhrase", () => {
   it("names a single month", () => {
@@ -127,5 +127,37 @@ describe("menuNote", () => {
     expect(menuNote("custom", [], [])).toBe("Your day off. It costs no leave.");
     expect(menuNote("work", [], ["Kim"])).toBe("Kim can't.");
     expect(menuNote("work", [], [])).toBeNull();
+  });
+});
+
+describe("noWindowsNote", () => {
+  it("tells the admin to widen the months", () => {
+    expect(noWindowsNote(true, "Sam")).toBe(t.noWindows);
+  });
+
+  it("tells everyone else who can", () => {
+    expect(noWindowsNote(false, "Sam")).toBe(
+      "No dates work for everyone in these months. Ask Sam to widen the months or the trip length.",
+    );
+    expect(noWindowsNote(false, null)).toBe(
+      "No dates work for everyone in these months. Ask whoever started the group to widen the months or the trip length.",
+    );
+  });
+});
+
+describe("saveNote", () => {
+  it("says nothing once everything is saved", () => {
+    expect(saveNote("online", false)).toBeNull();
+    expect(saveNote("offline", false)).toBeNull();
+  });
+
+  it("says saving while edits are on their way", () => {
+    expect(saveNote("online", true)).toBe("Saving…");
+  });
+
+  it("says offline while edits wait for the connection", () => {
+    for (const status of ["offline", "connecting"] as const) {
+      expect(saveNote(status, true)).toBe("Offline. Changes will save when you're back.");
+    }
   });
 });

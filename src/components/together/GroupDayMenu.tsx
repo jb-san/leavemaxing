@@ -31,7 +31,7 @@ export interface MenuWindow {
   start: DayNum;
   end: DayNum;
   length: number;
-  kind: "agreed" | "suggested" | "proposed";
+  kind: "agreed" | "suggested" | "proposed" | "voted";
   votes: MemberVote[];
 }
 

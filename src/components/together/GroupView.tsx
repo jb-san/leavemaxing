@@ -9,7 +9,6 @@ import { loadLast } from "~/lib/storage";
 import { withVote, yearsOf } from "~/lib/together/calendar";
 import { applyDayAction, type DayAction } from "~/lib/together/dayMenu";
 import { formatInvite } from "~/lib/together/link";
-import { limitToMonths } from "~/lib/together/member";
 import { openPick, type Pick, withoutProposal, withProposal } from "~/lib/together/propose";
 import type { GroupRecord, MemberRecord, Vote, WindowKey } from "~/lib/together/protocol";
 import { type Scored, type ScoredWindow, type ScoreMember, scoreWindows } from "~/lib/together/score";
@@ -17,7 +16,7 @@ import { sections } from "~/lib/together/sections";
 import type { GroupSession, GroupState } from "~/lib/together/session";
 import { planSettingsFor } from "~/lib/together/toPlan";
 import { Avatar } from "./Avatar";
-import { monthsPhrase, t } from "./copy";
+import { monthsPhrase, noWindowsNote, saveNote, t } from "./copy";
 import { GroupCalendar } from "./GroupCalendar";
 import { MemberSheet } from "./MemberSheet";
 import { ProposeSheet } from "./ProposeSheet";
@@ -73,6 +72,23 @@ function useStable<T>(items: T[]): T[] {
   const prev = ref.current;
   if (items.length !== prev.length || items.some((x, i) => x !== prev[i])) ref.current = items;
   return ref.current;
+}
+
+/** How long a save has to take before the status line says so, so quick saves don't flash it. */
+const SAVE_NOTE_MS = 600;
+
+/** `value`, once it has held for `ms`; null straight away. */
+function useSettled(value: string | null, ms: number): string | null {
+  const [shown, setShown] = useState<string | null>(null);
+  useEffect(() => {
+    if (value === null) {
+      setShown(null);
+      return;
+    }
+    const timer = setTimeout(() => setShown(value), ms);
+    return () => clearTimeout(timer);
+  }, [value, ms]);
+  return shown;
 }
 
 /** Hands a write to the session and reports it with a toast if the session refuses it. */
@@ -170,9 +186,9 @@ export function GroupView({
       if (session.state.error !== "rate") push(t.saveFailed, "warn");
     });
   };
+  // Days outside the group's months stay in the record: if the months are narrowed, they're only hidden.
   const markDay = (day: DayNum, action: Exclude<DayAction, "propose">) => {
-    const { blocked, customOff } = limitToMonths({ ...me, ...applyDayAction(me, day, action) }, group.months);
-    save(session.updateMe({ blocked, customOff }));
+    save(session.updateMe(applyDayAction(me, day, action)));
   };
   const voteOn = (key: WindowKey, v: Vote | null) => {
     save(session.updateMe({ votes: withVote(me.votes, key, v) }));
@@ -216,6 +232,8 @@ export function GroupView({
   const personal = session.personalLink();
   const unshown = [...members].slice(MAX_AVATARS);
   const place = placeName(me.country, me.region);
+  const saving = useSettled(saveNote(state.status, state.saving), SAVE_NOTE_MS);
+  const creator = group.createdBy === meId ? null : (members.get(group.createdBy)?.name ?? null);
 
   return (
     <div className="flex flex-col gap-5 pt-3">
@@ -224,6 +242,9 @@ export function GroupView({
           <h1 className="text-[clamp(32px,4.4vw,52px)] font-extrabold leading-none">{group.name}</h1>
           <p className="text-muted">
             {t.tripSentence(monthsPhrase(group.months), group.minLength, group.maxLength)}
+          </p>
+          <p aria-live="polite" className="min-h-5 text-sm font-semibold text-muted">
+            {saving}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -275,6 +296,7 @@ export function GroupView({
         meId={meId}
         holidays={myHolidays}
         ranked={scored?.ranked ?? []}
+        voted={scored?.voted ?? []}
         agreed={scored?.agreed ?? []}
         proposals={scored?.proposals ?? []}
         today={today}
@@ -302,11 +324,14 @@ export function GroupView({
       )}
       {shown?.empty && (
         <Windows title={t.suggested}>
-          <p className="card p-5 font-semibold">{t.noWindows}</p>
+          <p className="card p-5 font-semibold">{noWindowsNote(state.isAdmin, creator)}</p>
         </Windows>
       )}
       {shown && shown.suggested.length > 0 && (
         <Windows title={t.suggested}>{rows(shown.suggested, "suggested")}</Windows>
+      )}
+      {shown && shown.voted.length > 0 && (
+        <Windows title={t.votedOn}>{rows(shown.voted, "suggested")}</Windows>
       )}
 
       <ProposeSheet

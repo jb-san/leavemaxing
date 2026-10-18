@@ -39,11 +39,52 @@ async function serious(page: Page) {
     .map((v) => `${v.id}: ${v.nodes.length} × ${v.nodes[0]?.target.join(" ")}`);
 }
 
-test("create shows an invite QR", async ({ page }) => {
+/** How many dot-separated parts the address bar's fragment has: 2 for an invite. */
+const hashParts = (p: Page) => new URL(p.url()).hash.slice(1).split(".").length;
+
+/** The personal link from Settings, "Use on another device". */
+async function personalLink(p: Page): Promise<string> {
+  await p.getByRole("button", { name: /Edit$/ }).click();
+  await p
+    .getByRole("dialog", { name: "Settings" })
+    .getByRole("button", { name: "Use on another device" })
+    .click();
+  const sheet = p.getByRole("dialog", { name: "Use on another device" });
+  const link = await sheet.getByLabel("Link").inputValue();
+  await p.keyboard.press("Escape");
+  await expect(sheet).toBeHidden();
+  await p.keyboard.press("Escape");
+  await expect(p.getByRole("dialog", { name: "Settings" })).toBeHidden();
+  return link;
+}
+
+test("create shows an invite QR and keeps the invite in the address bar", async ({ page }) => {
   await createGroup(page);
   await expect(page.getByRole("img", { name: /Scan to join Lisbon 2027/ })).toBeVisible();
-  await expect.poll(() => new URL(page.url()).hash.slice(1).split(".").length).toBeGreaterThanOrEqual(4);
-  expect(new URL(page.url()).hash.slice(1).split(".").length).toBeLessThanOrEqual(5);
+  // The address bar holds the invite, never the personal link with its secrets.
+  expect(hashParts(page)).toBe(2);
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Lisbon 2027" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Join group" })).toHaveCount(0);
+  // Still the creator, with the trip's settings.
+  await page.getByRole("button", { name: /Edit$/ }).click();
+  await expect(
+    page.getByRole("dialog", { name: "Settings" }).getByRole("heading", { name: "The trip" }),
+  ).toBeVisible();
+});
+
+test("create says so when the server can't be reached, and shows no invite", async ({ page }) => {
+  await page.routeWebSocket(/\/api\/together\//, (ws) => ws.close());
+  await page.goto("/together/");
+  await page.getByLabel("Trip name").fill("Lisbon 2027");
+  await page.getByLabel("Your name").fill("Sam");
+  await page.getByRole("button", { name: "Create group" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "Can't reach the server" })).toHaveText(
+    "Can't reach the server. Check your connection and try again.",
+  );
+  await expect(page.getByRole("button", { name: "Create group" })).toBeEnabled();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  expect(new URL(page.url()).hash).toBe("");
 });
 
 test("the skip link doesn't reset the create form", async ({ page, isMobile }) => {
@@ -140,7 +181,9 @@ test("the month range picker caps the range and restarts before the start", asyn
 test("the personal link opens the group on another device", async ({ page, browser }) => {
   await createGroup(page);
   await expect(page.getByRole("img", { name: /Scan to join Lisbon 2027/ })).toBeVisible();
-  const personal = page.url();
+  await page.keyboard.press("Escape");
+  const personal = await personalLink(page);
+  expect(personal.split("#")[1]?.split(".").length).toBe(5);
   // A fresh context has nothing stored, so the group has to come from the server.
   const other = await newContext(browser);
   const second = await other.newPage();
@@ -180,9 +223,11 @@ test("join via invite", async ({ page, browser }) => {
   await second.getByLabel("Your name").fill("Alex");
   await second.getByRole("button", { name: "Join group" }).click();
   await expect(second.getByRole("heading", { name: "Lisbon 2027" })).toBeVisible();
-  // The address is now Alex's own link, not the invite.
-  await expect.poll(() => second.url()).not.toBe(invite);
-  expect(new URL(second.url()).hash.slice(1).split(".").length).toBeGreaterThanOrEqual(4);
+  // The address stays the invite: who Alex is lives in this browser's storage.
+  expect(second.url()).toBe(invite);
+  await second.reload();
+  await expect(second.getByRole("heading", { name: "Lisbon 2027" })).toBeVisible();
+  await expect(second.getByRole("button", { name: "Join group" })).toHaveCount(0);
 
   for (const p of [page, second]) {
     await p.keyboard.press("Escape");
@@ -646,4 +691,74 @@ test("group shows in My plans", async ({ page, browser }) => {
   await expect(second.getByRole("heading", { name: "No saved plans yet" })).toBeVisible();
   await expect(second.getByRole("link", { name: "Plan with friends" })).toBeVisible();
   await other.close();
+});
+
+test("another member's personal link asks who you are on this device", async ({ page, browser }) => {
+  const { other, second } = await twoMembers(page, browser);
+  const alexLink = await personalLink(second);
+
+  // Sam's browser, where Sam is the admin, opens Alex's personal link.
+  await page.goto(alexLink);
+  await expect(page.getByRole("heading", { name: "This link belongs to Alex." })).toBeVisible();
+  await expect(page.getByText("On this device you're Sam.")).toBeVisible();
+  await expect(
+    page.getByText("You'll lose admin rights on this device unless you saved your personal link."),
+  ).toBeVisible();
+  expect(await violations(page)).toEqual([]);
+
+  await page.getByRole("button", { name: "Stay as Sam" }).click();
+  await expect(page.getByRole("heading", { name: "Lisbon 2027" })).toBeVisible();
+  expect(hashParts(page)).toBe(2);
+  await page.getByRole("button", { name: /Edit$/ }).click();
+  const settings = page.getByRole("dialog", { name: "Settings" });
+  await expect(settings.getByLabel("Your name")).toHaveValue("Sam");
+  await expect(settings.getByRole("heading", { name: "The trip" })).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  // Asked again, Switch takes Alex's place on this device.
+  await page.goto("/plans/");
+  await page.goto(alexLink);
+  await page.getByRole("button", { name: "Switch to Alex" }).click();
+  await page.getByRole("button", { name: /Edit$/ }).click();
+  await expect(page.getByRole("dialog", { name: "Settings" }).getByLabel("Your name")).toHaveValue("Alex");
+  await other.close();
+});
+
+test("the save line says when changes wait for the connection", async ({ page, isMobile }) => {
+  // Every socket goes through here, so the test can cut the connection.
+  let offline = false;
+  const sockets: { close: () => Promise<void> }[] = [];
+  await page.routeWebSocket(/\/api\/together\//, (ws) => {
+    if (offline) {
+      ws.close();
+      return;
+    }
+    ws.connectToServer();
+    sockets.push(ws);
+  });
+  await createGroup(page);
+  await expect(page.getByRole("img", { name: /Scan to join Lisbon 2027/ })).toBeVisible();
+  await page.keyboard.press("Escape");
+  const status = page.locator("p[aria-live=polite]").filter({ hasText: /./ });
+  await expect(status).toHaveCount(0);
+
+  offline = true;
+  for (const ws of sockets.splice(0)) await ws.close();
+  const next = monthFromNow(1);
+  if (isMobile) await page.getByRole("button", { name: "Next month" }).click();
+  const { button } = await workday(page, next, 8);
+  await button.click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: /^Can't do this day/ })
+    .click();
+  await expect(page.getByText("Offline. Changes will save when you're back.")).toBeVisible();
+  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
+  expect(await violations(page)).toEqual([]);
+
+  offline = false;
+  await expect(page.getByText("Offline. Changes will save when you're back.")).toBeHidden({
+    timeout: 15_000,
+  });
+  await expect(status).toHaveCount(0);
 });

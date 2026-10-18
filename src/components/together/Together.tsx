@@ -1,11 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Toasts, useToasts } from "~/components/planner/ui";
-import { formatPersonal, parseFragment } from "~/lib/together/link";
+import { formatInvite, formatPersonal, parseFragment } from "~/lib/together/link";
 import { GroupSession } from "~/lib/together/session";
 import { CreateGroup } from "./CreateGroup";
 import { t } from "./copy";
 import { ErrorScreen } from "./ErrorScreen";
 import { GroupView } from "./GroupView";
+import { IdentityChoice } from "./IdentityChoice";
 import { JoinGroup } from "./JoinGroup";
 import { useGroup } from "./useGroup";
 
@@ -63,20 +64,27 @@ export default function Together() {
     };
   }, []);
 
-  const onCreated = (created: GroupSession) => {
-    const personal = created.personalLink();
-    // Replace rather than push: Back shouldn't return to an empty form, and no hashchange fires.
-    if (personal) history.replaceState(null, "", formatPersonal(location.origin, personal));
+  /**
+   * The address bar keeps the invite: who you are is in this browser's storage, so the invite brings
+   * you back. Only when that couldn't be saved does it hold your personal link instead, so a reload
+   * still knows you. Replace rather than push: Back shouldn't return to a form, and no hashchange fires.
+   */
+  const showLink = (s: GroupSession) => {
+    const personal = s.personalLink();
+    if (!personal) return;
+    const url = s.saved ? formatInvite(location.origin, personal) : formatPersonal(location.origin, personal);
+    if (url !== location.href) history.replaceState(null, "", url);
     shown.current = location.hash;
+  };
+
+  const onCreated = (created: GroupSession) => {
+    showLink(created);
     swap(created);
     setSharing(true);
   };
 
-  // Joining turns the invite in the address bar into the member's own link.
   const onJoined = () => {
-    const personal = current.current?.personalLink();
-    if (personal) history.replaceState(null, "", formatPersonal(location.origin, personal));
-    shown.current = location.hash;
+    if (current.current) showLink(current.current);
   };
 
   if (!ready) return null;
@@ -88,6 +96,7 @@ export default function Together() {
           sharing={sharing}
           setSharing={setSharing}
           onJoined={onJoined}
+          onStayed={onJoined}
           push={push}
         />
       ) : (
@@ -103,12 +112,15 @@ function GroupScreen({
   sharing,
   setSharing,
   onJoined,
+  onStayed,
   push,
 }: {
   session: GroupSession;
   sharing: boolean;
   setSharing: (open: boolean) => void;
   onJoined: () => void;
+  /** This device kept who it was rather than taking someone else's personal link. */
+  onStayed: () => void;
   push: Push;
 }) {
   const state = useGroup(session);
@@ -122,6 +134,12 @@ function GroupScreen({
 
   if (state.error && state.error !== "rate") return <ErrorScreen error={state.error} />;
   if (!state.loaded || !state.group) return <Placeholder text={t.loading} />;
+  // Someone else's personal link, on a device that's already someone in the group.
+  if (state.choice) {
+    return (
+      <IdentityChoice session={session} choice={state.choice} members={state.members} onStayed={onStayed} />
+    );
+  }
   // Whoever has no record in the group yet joins it first. `me` can be known before the record is.
   if (!state.me || !state.members.has(state.me)) {
     return <JoinGroup session={session} onJoined={onJoined} push={push} />;

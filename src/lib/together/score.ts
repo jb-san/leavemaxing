@@ -31,6 +31,8 @@ export interface Scored {
   ranked: ScoredWindow[];
   proposals: ScoredWindow[];
   agreed: ScoredWindow[];
+  /** Windows someone voted on that are no longer ranked, proposed or agreed, so votes never vanish. */
+  voted: ScoredWindow[];
 }
 
 export const TOP_N = 8;
@@ -172,12 +174,21 @@ export function scoreWindows(group: GroupRecord, members: ScoreMember[], today: 
     }
   }
   const agreed = fromKeys(members, days, agreedKeys);
+  const ranked = members.length === 0 ? [] : rank(group, members, days, today, proposals);
 
-  return {
-    ranked: members.length === 0 ? [] : rank(group, members, days, today, proposals),
-    proposals,
-    agreed,
-  };
+  // Scored the way proposals are, once each, when nothing else already lists them.
+  const listed = new Set([...ranked, ...proposals, ...agreed].map((w) => w.key));
+  const range = groupRange(group);
+  const votedKeys = new Map<WindowKey, string[]>();
+  for (const m of members) {
+    for (const k of Object.keys(m.record.votes) as WindowKey[]) {
+      const w = parseWindowKey(k);
+      if (!w || listed.has(k) || w.start < today || w.start < range.start || w.end > range.end) continue;
+      votedKeys.set(k, []);
+    }
+  }
+
+  return { ranked, proposals, agreed, voted: fromKeys(members, days, votedKeys) };
 }
 
 function rank(

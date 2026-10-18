@@ -69,6 +69,7 @@ export function GroupCalendar({
   meId,
   holidays,
   ranked,
+  voted,
   agreed,
   proposals,
   today,
@@ -84,6 +85,8 @@ export function GroupCalendar({
   /** Your public holidays, by day. */
   holidays: Map<DayNum, string[]>;
   ranked: Window[];
+  /** Windows with votes that are no longer ranked, proposed or agreed. Drawn like ranked ones. */
+  voted: Window[];
   agreed: Window[];
   /** Proposed dates, with who proposed them. */
   proposals: (Window & { proposedBy: string[] })[];
@@ -97,7 +100,9 @@ export function GroupCalendar({
   onVote: (key: WindowKey, vote: Vote | null) => void;
 }) {
   const shared = useShared(months, members, meId, holidays, today);
-  const decor = useDecor(members, ranked, proposals, agreed);
+  // Voted windows take the ranked windows' look, toned by the votes in the same way.
+  const banded = useMemo(() => [...ranked, ...voted], [ranked, voted]);
+  const decor = useDecor(members, banded, proposals, agreed);
   const own = useRef<HTMLDivElement>(null);
   const root = rootRef ?? own;
   const [menu, setMenu] = useState<{ day: DayNum; rect: DOMRect } | null>(null);
@@ -116,13 +121,20 @@ export function GroupCalendar({
 
   const agreedKeys = useMemo(() => new Set(agreed.map((w) => w.key)), [agreed]);
   const rankedKeys = useMemo(() => new Set(ranked.map((w) => w.key)), [ranked]);
+  const votedKeys = useMemo(() => new Set(voted.map((w) => w.key)), [voted]);
   const menuWindows = (day: DayNum): MenuWindow[] =>
     decor.windowsOn(day).map((w) => ({
       key: w.key,
       start: w.start,
       end: w.end,
       length: w.length,
-      kind: agreedKeys.has(w.key) ? "agreed" : rankedKeys.has(w.key) ? "suggested" : "proposed",
+      kind: agreedKeys.has(w.key)
+        ? "agreed"
+        : rankedKeys.has(w.key)
+          ? "suggested"
+          : votedKeys.has(w.key)
+            ? "voted"
+            : "proposed",
       votes: decor.votes.get(w.key) ?? [],
     }));
 

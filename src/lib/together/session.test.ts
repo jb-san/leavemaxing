@@ -577,6 +577,8 @@ describe("GroupSession", () => {
       expect(c.state.isAdmin).toBe(true);
       expect(loadMembership(alex.groupId, storage)?.admin).toBe(JSON.parse(stored ?? "{}").admin);
       expect(loadMembership(alex.groupId, storage)?.memberId).toBe(a.state.me);
+      // Stored already, so the address bar can show the invite.
+      expect(c.saved).toBe(true);
     });
 
     it("switches to the link's member when asked", async () => {
@@ -597,6 +599,7 @@ describe("GroupSession", () => {
     saveMembership({ ...(b.personalLink() as PersonalLink), groupName: "Lisbon 2027" }, storage);
     const c = server.session({ groupId: link.groupId, key: link.key }, { storage });
     expect(c.state.me).toBe(b.state.me);
+    expect(c.saved).toBe(true);
   });
 
   it("joins with a stored identity whose record never arrived", async () => {

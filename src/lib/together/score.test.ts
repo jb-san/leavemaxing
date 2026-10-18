@@ -252,6 +252,50 @@ describe("scoreWindows", () => {
     }
   });
 
+  describe("voted windows", () => {
+    // Monday to Thursday: the ranking always stretches it back over the weekend, so it's never ranked.
+    const k = key(10, 13);
+
+    it("scores a window someone voted on that isn't ranked, proposed or agreed", () => {
+      const members = [member("a", { votes: { [k]: "maybe" } }), member("b")];
+      const { ranked, voted } = scoreWindows(group(), members, today);
+      expect(ranked.some((w) => w.key === k)).toBe(false);
+      expect(voted.map((w) => w.key)).toEqual([k]);
+      expect(voted[0]).toMatchObject({ start: d(5, 10), end: d(5, 13), length: 4, proposedBy: [] });
+      expect(voted[0]?.costs).toEqual({ a: 4, b: 4 });
+    });
+
+    it("keeps a vetoed window, flagged like a proposal", () => {
+      const members = [member("a", { votes: { [k]: "no" }, blocked: [d(5, 11)] }), member("b")];
+      const { voted } = scoreWindows(group(), members, today);
+      expect(voted.map((w) => w.key)).toEqual([k]);
+      expect(voted[0]?.flagged).toEqual(["a"]);
+    });
+
+    it("leaves out windows already ranked, proposed or agreed", () => {
+      const best = scoreWindows(group(), [member("a"), member("b")], today).ranked[0]?.key as WindowKey;
+      const p = key(17, 21);
+      const both = key(24, 28);
+      const members = [
+        member("a", { votes: { [best]: "yes", [p]: "maybe", [both]: "yes" }, proposals: [p] }),
+        member("b", { votes: { [both]: "yes" } }),
+      ];
+      const { ranked, proposals, agreed, voted } = scoreWindows(group(), members, today);
+      expect(ranked.some((w) => w.key === best)).toBe(true);
+      expect(proposals.map((w) => w.key)).toEqual([p]);
+      expect(agreed.map((w) => w.key)).toEqual([both]);
+      expect(voted).toEqual([]);
+    });
+
+    it("leaves out votes on past dates or dates outside the group's months", () => {
+      const past = key(3, 7);
+      const outside = windowKey(d(6, 7), d(6, 11));
+      const members = [member("a", { votes: { [past]: "yes", [outside]: "maybe", [k]: "yes" } })];
+      const { voted } = scoreWindows(group(), [...members, member("b")], d(5, 5));
+      expect(voted.map((w) => w.key)).toEqual([k]);
+    });
+  });
+
   it("scores 20 members over 12 months within budget", () => {
     const members = Array.from({ length: 20 }, (_, i) => {
       const holidays = Array.from({ length: 14 }, (_, h) => ({

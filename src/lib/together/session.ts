@@ -195,6 +195,7 @@ export class GroupSession {
         this.adopt(stored.memberId, stored.secret, stored.admin ?? null);
         this.groupName = stored.groupName;
         this.summary = stored.summary;
+        this.stored = true;
       } else if (typeof linkAdmin === "string") {
         this.admin = linkAdmin;
         this.creating = true;
@@ -262,6 +263,7 @@ export class GroupSession {
     if (keep === "stored") {
       this.adopt(stored.memberId, stored.secret, stored.admin ?? null);
       this.summary = stored.summary;
+      this.stored = true;
     } else {
       this.adopt(link.memberId, link.secret, link.admin ?? null);
       this.summary = undefined;

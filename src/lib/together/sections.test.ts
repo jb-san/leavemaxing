@@ -13,11 +13,17 @@ const win = (start: number): ScoredWindow => ({
   helps: [],
   proposedBy: [],
 });
-const scored = (s: Partial<Scored>): Scored => ({ ranked: [], proposals: [], agreed: [], ...s });
+const scored = (s: Partial<Scored>): Scored => ({ ranked: [], proposals: [], agreed: [], voted: [], ...s });
 
 describe("sections", () => {
   it("shows the empty copy when no window works", () => {
-    expect(sections(scored({}))).toEqual({ agreed: [], proposals: [], suggested: [], empty: true });
+    expect(sections(scored({}))).toEqual({
+      agreed: [],
+      proposals: [],
+      suggested: [],
+      voted: [],
+      empty: true,
+    });
   });
 
   it("hides the suggested list, without the empty copy, when every ranked window is agreed", () => {
@@ -33,6 +39,13 @@ describe("sections", () => {
     const [a, b, c] = [win(10), win(20), win(30)];
     const p = win(40);
     const out = sections(scored({ ranked: [a, b, c], agreed: [b], proposals: [p] }));
-    expect(out).toEqual({ agreed: [b], proposals: [p], suggested: [a, c], empty: false });
+    expect(out).toEqual({ agreed: [b], proposals: [p], suggested: [a, c], voted: [], empty: false });
+  });
+
+  it("lists voted windows on their own, after the suggestions", () => {
+    const [a, v] = [win(10), win(50)];
+    expect(sections(scored({ ranked: [a], voted: [v] }))).toMatchObject({ suggested: [a], voted: [v] });
+    // Votes on old suggestions stay listed even when nothing is suggested any more.
+    expect(sections(scored({ voted: [v] }))).toMatchObject({ voted: [v], empty: true });
   });
 });

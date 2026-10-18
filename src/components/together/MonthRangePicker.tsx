@@ -16,6 +16,29 @@ const index = (m: Month) => m.year * 12 + m.month - 1;
 const monthAt = (i: number): Month => ({ year: Math.floor(i / 12), month: (i % 12) + 1 });
 const short = (m: Month) => `${MONTHS_SHORT[m.month - 1]} ${m.year}`;
 
+/** Months that can be picked, starting with the current one. */
+export const MONTHS_AHEAD = 24;
+/** The longest group, counting both ends. */
+export const MAX_MONTHS = 12;
+
+/** The months that can be picked, from the current one on. */
+export function upcomingMonths(now = new Date()): Month[] {
+  return Array.from({ length: MONTHS_AHEAD }, (_, i) => monthAt(now.getFullYear() * 12 + now.getMonth() + i));
+}
+
+/** Every month from the first to the last of a range. */
+export function monthsOf({ from, to }: MonthRange): Month[] {
+  const out: Month[] = [];
+  for (let i = index(from); i <= index(to); i++) out.push(monthAt(i));
+  return out;
+}
+
+/** The first and last of a group's months. */
+export function rangeOf(months: readonly Month[]): MonthRange {
+  const sorted = [...months].sort((a, b) => index(a) - index(b));
+  return { from: sorted[0] as Month, to: sorted[sorted.length - 1] as Month };
+}
+
 /** "Oct 2026 – Mar 2027", or "Oct 2026" for a single month. */
 export function rangeLabel({ from, to }: MonthRange): string {
   return index(from) === index(to) ? short(from) : `${short(from)} – ${short(to)}`;

@@ -4,36 +4,16 @@ import { Stepper } from "~/components/planner/ui";
 import { newGroup } from "~/lib/together/link";
 import { limitToMonths } from "~/lib/together/member";
 import { type GroupRecord, LIMITS, type MemberRecord } from "~/lib/together/protocol";
-import { GroupSession } from "~/lib/together/session";
+import { GroupSession, Unreachable } from "~/lib/together/session";
 import { t } from "./copy";
 import { defaultMember, MemberForm } from "./MemberForm";
-import { type MonthRange, MonthRangePicker } from "./MonthRangePicker";
+import { MAX_MONTHS, type MonthRange, MonthRangePicker, monthsOf, upcomingMonths } from "./MonthRangePicker";
 import type { Push } from "./Together";
 import { track } from "./track";
 
 type Month = { year: number; month: number };
 
-/** Months that can be picked, starting with the current one. */
-const MONTHS_AHEAD = 24;
-/** The longest group, counting both ends. */
-const MAX_MONTHS = 12;
 const DEFAULT_MONTHS = 6;
-
-function upcomingMonths(now = new Date()): Month[] {
-  return Array.from({ length: MONTHS_AHEAD }, (_, i) => {
-    const m0 = now.getMonth() + i;
-    return { year: now.getFullYear() + Math.floor(m0 / 12), month: (m0 % 12) + 1 };
-  });
-}
-
-/** Every month from the first to the last of a range. */
-function monthsOf({ from, to }: MonthRange): Month[] {
-  const out: Month[] = [];
-  for (let i = from.year * 12 + from.month - 1; i <= to.year * 12 + to.month - 1; i++) {
-    out.push({ year: Math.floor(i / 12), month: (i % 12) + 1 });
-  }
-  return out;
-}
 
 export function CreateGroup({ onCreated, push }: { onCreated: (session: GroupSession) => void; push: Push }) {
   const id = useId();
@@ -47,6 +27,8 @@ export function CreateGroup({ onCreated, push }: { onCreated: (session: GroupSes
   const [maxLength, setMax] = useState(7);
   const [me, setMe] = useState<MemberRecord>(defaultMember);
   const [busy, setBusy] = useState(false);
+  // Shown in place of the hint when the server couldn't be reached, until the next try.
+  const [unreachable, setUnreachable] = useState(false);
   const months = useMemo(() => monthsOf(range), [range]);
   // A link opened while the group is being created wins; the finished create must not take over.
   const mounted = useRef(true);
@@ -61,16 +43,19 @@ export function CreateGroup({ onCreated, push }: { onCreated: (session: GroupSes
     e.preventDefault();
     if (busy) return;
     setBusy(true);
+    setUnreachable(false);
     const link = newGroup();
     const session = new GroupSession(link);
     const group: GroupRecord = { name: name.trim(), months, minLength, maxLength, createdBy: "" };
     try {
+      // Resolves once the server has the group: the invite is never shown for one it doesn't have.
       await session.create(group, limitToMonths({ ...me, name: me.name.trim() }, months));
-    } catch {
+    } catch (e) {
       session.close();
       if (!mounted.current) return;
       setBusy(false);
-      push(t.createFailed, "warn");
+      if (e instanceof Unreachable) setUnreachable(true);
+      else push(t.createFailed, "warn");
       return;
     }
     if (!mounted.current) {
@@ -173,7 +158,13 @@ export function CreateGroup({ onCreated, push }: { onCreated: (session: GroupSes
       <MemberForm value={me} onChange={setMe} taken={[]} />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-        <p className="text-sm text-muted">{t.createHint}</p>
+        {/* The message is announced as it appears; the hint isn't. */}
+        <p
+          role={unreachable ? "alert" : undefined}
+          className={unreachable ? "text-sm font-semibold" : "text-sm text-muted"}
+        >
+          {unreachable ? t.createOffline : t.createHint}
+        </p>
         <button
           type="submit"
           disabled={busy}

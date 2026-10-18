@@ -1,5 +1,5 @@
 import { Smartphone } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Sheet, Stepper } from "~/components/planner/ui";
 import { formatPersonal } from "~/lib/together/link";
 import { changes } from "~/lib/together/member";
@@ -9,6 +9,7 @@ import { Avatar } from "./Avatar";
 import { t } from "./copy";
 import type { Save } from "./GroupView";
 import { MemberForm } from "./MemberForm";
+import { MAX_MONTHS, MonthRangePicker, monthsOf, rangeOf, upcomingMonths } from "./MonthRangePicker";
 import { ShareSheet } from "./ShareSheet";
 import { useDraft } from "./useDraft";
 
@@ -105,6 +106,7 @@ function TripSettings({
   const trip = useDraft<GroupRecord>((patch) => save(session.updateGroup(patch)), blankName);
   const membersHeading = useRef<HTMLHeadingElement>(null);
   const value = { ...group, ...trip.draft };
+  const options = useMemo(() => upcomingMonths(), []);
   const [asking, setAsking] = useState<string | null>(null);
   const removeButtons = useRef(new Map<string, HTMLButtonElement>());
   const cancelButton = useRef<HTMLButtonElement>(null);
@@ -122,7 +124,7 @@ function TripSettings({
       <h2 id={`${id}-trip`} className="text-2xl font-extrabold">
         {t.theTrip}
       </h2>
-      <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-2 gap-x-3 gap-y-5">
         <div className="col-span-2 flex flex-col gap-2 sm:col-span-1">
           <label htmlFor={`${id}-name`} className="field-label">
             {t.tripName}
@@ -135,6 +137,21 @@ function TripSettings({
             autoComplete="off"
             onChange={(e) => trip.change({ name: e.target.value }, true)}
             className="input"
+          />
+        </div>
+        <div className="col-span-2 flex flex-col gap-2 sm:col-span-1">
+          <span id={`${id}-when-label`} className="field-label">
+            {t.when}
+          </span>
+          {/* Narrowing hides days outside the months; nobody's marked days are deleted. */}
+          <MonthRangePicker
+            id={`${id}-when`}
+            labelId={`${id}-when-label`}
+            value={rangeOf(value.months)}
+            onChange={(r) => trip.change({ months: monthsOf(r) }, false)}
+            min={options[0] as (typeof options)[number]}
+            max={options[options.length - 1] as (typeof options)[number]}
+            maxMonths={MAX_MONTHS}
           />
         </div>
         <div className="flex flex-col gap-2">
