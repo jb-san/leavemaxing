@@ -67,7 +67,11 @@ test("calendar export downloads an .ics file", async ({ page }) => {
 
 test("saved plans show up under My plans", async ({ page }) => {
   await page.goto("/mt/2027/");
-  await page.getByRole("button", { name: "Save plan" }).click();
+  // A click that lands before the planner hydrates does nothing, so retry until the dialog opens.
+  await expect(async () => {
+    await page.getByRole("button", { name: "Save plan" }).click();
+    await expect(page.getByLabel("Name")).toBeVisible({ timeout: 1000 });
+  }).toPass();
   await page.getByLabel("Name").fill("Summer in Malta");
   await page.getByRole("dialog").getByRole("button", { name: "Save plan" }).click();
   await page.goto("/plans/");
