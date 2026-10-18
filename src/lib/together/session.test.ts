@@ -359,6 +359,73 @@ describe("GroupSession", () => {
     expect(loadCache(link.groupId, storage)).toEqual([]);
   });
 
+  it("forgets the membership and cache when the group is gone", async () => {
+    const server = new FakeServer();
+    const { b } = await createAndJoin(server);
+    const personal = b.personalLink() as PersonalLink;
+    const storage = memoryStorage();
+    const c = server.session(personal, { storage });
+    await until(() => expect(c.state.group).not.toBeNull());
+    expect(loadMembership(personal.groupId, storage)).not.toBeNull();
+    server.room.envs.clear();
+    const d = server.session(personal, { storage });
+    await until(() => expect(d.state.error).toBe("gone"));
+    expect(loadMembership(personal.groupId, storage)).toBeNull();
+    expect(loadCache(personal.groupId, storage)).toEqual([]);
+  });
+
+  describe("summary", () => {
+    it("is written once the group loads, from the group and the members", async () => {
+      const server = new FakeServer();
+      const { b } = await createAndJoin(server);
+      const personal = b.personalLink() as PersonalLink;
+      const storage = memoryStorage();
+      const c = server.session(personal, { storage, now: () => 1234 });
+      await until(() => expect(loadMembership(personal.groupId, storage)?.summary).toBeDefined());
+      expect(loadMembership(personal.groupId, storage)?.summary).toEqual({
+        from: "2027-06-01",
+        to: "2027-06-30",
+        members: 2,
+        agreed: 0,
+        updatedAt: 1234,
+      });
+      c.close();
+    });
+
+    it("takes the agreed count from noteSummary and writes only on a change", async () => {
+      const server = new FakeServer();
+      const { b } = await createAndJoin(server);
+      const personal = b.personalLink() as PersonalLink;
+      const storage = memoryStorage();
+      let clock = 100;
+      const c = server.session(personal, { storage, now: () => clock });
+      await until(() => expect(loadMembership(personal.groupId, storage)?.summary).toBeDefined());
+      const writes = vi.spyOn(storage, "setItem");
+      clock = 200;
+      c.noteSummary({ agreed: 0 });
+      expect(writes).not.toHaveBeenCalled();
+      c.noteSummary({ agreed: 3 });
+      expect(writes).toHaveBeenCalledTimes(1);
+      expect(loadMembership(personal.groupId, storage)?.summary).toMatchObject({ agreed: 3, updatedAt: 200 });
+      clock = 300;
+      c.noteSummary({ agreed: 3 });
+      expect(writes).toHaveBeenCalledTimes(1);
+      expect(loadMembership(personal.groupId, storage)?.summary?.updatedAt).toBe(200);
+    });
+
+    it("is never written for a browser that hasn't joined", async () => {
+      const server = new FakeServer();
+      const { b } = await createAndJoin(server);
+      const personal = b.personalLink() as PersonalLink;
+      const storage = memoryStorage();
+      const c = server.session({ groupId: personal.groupId, key: personal.key }, { storage });
+      await until(() => expect(c.state.group).not.toBeNull());
+      c.noteSummary({ agreed: 2 });
+      expect(storage.data.size).toBeLessThanOrEqual(1);
+      expect(loadMembership(personal.groupId, storage)).toBeNull();
+    });
+  });
+
   it("reports removed when the snapshot lists me", async () => {
     const server = new FakeServer();
     const { b } = await createAndJoin(server);

@@ -615,3 +615,35 @@ test("propose dates from a day", async ({ page, browser, isMobile }) => {
   await expect(start).toHaveAttribute("data-tone", "open");
   await other.close();
 });
+
+test("group shows in My plans", async ({ page, browser }) => {
+  const { other, second } = await twoMembers(page, browser);
+  await second.goto("/plans/");
+  const card = second.getByRole("listitem").filter({ hasText: "Lisbon 2027" });
+  await expect(card.getByText("Group plan", { exact: true })).toBeVisible();
+  await expect(card.getByText("2 people")).toBeVisible();
+  await expect(card).toContainText(
+    /(January|February|March|April|May|June|July|August|September|October|November|December) \d{4}/,
+  );
+  await expect(
+    second.getByText("Kept in this browser. Group plans are shared with your group, encrypted."),
+  ).toBeVisible();
+  expect(await violations(second)).toEqual([]);
+
+  // Closing the browser loses nothing: Open returns to the group as Alex, with no join screen.
+  await card.getByRole("link", { name: "Open Lisbon 2027" }).click();
+  await expect(second.getByRole("heading", { name: "Lisbon 2027" })).toBeVisible();
+  await expect(second.getByRole("button", { name: "Join group" })).toHaveCount(0);
+  await second.getByRole("button", { name: /Edit$/ }).click();
+  await expect(second.getByRole("dialog", { name: "Settings" }).getByLabel("Your name")).toHaveValue("Alex");
+
+  await second.goto("/plans/");
+  const again = second.getByRole("listitem").filter({ hasText: "Lisbon 2027" });
+  await again.getByRole("button", { name: "Remove Lisbon 2027 from this browser" }).click();
+  await expect(again.getByText("Your personal link still works.")).toBeVisible();
+  await again.getByRole("button", { name: /^Remove\? You stay in the group/ }).click();
+  await expect(second.getByText("Lisbon 2027")).toHaveCount(0);
+  await expect(second.getByRole("heading", { name: "No saved plans yet" })).toBeVisible();
+  await expect(second.getByRole("link", { name: "Plan with friends" })).toBeVisible();
+  await other.close();
+});

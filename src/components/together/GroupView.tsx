@@ -156,6 +156,11 @@ export function GroupView({
   }, [fresh]);
   const scored = fresh ?? held;
   const shown = scored ? sections(scored) : null;
+  // My plans shows how many dates work for everyone, and only this view runs the scoring.
+  const agreedCount = scored?.agreed.length;
+  useEffect(() => {
+    if (agreedCount !== undefined) session.noteSummary({ agreed: agreedCount });
+  }, [agreedCount, session]);
   const myHolidays = useMemo(() => holidayMap(holidays.get(meId) ?? []), [holidays, meId]);
   const meScored: ScoreMember = { id: meId, record: me, holidays: holidays.get(meId) ?? [] };
 

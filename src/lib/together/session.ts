@@ -17,9 +17,11 @@ import {
 } from "./protocol";
 import { groupRange } from "./score";
 import {
+  forgetGroup,
   forgetMembership,
   loadCache,
   loadMembership,
+  type MembershipSummary,
   type StorageLike,
   saveCache,
   saveMembership,
@@ -103,6 +105,10 @@ export class GroupSession {
   private secret: string | null = null;
   private admin: string | null = null;
   private groupName = "";
+  /** What My plans shows about this group, kept in the membership. */
+  private summary: MembershipSummary | undefined;
+  /** The agreed count last reported by the view, which is the only thing that scores. */
+  private agreed: number | undefined;
   /** A newGroup() link whose group isn't on the server yet: an empty room is expected. */
   private creating = false;
   private status: Status = "connecting";
@@ -139,10 +145,12 @@ export class GroupSession {
         const sameMember = stored?.memberId === link.memberId;
         this.adopt(link.memberId, link.secret, link.admin ?? (sameMember ? stored?.admin : null) ?? null);
         this.groupName = stored?.groupName ?? "";
+        this.summary = stored?.summary;
         this.remember();
       } else if (stored) {
         this.adopt(stored.memberId, stored.secret, stored.admin ?? null);
         this.groupName = stored.groupName;
+        this.summary = stored.summary;
       } else if (typeof linkAdmin === "string") {
         this.admin = linkAdmin;
         this.creating = true;
@@ -554,10 +562,42 @@ export class GroupSession {
         memberId: this.memberId,
         secret: this.secret,
         groupName: this.groupName,
+        ...(this.summary ? { summary: this.summary } : {}),
         ...(this.admin ? { admin: this.admin } : {}),
       },
       this.storage,
     );
+  }
+
+  /** The view reports how many dates work for everyone, as only it runs the scoring. */
+  noteSummary(note: { agreed: number }): void {
+    this.agreed = note.agreed;
+    this.syncSummary();
+  }
+
+  /** Writes the summary only when something it holds has changed. Never for a browser that hasn't joined. */
+  private syncSummary(): void {
+    const group = this.current.group;
+    if (!this.memberId || !this.secret || !this.loaded || !group || this.error) return;
+    const { start, end } = groupRange(group);
+    if (!Number.isFinite(start) || !Number.isFinite(end)) return;
+    const next = {
+      from: toIso(start),
+      to: toIso(end),
+      members: this.current.members.size,
+      agreed: this.agreed ?? this.summary?.agreed ?? 0,
+    };
+    const was = this.summary;
+    if (
+      was &&
+      was.from === next.from &&
+      was.to === next.to &&
+      was.members === next.members &&
+      was.agreed === next.agreed
+    )
+      return;
+    this.summary = { ...next, updatedAt: this.now() };
+    this.remember();
   }
 
   private persist(): void {
@@ -565,6 +605,7 @@ export class GroupSession {
   }
 
   private fail(error: Exclude<SessionError, null>): void {
+    if (error === "gone" && this.memberId) forgetGroup(this.groupId, this.storage);
     if (error === "removed") {
       forgetMembership(this.groupId, this.storage);
       this.memberId = null;
@@ -574,6 +615,7 @@ export class GroupSession {
     if (error === "gone" || error === "removed") {
       // Nothing from this group is shown or kept any more.
       saveCache(this.groupId, [], this.storage);
+      this.summary = undefined;
       this.local.clear();
       this.confirmed.clear();
       this.pending.clear();
@@ -609,6 +651,7 @@ export class GroupSession {
       this.groupName = name;
       this.remember();
     }
+    this.syncSummary();
     for (const fn of this.listeners) fn(this.current);
   }
 }
