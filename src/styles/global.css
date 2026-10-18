@@ -435,6 +435,33 @@
     animation: pop 320ms var(--ease-spring) backwards;
     animation-delay: calc(min(var(--i, 0), 16) * 15ms);
   }
+  /* Together: dates the whole group agreed on, and the coloured dots of others who can't do a day. */
+  .day[data-br="agreed"]::before {
+    background: var(--lime);
+  }
+  .day:disabled {
+    cursor: default;
+  }
+  .day:disabled .mk {
+    transform: none;
+  }
+  .day .dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    height: 7px;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--muted);
+  }
+  .day .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px var(--card);
+  }
 }
 
 @keyframes pop {

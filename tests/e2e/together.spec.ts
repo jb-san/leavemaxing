@@ -23,6 +23,12 @@ async function createGroup(page: Page) {
   await page.getByRole("button", { name: "Create group" }).click();
 }
 
+/** Every axe violation, whatever its impact. */
+async function violations(page: Page) {
+  const results = await new AxeBuilder({ page }).analyze();
+  return results.violations.map((v) => `${v.id}: ${v.nodes.length} × ${v.nodes[0]?.target.join(" ")}`);
+}
+
 async function serious(page: Page) {
   const results = await new AxeBuilder({ page }).analyze();
   return results.violations
@@ -172,6 +178,7 @@ test("join via invite", async ({ page, browser }) => {
   await second.getByRole("button", { name: "Join group" }).click();
   await expect(second.getByRole("heading", { name: "Lisbon 2027" })).toBeVisible();
   // The address is now Alex's own link, not the invite.
+  await expect.poll(() => second.url()).not.toBe(invite);
   expect(new URL(second.url()).hash.slice(1).split(".").length).toBeGreaterThanOrEqual(4);
 
   for (const p of [page, second]) {
@@ -187,4 +194,97 @@ test("broken link", async ({ page }) => {
   await page.goto("/together/#abc");
   await expect(page.getByText("This link is incomplete. Ask for the invite again.")).toBeVisible();
   expect(await serious(page)).toEqual([]);
+});
+
+/** Sam creates the group and Alex joins it from a second browser. Each waits until they see the other. */
+async function twoMembers(page: Page, browser: Browser, scheme: "light" | "dark" = "light") {
+  await createGroup(page);
+  const invite = await page.getByRole("dialog").getByLabel("Link").inputValue();
+  await page.keyboard.press("Escape");
+  const other = await newContext(browser);
+  const second = await other.newPage();
+  await second.emulateMedia({ colorScheme: scheme });
+  await second.goto(invite);
+  await second.getByLabel("Your name").fill("Alex");
+  await second.getByRole("button", { name: "Join group" }).click();
+  for (const p of [page, second]) {
+    await expect(p.getByRole("list", { name: "Members" }).getByRole("listitem")).toHaveCount(2);
+  }
+  return { other, second };
+}
+
+test("both vote and agree", async ({ page, browser }) => {
+  const { other, second } = await twoMembers(page, browser, "dark");
+  const first = page.getByRole("region", { name: "Suggested dates" }).getByRole("article").first();
+  const dates = (await first.getByRole("heading").textContent()) ?? "";
+  expect(dates).not.toBe("");
+  await first.getByRole("radio", { name: /^Works/ }).click();
+  await expect(first.getByRole("radio", { name: /^Works/ })).toHaveAttribute("aria-checked", "true");
+
+  const theirs = second
+    .getByRole("region", { name: "Suggested dates" })
+    .getByRole("article", { name: dates, exact: true });
+  await expect(theirs.getByRole("radio", { name: /^Works/ })).toContainText("1");
+  await theirs.getByRole("radio", { name: /^Works/ }).click();
+
+  for (const p of [page, second]) {
+    await expect(p.getByRole("region", { name: "Works for everyone" })).toContainText(dates);
+  }
+  for (const p of [page, second]) {
+    await p.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
+    expect(await violations(p)).toEqual([]);
+  }
+  await other.close();
+});
+
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+test("a day marked in the shared calendar shows for the others", async ({ page, browser, isMobile }) => {
+  const { other, second } = await twoMembers(page, browser);
+  const next = monthFromNow(1);
+  const weekday = WEEKDAYS[new Date(Date.UTC(next.year, next.month - 1, 15)).getUTCDay()];
+  const day = `${weekday} 15 ${SHORT[next.month - 1]}`;
+
+  // Phones show one month at a time, starting with this one.
+  if (isMobile) await page.getByRole("button", { name: "Next month" }).click();
+  const mine = page.getByRole("button", { name: new RegExp(`^${day},`) });
+  await expect(mine).toHaveAttribute("aria-pressed", "false");
+  await mine.click();
+  await expect(mine).toHaveAttribute("aria-pressed", "true");
+  await expect(mine).toHaveAccessibleName(new RegExp(`^${day}, you can't\\.$`));
+
+  if (isMobile) await second.getByRole("button", { name: "Next month" }).click();
+  const theirs = second.getByRole("button", { name: new RegExp(`^${day},`) });
+  await expect(theirs).toHaveAccessibleName(/\. Sam can't\.$/);
+  // Sam has the first member colour.
+  await expect(theirs.locator(".dot")).toHaveCSS("background-color", "rgb(225, 29, 72)");
+  await other.close();
+});
+
+test("settings keep a name typed just before closing, and the admin can remove a member", async ({
+  page,
+  browser,
+}) => {
+  // Sam's timers only run when the test says, so typing never settles on its own.
+  await page.clock.install();
+  const { other, second } = await twoMembers(page, browser);
+  await page.clock.pauseAt(Date.now() + 1000);
+  await page.getByRole("button", { name: /Edit$/ }).click();
+  const sheet = page.getByRole("dialog", { name: "Settings" });
+  await sheet.getByLabel("Your name").fill("Samantha");
+  // Closing the sheet sends the name before the 400 ms pause after typing is up.
+  await page.keyboard.press("Escape");
+  await expect(sheet).toBeHidden();
+  await page.clock.runFor(350);
+  await expect(sheet.getByLabel("Your name")).toHaveCount(0);
+  await expect(second.getByRole("list", { name: "Members" })).toContainText("Samantha");
+
+  await page.getByRole("button", { name: /Edit$/ }).click();
+  await sheet.getByRole("button", { name: "Remove Alex" }).click();
+  await expect(sheet.getByText("Remove Alex?")).toBeVisible();
+  await expect(sheet.getByRole("button", { name: "Cancel" })).toBeFocused();
+  await sheet.getByRole("button", { name: "Confirm" }).click();
+  await expect(second.getByText("You were removed from this group.")).toBeVisible();
+  await expect(sheet.getByRole("button", { name: "Remove Alex" })).toHaveCount(0);
+  await other.close();
 });

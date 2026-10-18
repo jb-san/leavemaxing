@@ -1,31 +1,42 @@
 import { type SubmitEvent, useRef, useState } from "react";
-import { Toasts, useToasts } from "~/components/planner/ui";
 import { forJoining } from "~/lib/together/member";
-import type { MemberRecord } from "~/lib/together/protocol";
+import { LIMITS, type MemberRecord } from "~/lib/together/protocol";
 import type { GroupSession } from "~/lib/together/session";
 import { Avatar } from "./Avatar";
 import { monthsPhrase, t } from "./copy";
+import { ErrorScreen } from "./ErrorScreen";
 import { defaultMember, MemberForm } from "./MemberForm";
+import type { Push } from "./Together";
 import { track } from "./track";
 import { useGroup } from "./useGroup";
 
 /** The screen behind an invite link: who invited you, who is in, and your own details. */
-export function JoinGroup({ session, onJoined }: { session: GroupSession; onJoined?: () => void }) {
+export function JoinGroup({
+  session,
+  onJoined,
+  push,
+}: {
+  session: GroupSession;
+  onJoined?: () => void;
+  /** The island's toasts, which outlive this screen: a join can fail after the group view replaced it. */
+  push: Push;
+}) {
   const state = useGroup(session);
   const [me, setMe] = useState<MemberRecord>(defaultMember);
   const [busy, setBusy] = useState(false);
-  const { toasts, push } = useToasts();
   const joining = useRef(false);
   const { group, members } = state;
   if (!group) return null;
+  // The server would refuse one more, so don't ask for details that can't be used.
+  const full = members.size >= LIMITS.members;
+  if (full) return <ErrorScreen error="full" />;
 
   const creator = members.get(group.createdBy);
-  const others = [...members.values()];
-  const taken = others.map((m) => m.color);
+  const taken = [...members.values()].map((m) => m.color);
 
   const submit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (joining.current) return;
+    if (joining.current || full) return;
     joining.current = true;
     setBusy(true);
     try {
@@ -52,7 +63,7 @@ export function JoinGroup({ session, onJoined }: { session: GroupSession; onJoin
         </p>
       </div>
 
-      {others.length > 0 && (
+      {members.size > 0 && (
         <section className="card p-5 sm:p-6">
           <h2 className="field-label mb-3">{t.alreadyIn}</h2>
           <ul aria-label={t.members} className="flex flex-wrap gap-x-5 gap-y-3">
@@ -78,7 +89,6 @@ export function JoinGroup({ session, onJoined }: { session: GroupSession; onJoin
           {busy ? t.joining : t.joinGroup}
         </button>
       </div>
-      <Toasts toasts={toasts} />
     </form>
   );
 }

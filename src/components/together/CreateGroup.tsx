@@ -1,6 +1,6 @@
 import { type SubmitEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Mascot } from "~/components/Mascot";
-import { Stepper, Toasts, useToasts } from "~/components/planner/ui";
+import { Stepper } from "~/components/planner/ui";
 import { newGroup } from "~/lib/together/link";
 import { limitToMonths } from "~/lib/together/member";
 import { type GroupRecord, LIMITS, type MemberRecord } from "~/lib/together/protocol";
@@ -8,6 +8,7 @@ import { GroupSession } from "~/lib/together/session";
 import { t } from "./copy";
 import { defaultMember, MemberForm } from "./MemberForm";
 import { type MonthRange, MonthRangePicker } from "./MonthRangePicker";
+import type { Push } from "./Together";
 import { track } from "./track";
 
 type Month = { year: number; month: number };
@@ -34,7 +35,7 @@ function monthsOf({ from, to }: MonthRange): Month[] {
   return out;
 }
 
-export function CreateGroup({ onCreated }: { onCreated: (session: GroupSession) => void }) {
+export function CreateGroup({ onCreated, push }: { onCreated: (session: GroupSession) => void; push: Push }) {
   const id = useId();
   const options = useMemo(() => upcomingMonths(), []);
   const [name, setName] = useState("");
@@ -46,7 +47,6 @@ export function CreateGroup({ onCreated }: { onCreated: (session: GroupSession) 
   const [maxLength, setMax] = useState(7);
   const [me, setMe] = useState<MemberRecord>(defaultMember);
   const [busy, setBusy] = useState(false);
-  const { toasts, push } = useToasts();
   const months = useMemo(() => monthsOf(range), [range]);
   // A link opened while the group is being created wins; the finished create must not take over.
   const mounted = useRef(true);
@@ -182,7 +182,6 @@ export function CreateGroup({ onCreated }: { onCreated: (session: GroupSession) 
           {busy ? t.creating : t.create}
         </button>
       </div>
-      <Toasts toasts={toasts} />
     </form>
   );
 }

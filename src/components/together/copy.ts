@@ -1,3 +1,6 @@
+import { type DayNum, formatShort } from "~/lib/dates";
+import type { MemberDayKind } from "~/lib/together/calendar";
+
 /** Together's own UI strings. Together v1 is English only, so these stay out of the i18n catalog. */
 export const t = {
   title: "Plan time off with friends",
@@ -64,9 +67,64 @@ export const t = {
     full: "This group is full (20 people).",
   },
   startNew: "Start a new group",
-  groupSoon: "The group view is coming soon.",
-  youreIn: "You're in. Share the invite so others can add their days.",
+
+  edit: "Edit",
+  settings: "Settings",
+  leaveDays: (n: number) => `${n} leave ${n === 1 ? "day" : "days"}`,
+  calendar: "Days you can't do",
+  calendarHint: "Tap the days you can't do. Everyone in the group sees them.",
+  legend: "Legend",
+  legendHoliday: "Public holiday",
+  legendWeekend: "Weekend",
+  legendYouCant: "You can't",
+  legendOthersCant: "Others can't",
+  legendBreak: "Suggested break",
+  worksForEveryone: "Works for everyone",
+  proposed: "Proposed",
+  suggested: "Suggested dates",
+  noWindows: "No dates work for everyone in these months. Widen the months or the trip length.",
+  daysOff: (n: number) => `${n} days off`,
+  leave: (n: number) => `${n} leave`,
+  cantDo: (name: string) => `${name} can't do these dates`,
+  savesFor: (who: string) => `, saves leave for ${who}`,
+  nameYou: (name: string) => `${name} (you)`,
+  yourVote: "Your vote",
+  votes: { yes: "Works", maybe: "Maybe", no: "Can't" },
+  voteCount: (n: number) => `${n} ${n === 1 ? "vote" : "votes"}`,
+  theTrip: "The trip",
+  remove: "Remove",
+  removeAsk: (name: string) => `Remove ${name}?`,
+  confirm: "Confirm",
+  cancel: "Cancel",
 } as const;
+
+/** "Sam", "Sam and Alex", "Sam, Alex and Kim". */
+export function joinNames(names: readonly string[]): string {
+  if (names.length <= 1) return names[0] ?? "";
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
+
+const DAY_KIND: Record<Exclude<MemberDayKind, "holiday">, string> = {
+  blocked: "you can't",
+  custom: "your day off",
+  weekend: "weekend",
+  work: "workday",
+};
+
+/**
+ * A shared calendar day for screen readers: the date, what it is for you, then who else can't do it.
+ * "Sat 9 Jan, weekend. Sam and Alex can't."
+ */
+export function dayLabel(
+  day: DayNum,
+  kind: MemberDayKind,
+  holidays: readonly string[],
+  othersCant: readonly string[],
+): string {
+  const what = kind === "holiday" ? `public holiday ${holidays.join(", ")}` : DAY_KIND[kind];
+  const who = othersCant.length > 0 ? ` ${joinNames(othersCant)} can't.` : "";
+  return `${formatShort(day)}, ${what}.${who}`;
+}
 
 /** Names for MEMBER_COLORS, in the same order, for screen readers. */
 export const COLOR_NAMES: readonly string[] = [

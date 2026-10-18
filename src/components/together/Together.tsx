@@ -1,15 +1,16 @@
-import { Share2, Smartphone } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Toasts, useToasts } from "~/components/planner/ui";
-import { formatInvite, formatPersonal, parseFragment } from "~/lib/together/link";
+import { formatPersonal, parseFragment } from "~/lib/together/link";
 import { GroupSession } from "~/lib/together/session";
-import { Avatar } from "./Avatar";
 import { CreateGroup } from "./CreateGroup";
 import { t } from "./copy";
 import { ErrorScreen } from "./ErrorScreen";
+import { GroupView } from "./GroupView";
 import { JoinGroup } from "./JoinGroup";
-import { ShareSheet } from "./ShareSheet";
 import { useGroup } from "./useGroup";
+
+/** Shows a toast. Owned by the island, so a toast outlives the screen that raised it. */
+export type Push = ReturnType<typeof useToasts>["push"];
 
 /**
  * Whether the hash should open a group. A fragment naming an element on the page (the skip link's
@@ -31,6 +32,8 @@ export default function Together() {
   const [session, setSession] = useState<GroupSession | null>(null);
   const [ready, setReady] = useState(false);
   const [sharing, setSharing] = useState(false);
+  // One live region for the whole island: toasts survive screens swapping underneath them.
+  const { toasts, push } = useToasts();
   const current = useRef<GroupSession | null>(null);
   /** The hash whose screen is showing: "" for the create form, null before the first one. */
   const shown = useRef<string | null>(null);
@@ -77,8 +80,22 @@ export default function Together() {
   };
 
   if (!ready) return null;
-  if (!session) return <CreateGroup onCreated={onCreated} />;
-  return <GroupScreen session={session} sharing={sharing} setSharing={setSharing} onJoined={onJoined} />;
+  return (
+    <>
+      {session ? (
+        <GroupScreen
+          session={session}
+          sharing={sharing}
+          setSharing={setSharing}
+          onJoined={onJoined}
+          push={push}
+        />
+      ) : (
+        <CreateGroup onCreated={onCreated} push={push} />
+      )}
+      <Toasts toasts={toasts} />
+    </>
+  );
 }
 
 function GroupScreen({
@@ -86,17 +103,15 @@ function GroupScreen({
   sharing,
   setSharing,
   onJoined,
+  push,
 }: {
   session: GroupSession;
   sharing: boolean;
   setSharing: (open: boolean) => void;
   onJoined: () => void;
+  push: Push;
 }) {
   const state = useGroup(session);
-  const [personalOpen, setPersonalOpen] = useState(false);
-  const inviteButton = useRef<HTMLButtonElement>(null);
-  const wasSharing = useRef(sharing);
-  const { toasts, push } = useToasts();
   const limited = state.error === "rate";
 
   // A rate limit passes on its own, so it is a toast rather than a screen.
@@ -105,83 +120,23 @@ function GroupScreen({
     if (limited) push(t.slowDown, "warn");
   }, [limited]);
 
-  // The invite sheet opens straight after creating, when the form that had focus is gone.
-  // Closing it hands focus to the Invite button instead of dropping it on the page.
-  useEffect(() => {
-    if (wasSharing.current && !sharing) inviteButton.current?.focus();
-    wasSharing.current = sharing;
-  }, [sharing]);
-
   if (state.error && state.error !== "rate") return <ErrorScreen error={state.error} />;
-  if (!state.loaded) return <Placeholder text={t.loading} />;
+  if (!state.loaded || !state.group) return <Placeholder text={t.loading} />;
   // Whoever has no record in the group yet joins it first. `me` can be known before the record is.
   if (!state.me || !state.members.has(state.me)) {
-    return (
-      <>
-        <JoinGroup session={session} onJoined={onJoined} />
-        <Toasts toasts={toasts} />
-      </>
-    );
+    return <JoinGroup session={session} onJoined={onJoined} push={push} />;
   }
-
-  const personal = session.personalLink();
-  const origin = location.origin;
-  const name = state.group?.name ?? "";
   return (
-    <div className="flex flex-col gap-5 pt-3">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <h1 className="text-[clamp(32px,4.4vw,52px)] font-extrabold leading-none">{name}</h1>
-        <div className="flex flex-wrap gap-2">
-          <button
-            ref={inviteButton}
-            type="button"
-            className="btn btn-primary"
-            onClick={() => setSharing(true)}
-          >
-            <Share2 size={16} /> {t.invite}
-          </button>
-          <button type="button" className="btn btn-soft" onClick={() => setPersonalOpen(true)}>
-            <Smartphone size={16} /> {t.personalTitle}
-          </button>
-        </div>
-      </div>
-      <div className="card p-5 sm:p-6">
-        <p className="font-semibold">{t.youreIn}</p>
-        <p className="text-sm text-muted">{t.groupSoon}</p>
-        <ul aria-label={t.members} className="mt-4 flex flex-wrap gap-x-5 gap-y-3">
-          {[...state.members].map(([id, m]) => (
-            <li key={id} className="flex items-center gap-2 font-semibold">
-              <Avatar name={m.name} color={m.color} />
-              {m.name}
-            </li>
-          ))}
-        </ul>
-      </div>
-      <Toasts toasts={toasts} />
-      {personal && (
-        <>
-          <ShareSheet
-            open={sharing}
-            onClose={() => setSharing(false)}
-            url={formatInvite(origin, personal)}
-            title={t.inviteTitle}
-            caption={t.scanToJoin(name)}
-          />
-          <ShareSheet
-            open={personalOpen}
-            onClose={() => setPersonalOpen(false)}
-            url={formatPersonal(origin, personal)}
-            title={t.personalTitle}
-            caption={t.personalCaption}
-            warning={t.personalWarning}
-          />
-        </>
-      )}
-    </div>
+    <GroupView
+      session={session}
+      state={{ ...state, group: state.group, me: state.me }}
+      sharing={sharing}
+      setSharing={setSharing}
+    />
   );
 }
 
-/** Stands in for the group screen until it exists, and while the group opens. */
+/** Shown while the group opens. */
 function Placeholder({ text }: { text: string }) {
   return (
     <div className="flex flex-col gap-2 pb-6 pt-3">

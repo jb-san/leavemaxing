@@ -16,6 +16,17 @@ export function forJoining(member: MemberRecord, months: { year: number; month: 
   return limitToMonths({ ...member, name: member.name.trim() }, months);
 }
 
+/** The fields of `after` that differ from `before`. Arrays count as equal when they hold the same items. */
+export function changes<T extends object>(before: T, after: T): Partial<T> {
+  const same = (a: unknown, b: unknown) =>
+    Array.isArray(a) && Array.isArray(b) ? a.length === b.length && a.every((x, i) => x === b[i]) : a === b;
+  const out: Partial<T> = {};
+  for (const key of Object.keys(after) as (keyof T)[]) {
+    if (!same(before[key], after[key])) out[key] = after[key];
+  }
+  return out;
+}
+
 function luminance(hex: string): number {
   const [r, g, b] = [1, 3, 5].map((i) => {
     const c = Number.parseInt(hex.slice(i, i + 2), 16) / 255;

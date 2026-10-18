@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { dayNum } from "../dates";
-import { forJoining, limitToMonths, textOn } from "./member";
+import { changes, forJoining, limitToMonths, textOn } from "./member";
 import { MEMBER_COLORS, type MemberRecord } from "./protocol";
 
 const member = (blocked: number[], customOff: number[]): MemberRecord => ({
@@ -64,5 +64,22 @@ describe("textOn", () => {
   };
   it("passes 4.5:1 on every member colour", () => {
     for (const c of MEMBER_COLORS) expect(contrast(c, textOn(c))).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+describe("changes", () => {
+  it("keeps only the fields that changed", () => {
+    const before = member([1], []);
+    expect(changes(before, before)).toEqual({});
+    expect(changes(before, { ...before, name: "Sammy", allowance: 6 })).toEqual({
+      name: "Sammy",
+      allowance: 6,
+    });
+  });
+
+  it("compares arrays by what they hold", () => {
+    const before = member([1], []);
+    expect(changes(before, { ...before, blocked: [1], workWeek: [...before.workWeek] })).toEqual({});
+    expect(changes(before, { ...before, blocked: [1, 2] })).toEqual({ blocked: [1, 2] });
   });
 });
