@@ -132,6 +132,7 @@ function GroupScreen({
       state={{ ...state, group: state.group, me: state.me }}
       sharing={sharing}
       setSharing={setSharing}
+      push={push}
     />
   );
 }

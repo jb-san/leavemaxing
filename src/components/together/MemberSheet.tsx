@@ -1,5 +1,5 @@
 import { Smartphone } from "lucide-react";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Sheet, Stepper } from "~/components/planner/ui";
 import { formatPersonal } from "~/lib/together/link";
 import { changes } from "~/lib/together/member";
@@ -7,11 +7,10 @@ import { type GroupRecord, LIMITS, type MemberRecord } from "~/lib/together/prot
 import type { GroupSession, GroupState } from "~/lib/together/session";
 import { Avatar } from "./Avatar";
 import { t } from "./copy";
+import type { Save } from "./GroupView";
 import { MemberForm } from "./MemberForm";
 import { ShareSheet } from "./ShareSheet";
-
-/** How long typing settles before it's sent. */
-const TYPING_MS = 400;
+import { useDraft } from "./useDraft";
 
 /** Your own settings, a link for your other devices, and for the admin, the trip and its members. */
 export function MemberSheet({
@@ -19,18 +18,21 @@ export function MemberSheet({
   onClose,
   session,
   state,
+  save,
 }: {
   open: boolean;
   onClose: () => void;
   session: GroupSession;
   state: GroupState;
+  /** Reports a write the session refused. */
+  save: Save;
 }) {
   const [personalOpen, setPersonalOpen] = useState(false);
   const personal = session.personalLink();
   return (
     <>
       <Sheet open={open} onClose={onClose} title={t.settings} wide>
-        <Settings session={session} state={state} onPersonal={() => setPersonalOpen(true)} />
+        <Settings session={session} state={state} save={save} onPersonal={() => setPersonalOpen(true)} />
       </Sheet>
       {personal && (
         <ShareSheet
@@ -46,66 +48,22 @@ export function MemberSheet({
   );
 }
 
-/**
- * Edits held back while someone types, sent 400 ms after the last keystroke, straight away for anything
- * else, and when the sheet goes away. Fields `hold` refuses (a blank name) wait until they're valid.
- */
-function useDraft<T extends object>(
-  write: (patch: Partial<T>) => void,
-  hold: (key: keyof T, value: unknown) => boolean,
-) {
-  const [draft, setDraft] = useState<Partial<T>>({});
-  const pending = useRef<Partial<T>>({});
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const writeRef = useRef(write);
-  writeRef.current = write;
-  const holdRef = useRef(hold);
-  holdRef.current = hold;
-
-  const flush = useCallback(() => {
-    if (timer.current !== null) clearTimeout(timer.current);
-    timer.current = null;
-    const ready: Partial<T> = {};
-    const held: Partial<T> = {};
-    for (const key of Object.keys(pending.current) as (keyof T)[]) {
-      const value = pending.current[key];
-      if (holdRef.current(key, value)) held[key] = value;
-      else ready[key] = value;
-    }
-    pending.current = held;
-    setDraft(held);
-    if (Object.keys(ready).length > 0) writeRef.current(ready);
-  }, []);
-
-  const change = (patch: Partial<T>, typing: boolean) => {
-    pending.current = { ...pending.current, ...patch };
-    setDraft(pending.current);
-    if (!typing) return flush();
-    if (timer.current !== null) clearTimeout(timer.current);
-    timer.current = setTimeout(flush, TYPING_MS);
-  };
-
-  // Closing the sheet mid-word still sends the word.
-  useEffect(() => flush, [flush]);
-  return { draft, change };
-}
-
 const blankName = (key: PropertyKey, value: unknown) =>
   key === "name" && typeof value === "string" && !value.trim();
 
 function Settings({
   session,
   state,
+  save,
   onPersonal,
 }: {
   session: GroupSession;
   state: GroupState;
+  save: Save;
   onPersonal: () => void;
 }) {
   const me = state.me ? state.members.get(state.me) : undefined;
-  const mine = useDraft<MemberRecord>((patch) => {
-    session.updateMe(patch).catch(() => {});
-  }, blankName);
+  const mine = useDraft<MemberRecord>((patch) => save(session.updateMe(patch)), blankName);
   if (!me || !state.me) return null;
 
   const value = { ...me, ...mine.draft };
@@ -125,7 +83,9 @@ function Settings({
       <button type="button" className="btn btn-soft self-start" onClick={onPersonal}>
         <Smartphone size={16} /> {t.personalTitle}
       </button>
-      {state.isAdmin && state.group && <TripSettings session={session} state={state} group={state.group} />}
+      {state.isAdmin && state.group && (
+        <TripSettings session={session} state={state} group={state.group} save={save} />
+      )}
     </>
   );
 }
@@ -134,15 +94,16 @@ function TripSettings({
   session,
   state,
   group,
+  save,
 }: {
   session: GroupSession;
   state: GroupState;
   group: GroupRecord;
+  save: Save;
 }) {
   const id = useId();
-  const trip = useDraft<GroupRecord>((patch) => {
-    session.updateGroup(patch).catch(() => {});
-  }, blankName);
+  const trip = useDraft<GroupRecord>((patch) => save(session.updateGroup(patch)), blankName);
+  const membersHeading = useRef<HTMLHeadingElement>(null);
   const value = { ...group, ...trip.draft };
   const [asking, setAsking] = useState<string | null>(null);
   const removeButtons = useRef(new Map<string, HTMLButtonElement>());
@@ -209,7 +170,7 @@ function TripSettings({
       </div>
 
       <div className="flex flex-col gap-2">
-        <h3 id={`${id}-members`} className="field-label">
+        <h3 ref={membersHeading} id={`${id}-members`} tabIndex={-1} className="field-label">
           {t.members}
         </h3>
         <ul aria-labelledby={`${id}-members`} className="flex flex-col divide-y divide-line">
@@ -229,6 +190,8 @@ function TripSettings({
                       lastAsked.current = null;
                       setAsking(null);
                       session.removeMember(memberId);
+                      // The row goes with the member, so focus moves to the list's heading.
+                      membersHeading.current?.focus();
                     }}
                   >
                     {t.confirm}

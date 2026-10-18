@@ -2,13 +2,11 @@ import { Flag } from "lucide-react";
 import { type KeyboardEvent, useId, useRef } from "react";
 import { cx, DayIcon } from "~/components/planner/ui";
 import { formatRange } from "~/lib/dates";
-import { groupHelps, voteCounts } from "~/lib/together/calendar";
+import { arrowVote, clickedVote, groupHelps, VOTES, voteCounts } from "~/lib/together/calendar";
 import type { MemberRecord, Vote } from "~/lib/together/protocol";
 import type { ScoredWindow } from "~/lib/together/score";
 import { Avatar } from "./Avatar";
 import { joinNames, t } from "./copy";
-
-const VOTES: Vote[] = ["yes", "maybe", "no"];
 
 const CHECKED: Record<Vote, string> = {
   yes: "bg-lime text-lime-ink",
@@ -57,7 +55,6 @@ export function WindowRow({
               return (
                 <li
                   key={memberId}
-                  aria-label={flagged ? t.cantDo(m.name) : undefined}
                   className={cx(
                     "flex items-center gap-1.5 rounded-full border py-1 pl-1 pr-2.5 text-[13px] font-semibold",
                     flagged ? "border-red bg-red-soft" : "border-line bg-card-2",
@@ -66,7 +63,12 @@ export function WindowRow({
                   <Avatar name={m.name} color={m.color} size={22} />
                   <span className="sr-only">{memberId === me ? t.nameYou(m.name) : m.name}:</span>
                   {t.leave(w.costs[memberId] ?? 0)}
-                  {flagged && <Flag size={13} strokeWidth={2.6} className="text-red" aria-hidden="true" />}
+                  {flagged && (
+                    <>
+                      <Flag size={13} strokeWidth={2.6} className="text-red" aria-hidden="true" />
+                      <span className="sr-only">. {t.cantDo(m.name)}</span>
+                    </>
+                  )}
                 </li>
               );
             })}
@@ -117,12 +119,11 @@ function VoteControl({
   const focusable = value ?? "yes";
 
   const onKeyDown = (e: KeyboardEvent<HTMLButtonElement>, i: number) => {
-    const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
-    if (!step) return;
+    const next = arrowVote(i, e.key);
+    if (!next) return;
     e.preventDefault();
-    const next = (i + step + VOTES.length) % VOTES.length;
-    buttons.current[next]?.focus();
-    onVote(VOTES[next] as Vote);
+    buttons.current[VOTES.indexOf(next)]?.focus();
+    onVote(next);
   };
 
   return (
@@ -141,7 +142,7 @@ function VoteControl({
           role="radio"
           aria-checked={value === v}
           tabIndex={v === focusable ? 0 : -1}
-          onClick={() => onVote(value === v ? null : v)}
+          onClick={() => onVote(clickedVote(value, v))}
           onKeyDown={(e) => onKeyDown(e, i)}
           className={cx(
             "flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-bold transition-[transform,background-color,color] duration-150 ease-[var(--ease-out)] active:scale-[0.97]",

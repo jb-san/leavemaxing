@@ -70,6 +70,7 @@ export const t = {
 
   edit: "Edit",
   settings: "Settings",
+  saveFailed: "Couldn't save that change. Try again.",
   leaveDays: (n: number) => `${n} leave ${n === 1 ? "day" : "days"}`,
   calendar: "Days you can't do",
   calendarHint: "Tap the days you can't do. Everyone in the group sees them.",

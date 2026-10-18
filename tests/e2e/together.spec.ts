@@ -1,5 +1,8 @@
 import AxeBuilder from "@axe-core/playwright";
 import { type Browser, type BrowserContext, expect, type Page, test } from "@playwright/test";
+import { parseFragment } from "../../src/lib/together/link";
+import { LIMITS, MEMBER_COLORS, type MemberRecord } from "../../src/lib/together/protocol";
+import { GroupSession } from "../../src/lib/together/session";
 
 /** Keep test runs out of the real analytics. Every context this spec uses goes through here. */
 async function blockAnalytics(context: BrowserContext): Promise<BrowserContext> {
@@ -215,7 +218,28 @@ async function twoMembers(page: Page, browser: Browser, scheme: "light" | "dark"
 
 test("both vote and agree", async ({ page, browser }) => {
   const { other, second } = await twoMembers(page, browser, "dark");
-  const first = page.getByRole("region", { name: "Suggested dates" }).getByRole("article").first();
+  const suggested = page.getByRole("region", { name: "Suggested dates" });
+
+  // Tapping your vote again clears it; arrow keys move and pick.
+  const otherDates = (await suggested.getByRole("article").nth(1).getByRole("heading").textContent()) ?? "";
+  const row = suggested.getByRole("article", { name: otherDates, exact: true });
+  const radio = (name: RegExp) => row.getByRole("radio", { name });
+  await radio(/^Maybe/).click();
+  await expect(radio(/^Maybe/)).toHaveAttribute("aria-checked", "true");
+  await radio(/^Maybe/).click();
+  await expect(row.getByRole("radio", { checked: true })).toHaveCount(0);
+  await radio(/^Works/).focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(radio(/^Maybe/)).toBeFocused();
+  await expect(radio(/^Maybe/)).toHaveAttribute("aria-checked", "true");
+  await page.keyboard.press("ArrowLeft");
+  await page.keyboard.press("ArrowLeft");
+  await expect(radio(/^Can't/)).toBeFocused();
+  await expect(radio(/^Can't/)).toHaveAttribute("aria-checked", "true");
+  await radio(/^Can't/).click();
+  await expect(row.getByRole("radio", { checked: true })).toHaveCount(0);
+
+  const first = suggested.getByRole("article").first();
   const dates = (await first.getByRole("heading").textContent()) ?? "";
   expect(dates).not.toBe("");
   await first.getByRole("radio", { name: /^Works/ }).click();
@@ -229,6 +253,10 @@ test("both vote and agree", async ({ page, browser }) => {
 
   for (const p of [page, second]) {
     await expect(p.getByRole("region", { name: "Works for everyone" })).toContainText(dates);
+    // Agreed dates move out of the suggestions rather than showing twice.
+    await expect(
+      p.getByRole("region", { name: "Suggested dates" }).getByRole("article", { name: dates, exact: true }),
+    ).toHaveCount(0);
   }
   for (const p of [page, second]) {
     await p.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
@@ -285,6 +313,54 @@ test("settings keep a name typed just before closing, and the admin can remove a
   await expect(sheet.getByRole("button", { name: "Cancel" })).toBeFocused();
   await sheet.getByRole("button", { name: "Confirm" }).click();
   await expect(second.getByText("You were removed from this group.")).toBeVisible();
+  await expect(sheet.getByRole("heading", { name: "Members" })).toBeFocused();
   await expect(sheet.getByRole("button", { name: "Remove Alex" })).toHaveCount(0);
+  await other.close();
+});
+
+test("a full group shows the full screen instead of the join form", async ({ page, browser, isMobile }) => {
+  test.skip(isMobile, "the server side is the same on every screen");
+  await createGroup(page);
+  const invite = await page.getByRole("dialog").getByLabel("Link").inputValue();
+  const link = parseFragment(new URL(invite).hash);
+  // Fill the group from Node: one session per member, like that many browsers.
+  const sessions = Array.from(
+    { length: LIMITS.members - 1 },
+    () => new GroupSession(link, { storage: null }),
+  );
+  const member = (i: number): MemberRecord => ({
+    name: `Friend ${i}`,
+    color: MEMBER_COLORS[i % MEMBER_COLORS.length] as string,
+    country: "PT",
+    region: null,
+    workWeek: [true, true, true, true, true, false, false],
+    customOff: [],
+    blocked: [],
+    allowance: 5,
+    proposals: [],
+    votes: {},
+  });
+  await Promise.all(
+    sessions.map(async (s, i) => {
+      await expect.poll(() => s.state.loaded).toBe(true);
+      await s.join(member(i));
+    }),
+  );
+  await expect(page.getByRole("list", { name: "Members" })).toContainText(`Friend ${LIMITS.members - 2}`);
+
+  const other = await newContext(browser);
+  const late = await other.newPage();
+  const events: string[] = [];
+  await late.exposeFunction("recordEvent", (name: string) => events.push(name));
+  await late.addInitScript(() => {
+    (window as unknown as { rybbit: unknown }).rybbit = {
+      event: (name: string) => (window as unknown as { recordEvent: (n: string) => void }).recordEvent(name),
+    };
+  });
+  await late.goto(invite);
+  await expect(late.getByText("This group is full (20 people).")).toBeVisible();
+  await expect(late.getByRole("button", { name: "Join group" })).toHaveCount(0);
+  expect(events).toEqual([]);
+  for (const s of sessions) s.close();
   await other.close();
 });

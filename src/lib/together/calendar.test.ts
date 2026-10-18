@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { dayNum } from "~/lib/dates";
 import {
+  arrowVote,
   bandEdges,
   bandsOf,
   blockedBy,
+  clickedVote,
   groupHelps,
   memberDayKind,
   overflow,
@@ -141,5 +143,22 @@ describe("yearsOf", () => {
         { year: 2027, month: 11 },
       ]),
     ).toEqual([2027, 2028]);
+  });
+});
+
+describe("vote control", () => {
+  it("picks the tapped vote, and clears it when it was already yours", () => {
+    expect(clickedVote(undefined, "yes")).toBe("yes");
+    expect(clickedVote("maybe", "yes")).toBe("yes");
+    expect(clickedVote("yes", "yes")).toBe(null);
+  });
+
+  it("moves with the arrow keys and wraps at the ends", () => {
+    expect(arrowVote(0, "ArrowRight")).toBe("maybe");
+    expect(arrowVote(1, "ArrowDown")).toBe("no");
+    expect(arrowVote(2, "ArrowRight")).toBe("yes");
+    expect(arrowVote(0, "ArrowLeft")).toBe("no");
+    expect(arrowVote(2, "ArrowUp")).toBe("maybe");
+    expect(arrowVote(0, "Enter")).toBe(null);
   });
 });

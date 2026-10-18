@@ -63,9 +63,14 @@ export function MonthCarousel({
     const delta = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }[e.key];
     const current = (e.target as HTMLElement).dataset.day;
     if (!delta || current === undefined) return;
-    const target = scroller.current?.querySelector<HTMLButtonElement>(
-      `[data-day="${Number(current) + delta}"]`,
-    );
+    const at = (day: number) => scroller.current?.querySelector<HTMLButtonElement>(`[data-day="${day}"]`);
+    // Disabled days (past ones, in Together) are stepped over in the same direction.
+    let day = Number(current) + delta;
+    let target = at(day);
+    while (target?.disabled) {
+      day += delta;
+      target = at(day);
+    }
     if (target) {
       e.preventDefault();
       target.focus();

@@ -9,12 +9,14 @@ import { formatInvite } from "~/lib/together/link";
 import { limitToMonths } from "~/lib/together/member";
 import type { GroupRecord, MemberRecord, Vote } from "~/lib/together/protocol";
 import { type Scored, type ScoredWindow, scoreWindows } from "~/lib/together/score";
+import { sections } from "~/lib/together/sections";
 import type { GroupSession, GroupState } from "~/lib/together/session";
 import { Avatar } from "./Avatar";
 import { monthsPhrase, t } from "./copy";
 import { GroupCalendar } from "./GroupCalendar";
 import { MemberSheet } from "./MemberSheet";
 import { ShareSheet } from "./ShareSheet";
+import type { Push } from "./Together";
 import { WindowRow } from "./WindowRow";
 
 /** Avatars shown in the header before the rest become "+n". */
@@ -66,16 +68,21 @@ function useStable<T>(items: T[]): T[] {
   return ref.current;
 }
 
+/** Hands a write to the session and reports it with a toast if the session refuses it. */
+export type Save = (write: Promise<void>) => void;
+
 export function GroupView({
   session,
   state,
   sharing,
   setSharing,
+  push,
 }: {
   session: GroupSession;
   state: GroupState & { group: GroupRecord; me: string };
   sharing: boolean;
   setSharing: (open: boolean) => void;
+  push: Push;
 }) {
   const { group, members, me: meId } = state;
   const me = members.get(meId) as MemberRecord;
@@ -110,23 +117,33 @@ export function GroupView({
     return out;
   }, [entries, files, years]);
 
-  // Held over while a new member's holidays load, so the lists don't flash empty.
-  const last = useRef<Scored | null>(null);
   // biome-ignore lint/correctness/useExhaustiveDependencies: `holidays` changes whenever `members` does
-  const scored = useMemo(() => {
-    if (!ready) return last.current;
+  const fresh = useMemo(() => {
+    if (!ready) return null;
     const list = [...members].map(([id, record]) => ({ id, record, holidays: holidays.get(id) ?? [] }));
     return scoreWindows(group, list, today);
   }, [group, holidays, today, ready]);
-  last.current = scored;
+  // The last result stays up while a new member's holidays load, so the lists don't flash empty.
+  const [held, setHeld] = useState<Scored | null>(null);
+  useEffect(() => {
+    if (fresh) setHeld(fresh);
+  }, [fresh]);
+  const scored = fresh ?? held;
+  const shown = scored ? sections(scored) : null;
   const myHolidays = useMemo(() => holidayMap(holidays.get(meId) ?? []), [holidays, meId]);
 
+  const save: Save = (write) => {
+    write.catch(() => {
+      // A rate limit has its own toast, from the session's state.
+      if (session.state.error !== "rate") push(t.saveFailed, "warn");
+    });
+  };
   const toggle = (day: DayNum) => {
     const blocked = limitToMonths({ ...me, blocked: toggleDay(me.blocked, day) }, group.months).blocked;
-    session.updateMe({ blocked }).catch(() => {});
+    save(session.updateMe({ blocked }));
   };
   const vote = (w: ScoredWindow) => (v: Vote | null) => {
-    session.updateMe({ votes: withVote(me.votes, w.key, v) }).catch(() => {});
+    save(session.updateMe({ votes: withVote(me.votes, w.key, v) }));
   };
   const rows = (windows: ScoredWindow[]) =>
     windows.map((w) => (
@@ -200,19 +217,22 @@ export function GroupView({
         onToggle={toggle}
       />
 
-      {scored && scored.agreed.length > 0 && (
-        <Windows title={t.worksForEveryone}>{rows(scored.agreed)}</Windows>
-      )}
-      {scored && scored.proposals.length > 0 && (
-        <Windows title={t.proposed}>{rows(scored.proposals)}</Windows>
-      )}
-      {scored && (
-        <Windows title={t.suggested} empty={t.noWindows}>
-          {rows(scored.ranked)}
+      {shown && shown.agreed.length > 0 && <Windows title={t.worksForEveryone}>{rows(shown.agreed)}</Windows>}
+      {shown && shown.proposals.length > 0 && <Windows title={t.proposed}>{rows(shown.proposals)}</Windows>}
+      {shown?.empty && (
+        <Windows title={t.suggested}>
+          <p className="card p-5 font-semibold">{t.noWindows}</p>
         </Windows>
       )}
+      {shown && shown.suggested.length > 0 && <Windows title={t.suggested}>{rows(shown.suggested)}</Windows>}
 
-      <MemberSheet open={editing} onClose={() => setEditing(false)} session={session} state={state} />
+      <MemberSheet
+        open={editing}
+        onClose={() => setEditing(false)}
+        session={session}
+        state={state}
+        save={save}
+      />
       {personal && (
         <ShareSheet
           open={sharing}
@@ -226,18 +246,15 @@ export function GroupView({
   );
 }
 
-function Windows({ title, empty, children }: { title: string; empty?: string; children: React.ReactNode[] }) {
+function Windows({ title, children }: { title: string; children: React.ReactNode }) {
   const id = useId();
+  const list = Array.isArray(children);
   return (
     <section aria-labelledby={id} className="flex flex-col gap-3">
       <h2 id={id} className="text-2xl font-extrabold">
         {title}
       </h2>
-      {children.length > 0 ? (
-        <ul className="flex flex-col gap-3">{children}</ul>
-      ) : (
-        <p className="card p-5 font-semibold">{empty}</p>
-      )}
+      {list ? <ul className="flex flex-col gap-3">{children}</ul> : children}
     </section>
   );
 }

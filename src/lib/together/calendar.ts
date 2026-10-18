@@ -100,3 +100,18 @@ export function withVote(
 export function yearsOf(months: readonly { year: number; month: number }[]): number[] {
   return [...new Set(months.map((m) => m.year))].sort((a, b) => a - b);
 }
+
+/** The vote control's options, in order. */
+export const VOTES: readonly Vote[] = ["yes", "maybe", "no"];
+
+/** Tapping a vote picks it, or clears it when it's already yours. */
+export function clickedVote(current: Vote | undefined, clicked: Vote): Vote | null {
+  return current === clicked ? null : clicked;
+}
+
+/** The vote an arrow key moves to from option `index`, wrapping at the ends. Null for other keys. */
+export function arrowVote(index: number, key: string): Vote | null {
+  const step = ({ ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 } as Record<string, number>)[key];
+  if (!step) return null;
+  return VOTES[(index + step + VOTES.length) % VOTES.length] ?? null;
+}
