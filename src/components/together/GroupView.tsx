@@ -240,12 +240,15 @@ export function GroupView({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-col gap-2">
           <h1 className="text-[clamp(32px,4.4vw,52px)] font-extrabold leading-none">{group.name}</h1>
-          <p className="text-muted">
-            {t.tripSentence(monthsPhrase(group.months), group.minLength, group.maxLength)}
-          </p>
-          <p aria-live="polite" className="min-h-5 text-sm font-semibold text-muted">
-            {saving}
-          </p>
+          {/* The save line takes no room while it's empty, so the header doesn't move for it. */}
+          <div>
+            <p className="text-muted">
+              {t.tripSentence(monthsPhrase(group.months), group.minLength, group.maxLength)}
+            </p>
+            <p aria-live="polite" className="text-sm font-semibold text-muted [&:not(:empty)]:mt-1">
+              {saving}
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <ul aria-label={t.members} className="flex items-center -space-x-2">
