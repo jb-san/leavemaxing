@@ -126,6 +126,7 @@ export const svSE: Copy = {
     share: "Dela",
     addCalendar: "Lägg i kalendern",
     savePlan: "Spara plan",
+    planTogether: "Planera med vänner",
     usedOf: "{used} av {budget} använda",
     now: "nu",
     tomorrow: "i morgon",

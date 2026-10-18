@@ -129,6 +129,7 @@ export const ukUA: Copy = {
     share: "Поділитись",
     addCalendar: "У календар",
     savePlan: "Зберегти план",
+    planTogether: "Спланувати з друзями",
     usedOf: "{used} із {budget} використано",
     now: "зараз",
     tomorrow: "завтра",

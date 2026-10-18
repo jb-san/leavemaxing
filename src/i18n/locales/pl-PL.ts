@@ -130,6 +130,7 @@ export const plPL: Copy = {
     share: "Udostępnij",
     addCalendar: "Do kalendarza",
     savePlan: "Zapisz plan",
+    planTogether: "Zaplanuj z przyjaciółmi",
     usedOf: "{used} z {budget} wykorzystane",
     now: "teraz",
     tomorrow: "jutro",

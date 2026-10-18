@@ -129,6 +129,7 @@ export const esES: Copy = {
     share: "Compartir",
     addCalendar: "Al calendario",
     savePlan: "Guardar plan",
+    planTogether: "Planear con amigos",
     usedOf: "{used} de {budget} usados",
     now: "ahora",
     tomorrow: "mañana",

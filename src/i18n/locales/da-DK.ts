@@ -127,6 +127,7 @@ export const daDK: Copy = {
     share: "Del",
     addCalendar: "Læg i kalenderen",
     savePlan: "Gem plan",
+    planTogether: "Planlæg med venner",
     usedOf: "{used} af {budget} brugt",
     now: "nu",
     tomorrow: "i morgen",

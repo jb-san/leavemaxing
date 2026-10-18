@@ -128,6 +128,7 @@ export const itIT: Copy = {
     share: "Condividi",
     addCalendar: "Nel calendario",
     savePlan: "Salva piano",
+    planTogether: "Pianifica con amici",
     usedOf: "{used} di {budget} usati",
     now: "ora",
     tomorrow: "domani",

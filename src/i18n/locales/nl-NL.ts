@@ -131,6 +131,7 @@ export const nlNL: Copy = {
     share: "Delen",
     addCalendar: "In de agenda",
     savePlan: "Plan opslaan",
+    planTogether: "Plan met vrienden",
     usedOf: "{used} van {budget} gebruikt",
     now: "nu",
     tomorrow: "morgen",

@@ -129,6 +129,7 @@ export interface Copy {
     share: string;
     addCalendar: string;
     savePlan: string;
+    planTogether: string;
     usedOf: string;
     now: string;
     tomorrow: string;

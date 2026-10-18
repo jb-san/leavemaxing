@@ -1,4 +1,4 @@
-import { Bookmark, CalendarPlus, Share2, TriangleAlert } from "lucide-react";
+import { Bookmark, CalendarPlus, Share2, TriangleAlert, Users } from "lucide-react";
 import { Mascot, moodFor } from "~/components/Mascot";
 import { useI18n } from "~/i18n/context";
 import { translateWarning } from "~/i18n/warnings";
@@ -132,6 +132,9 @@ export function HeroCard({
           <button type="button" className="btn btn-ghost" onClick={onSave}>
             <Bookmark size={16} /> {p.savePlan}
           </button>
+          <a href="/together/" className="btn btn-ghost">
+            <Users size={16} /> {p.planTogether}
+          </a>
         </div>
       </div>
     </section>

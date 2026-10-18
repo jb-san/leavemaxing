@@ -129,6 +129,7 @@ export const deDE: Copy = {
     share: "Teilen",
     addCalendar: "In den Kalender",
     savePlan: "Plan speichern",
+    planTogether: "Mit Freunden planen",
     usedOf: "{used} von {budget} verplant",
     now: "jetzt",
     tomorrow: "morgen",

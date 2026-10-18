@@ -129,6 +129,7 @@ export const ptPT: Copy = {
     share: "Partilhar",
     addCalendar: "No calendário",
     savePlan: "Guardar plano",
+    planTogether: "Planear com amigos",
     usedOf: "{used} de {budget} usados",
     now: "agora",
     tomorrow: "amanhã",

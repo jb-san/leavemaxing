@@ -130,6 +130,7 @@ export const fiFI: Copy = {
     share: "Jaa",
     addCalendar: "Kalenteriin",
     savePlan: "Tallenna",
+    planTogether: "Suunnittele yhdessä",
     usedOf: "{used} / {budget} käytetty",
     now: "nyt",
     tomorrow: "huomenna",

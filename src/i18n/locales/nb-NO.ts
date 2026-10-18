@@ -132,6 +132,7 @@ export const nbNO: Copy = {
     share: "Del",
     addCalendar: "Legg i kalenderen",
     savePlan: "Lagre plan",
+    planTogether: "Planlegg med venner",
     usedOf: "{used} av {budget} brukt",
     now: "nå",
     tomorrow: "i morgen",

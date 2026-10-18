@@ -128,6 +128,7 @@ export const en: Copy = {
     share: "Share",
     addCalendar: "Add to calendar",
     savePlan: "Save plan",
+    planTogether: "Plan with friends",
     usedOf: "{used} of {budget} used",
     now: "now",
     tomorrow: "tomorrow",

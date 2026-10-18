@@ -128,6 +128,7 @@ export const csCZ: Copy = {
     share: "Sdílet",
     addCalendar: "Do kalendáře",
     savePlan: "Uložit plán",
+    planTogether: "Plánovat s přáteli",
     usedOf: "{used} z {budget} využito",
     now: "teď",
     tomorrow: "zítra",
