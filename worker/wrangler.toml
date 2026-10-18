@@ -1,6 +1,8 @@
 name = "leavemaxxing-together"
 main = "src/index.ts"
 compatibility_date = "2026-10-01"
+# Only reachable through the site's own route, not a separate workers.dev address.
+workers_dev = false
 routes = [{ pattern = "leavemaxxing.com/api/together/*", zone_name = "leavemaxxing.com" }]
 
 [[durable_objects.bindings]]
