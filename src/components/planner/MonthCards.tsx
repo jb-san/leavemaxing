@@ -15,12 +15,15 @@ export function MonthCarousel({
   today,
   label,
   badge,
+  columns = "sm:grid-cols-2 xl:grid-cols-3",
   children,
 }: {
   months: Month[];
   today: DayNum;
   /** The section's accessible name. */
   label: string;
+  /** Grid columns from the `sm` breakpoint up, for a narrower container such as a sheet. */
+  columns?: string;
   /** Shown next to the month name in the phone header. */
   badge?: (m: Month) => ReactNode;
   children: (m: Month) => ReactNode;
@@ -123,7 +126,10 @@ export function MonthCarousel({
             setIndex(i);
           }
         }}
-        className="no-scrollbar -mx-1 flex snap-x snap-mandatory overflow-x-auto px-1 sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 xl:grid-cols-3"
+        className={cx(
+          "no-scrollbar -mx-1 flex snap-x snap-mandatory overflow-x-auto px-1 sm:mx-0 sm:grid sm:snap-none sm:gap-4 sm:overflow-visible sm:px-0",
+          columns,
+        )}
       >
         {months.map((m) => (
           <div key={`${m.year}-${m.month}`} className="w-full shrink-0 snap-center px-0.5 sm:w-auto sm:px-0">

@@ -439,6 +439,29 @@
   .day[data-br="agreed"]::before {
     background: var(--lime);
   }
+  /* Together: proposed dates, a dashed outline that sits over any band fill and under the marks. */
+  .day[data-pr]::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -3px;
+    height: 34px;
+    border-block: 2px dashed var(--lime-strong);
+    pointer-events: none;
+  }
+  .day[data-pr-s]::after {
+    left: 2px;
+    border-left: 2px dashed var(--lime-strong);
+    border-top-left-radius: 17px;
+    border-bottom-left-radius: 17px;
+  }
+  .day[data-pr-e]::after {
+    right: 2px;
+    border-right: 2px dashed var(--lime-strong);
+    border-top-right-radius: 17px;
+    border-bottom-right-radius: 17px;
+  }
   .day:disabled {
     cursor: default;
   }

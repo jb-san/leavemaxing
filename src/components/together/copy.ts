@@ -80,6 +80,8 @@ export const t = {
   legendYouCant: "You can't",
   legendOthersCant: "Others can't",
   legendBreak: "Suggested break",
+  legendProposed: "Proposed",
+  proposerYou: "you",
   worksForEveryone: "Works for everyone",
   proposed: "Proposed",
   suggested: "Suggested dates",
@@ -92,6 +94,17 @@ export const t = {
   yourVote: "Your vote",
   votes: { yes: "Works", maybe: "Maybe", no: "Can't" },
   voteCount: (n: number) => `${n} ${n === 1 ? "vote" : "votes"}`,
+  proposeDates: "Propose dates",
+  proposeMonths: "Dates to propose",
+  proposeFirst: "Tap the first day of the trip, then the last.",
+  proposeLast: "Now tap the last day.",
+  proposeCost: (length: number, leave: number) =>
+    `${length} ${length === 1 ? "day" : "days"}, costs you ${leave} leave`,
+  proposeClamped: (max: number, end: DayNum) =>
+    `Trips are ${max} days at most, so it ends on ${formatShort(end)}.`,
+  proposedBy: "Proposed by",
+  withdraw: "Withdraw",
+  addToPlan: "Add to my plan",
   theTrip: "The trip",
   remove: "Remove",
   removeAsk: (name: string) => `Remove ${name}?`,
@@ -113,18 +126,20 @@ const DAY_KIND: Record<Exclude<MemberDayKind, "holiday">, string> = {
 };
 
 /**
- * A shared calendar day for screen readers: the date, what it is for you, then who else can't do it.
- * "Sat 9 Jan, weekend. Sam and Alex can't."
+ * A shared calendar day for screen readers: the date, what it is for you, who else can't do it,
+ * and who proposed dates that cover it. "Sat 9 Jan, weekend. Sam and Alex can't. Proposed by Kim."
  */
 export function dayLabel(
   day: DayNum,
   kind: MemberDayKind,
   holidays: readonly string[],
   othersCant: readonly string[],
+  proposedBy: readonly string[] = [],
 ): string {
   const what = kind === "holiday" ? `public holiday ${holidays.join(", ")}` : DAY_KIND[kind];
   const who = othersCant.length > 0 ? ` ${joinNames(othersCant)} can't.` : "";
-  return `${formatShort(day)}, ${what}.${who}`;
+  const proposed = proposedBy.length > 0 ? ` Proposed by ${joinNames(proposedBy)}.` : "";
+  return `${formatShort(day)}, ${what}.${who}${proposed}`;
 }
 
 /** Names for MEMBER_COLORS, in the same order, for screen readers. */

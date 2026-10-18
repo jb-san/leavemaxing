@@ -60,6 +60,32 @@ export function bandEdges(bands: ReadonlyMap<DayNum, Band>, day: DayNum): { star
   return { start: bands.get(day - 1) !== band, end: bands.get(day + 1) !== band };
 }
 
+/**
+ * For each day inside an open proposal, who proposed it, in order and once each. A proposal everyone
+ * agreed on is left out: it is drawn as agreed instead.
+ */
+export function proposedDays(
+  proposals: readonly { key: WindowKey; start: DayNum; end: DayNum; proposedBy: readonly string[] }[],
+  agreed: readonly { key: WindowKey }[],
+): Map<DayNum, string[]> {
+  const done = new Set(agreed.map((w) => w.key));
+  const out = new Map<DayNum, string[]>();
+  for (const w of proposals) {
+    if (done.has(w.key)) continue;
+    for (let d = w.start; d <= w.end; d++) {
+      const ids = out.get(d) ?? [];
+      for (const id of w.proposedBy) if (!ids.includes(id)) ids.push(id);
+      out.set(d, ids);
+    }
+  }
+  return out;
+}
+
+/** Whether a day in a set of days starts or ends its run of consecutive days. */
+export function runEdges(days: ReadonlyMap<DayNum, unknown>, day: DayNum): { start: boolean; end: boolean } {
+  return { start: !days.has(day - 1), end: !days.has(day + 1) };
+}
+
 /** Holidays that save leave in a window, one per day and name, with every member it helps. */
 export function groupHelps(helps: readonly Helper[]): { day: DayNum; name: string; memberIds: string[] }[] {
   const out: { day: DayNum; name: string; memberIds: string[] }[] = [];

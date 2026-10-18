@@ -1,23 +1,28 @@
-import { Share2, SlidersHorizontal } from "lucide-react";
+import { CalendarRange, Share2, SlidersHorizontal } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { placeName } from "~/data";
 import { type DayNum, localToday } from "~/lib/dates";
 import { type HolidayFile, holidayMap, loadHolidayFile, resolveHolidays } from "~/lib/holidays";
 import type { HolidayDay } from "~/lib/planner/types";
+import { shareUrl } from "~/lib/settings";
+import { loadLast } from "~/lib/storage";
 import { toggleDay, withVote, yearsOf } from "~/lib/together/calendar";
 import { formatInvite } from "~/lib/together/link";
 import { limitToMonths } from "~/lib/together/member";
-import type { GroupRecord, MemberRecord, Vote } from "~/lib/together/protocol";
-import { type Scored, type ScoredWindow, scoreWindows } from "~/lib/together/score";
+import { withoutProposal, withProposal } from "~/lib/together/propose";
+import type { GroupRecord, MemberRecord, Vote, WindowKey } from "~/lib/together/protocol";
+import { type Scored, type ScoredWindow, type ScoreMember, scoreWindows } from "~/lib/together/score";
 import { sections } from "~/lib/together/sections";
 import type { GroupSession, GroupState } from "~/lib/together/session";
+import { planSettingsFor } from "~/lib/together/toPlan";
 import { Avatar } from "./Avatar";
 import { monthsPhrase, t } from "./copy";
 import { GroupCalendar } from "./GroupCalendar";
 import { MemberSheet } from "./MemberSheet";
+import { ProposeSheet } from "./ProposeSheet";
 import { ShareSheet } from "./ShareSheet";
 import type { Push } from "./Together";
-import { WindowRow } from "./WindowRow";
+import { type RowKind, WindowRow } from "./WindowRow";
 
 /** Avatars shown in the header before the rest become "+n". */
 const MAX_AVATARS = 6;
@@ -88,8 +93,11 @@ export function GroupView({
   const me = members.get(meId) as MemberRecord;
   const [today] = useState<DayNum>(() => localToday());
   const [editing, setEditing] = useState(false);
+  const [proposing, setProposing] = useState(false);
   const inviteButton = useRef<HTMLButtonElement>(null);
+  const proposeButton = useRef<HTMLButtonElement>(null);
   const wasSharing = useRef(sharing);
+  const wasProposing = useRef(proposing);
 
   // The invite sheet opens straight after creating, when the form that had focus is gone.
   // Closing it hands focus to the Invite button instead of dropping it on the page.
@@ -97,6 +105,12 @@ export function GroupView({
     if (wasSharing.current && !sharing) inviteButton.current?.focus();
     wasSharing.current = sharing;
   }, [sharing]);
+
+  // Once the sheet has closed, focus goes back to the button that opened it.
+  useEffect(() => {
+    if (wasProposing.current && !proposing) proposeButton.current?.focus();
+    wasProposing.current = proposing;
+  }, [proposing]);
 
   const years = useMemo(() => yearsOf(group.months), [group.months]);
   const { files, ready } = useHolidays(members, years);
@@ -131,6 +145,7 @@ export function GroupView({
   const scored = fresh ?? held;
   const shown = scored ? sections(scored) : null;
   const myHolidays = useMemo(() => holidayMap(holidays.get(meId) ?? []), [holidays, meId]);
+  const meScored: ScoreMember = { id: meId, record: me, holidays: holidays.get(meId) ?? [] };
 
   const save: Save = (write) => {
     write.catch(() => {
@@ -145,9 +160,29 @@ export function GroupView({
   const vote = (w: ScoredWindow) => (v: Vote | null) => {
     save(session.updateMe({ votes: withVote(me.votes, w.key, v) }));
   };
-  const rows = (windows: ScoredWindow[]) =>
+  const propose = (key: WindowKey) => {
+    save(session.updateMe({ proposals: withProposal(me.proposals, key) }));
+    setProposing(false);
+  };
+  const withdraw = (w: ScoredWindow) => () => {
+    save(session.updateMe({ proposals: withoutProposal(me.proposals, w.key) }));
+  };
+  const addToPlan = (w: ScoredWindow) => () => {
+    location.assign(shareUrl(planSettingsFor(meScored, w, loadLast()), location.origin));
+  };
+  const rows = (windows: ScoredWindow[], kind: RowKind) =>
     windows.map((w) => (
-      <WindowRow key={w.key} w={w} members={members} me={meId} myVote={me.votes[w.key]} onVote={vote(w)} />
+      <WindowRow
+        key={w.key}
+        w={w}
+        kind={kind}
+        members={members}
+        me={meId}
+        myVote={me.votes[w.key]}
+        onVote={vote(w)}
+        onWithdraw={withdraw(w)}
+        onAddToPlan={addToPlan(w)}
+      />
     ));
 
   const personal = session.personalLink();
@@ -213,19 +248,46 @@ export function GroupView({
         holidays={myHolidays}
         ranked={scored?.ranked ?? []}
         agreed={scored?.agreed ?? []}
+        proposals={scored?.proposals ?? []}
         today={today}
         onToggle={toggle}
+        action={
+          <button
+            ref={proposeButton}
+            type="button"
+            className="btn btn-soft shrink-0"
+            onClick={() => setProposing(true)}
+          >
+            <CalendarRange size={16} /> {t.proposeDates}
+          </button>
+        }
       />
 
-      {shown && shown.agreed.length > 0 && <Windows title={t.worksForEveryone}>{rows(shown.agreed)}</Windows>}
-      {shown && shown.proposals.length > 0 && <Windows title={t.proposed}>{rows(shown.proposals)}</Windows>}
+      {shown && shown.agreed.length > 0 && (
+        <Windows title={t.worksForEveryone}>{rows(shown.agreed, "agreed")}</Windows>
+      )}
+      {shown && shown.proposals.length > 0 && (
+        <Windows title={t.proposed}>{rows(shown.proposals, "proposed")}</Windows>
+      )}
       {shown?.empty && (
         <Windows title={t.suggested}>
           <p className="card p-5 font-semibold">{t.noWindows}</p>
         </Windows>
       )}
-      {shown && shown.suggested.length > 0 && <Windows title={t.suggested}>{rows(shown.suggested)}</Windows>}
+      {shown && shown.suggested.length > 0 && (
+        <Windows title={t.suggested}>{rows(shown.suggested, "suggested")}</Windows>
+      )}
 
+      <ProposeSheet
+        open={proposing}
+        onClose={() => setProposing(false)}
+        months={group.months}
+        members={members}
+        me={meScored}
+        holidays={myHolidays}
+        today={today}
+        onPropose={propose}
+      />
       <MemberSheet
         open={editing}
         onClose={() => setEditing(false)}

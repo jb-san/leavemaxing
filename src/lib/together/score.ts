@@ -66,10 +66,15 @@ function daysOf(m: ScoreMember): Days {
   };
 }
 
+/** In the member's work week and not a public holiday or a day off of their own. Ignores blocked days. */
+function isWorking(m: Days, day: DayNum): boolean {
+  return Boolean(m.workWeek[weekdayMon0(day)]) && !m.holidays.has(day) && !m.off.has(day);
+}
+
 /** A blocked day is never off, whatever the weekday or holiday. */
 function isOff(m: Days, day: DayNum): boolean {
   if (m.blocked.has(day)) return false;
-  return !m.workWeek[weekdayMon0(day)] || m.holidays.has(day) || m.off.has(day);
+  return !isWorking(m, day);
 }
 
 function isCharged(m: Days, day: DayNum): boolean {
@@ -85,6 +90,17 @@ function cost(m: Days, start: DayNum, end: DayNum): number {
 /** Leave days a member spends on a window. */
 export function costFor(m: ScoreMember, start: DayNum, end: DayNum): number {
   return cost(daysOf(m), start, end);
+}
+
+/**
+ * The member's working days from `start` to `end`: the days a plan would take as leave. Unlike
+ * `costFor`, days they can't do count as working days like any other.
+ */
+export function workingDays(m: ScoreMember, start: DayNum, end: DayNum): DayNum[] {
+  const days = daysOf(m);
+  const out: DayNum[] = [];
+  for (let day = start; day <= end; day++) if (isWorking(days, day)) out.push(day);
+  return out;
 }
 
 function formula(length: number, costs: number[]): number {

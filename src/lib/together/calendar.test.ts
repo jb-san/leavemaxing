@@ -9,6 +9,8 @@ import {
   groupHelps,
   memberDayKind,
   overflow,
+  proposedDays,
+  runEdges,
   toggleDay,
   voteCounts,
   withVote,
@@ -160,5 +162,43 @@ describe("vote control", () => {
     expect(arrowVote(0, "ArrowLeft")).toBe("no");
     expect(arrowVote(2, "ArrowUp")).toBe("maybe");
     expect(arrowVote(0, "Enter")).toBe(null);
+  });
+});
+
+describe("proposedDays and runEdges", () => {
+  const d = (day: number) => dayNum(2027, 5, day);
+  const w = (a: number, b: number, proposedBy: string[]) => ({
+    key: `2027-05-${String(a).padStart(2, "0")}..2027-05-${String(b).padStart(2, "0")}` as const,
+    start: d(a),
+    end: d(b),
+    proposedBy,
+  });
+
+  it("maps each day inside a proposal to who proposed it", () => {
+    const days = proposedDays([w(10, 12, ["b"])], []);
+    expect([...days.keys()]).toEqual([d(10), d(11), d(12)]);
+    expect(days.get(d(11))).toEqual(["b"]);
+  });
+
+  it("joins the proposers of overlapping proposals, once each, in order", () => {
+    const days = proposedDays([w(10, 12, ["b"]), w(12, 14, ["a", "b"])], []);
+    expect(days.get(d(10))).toEqual(["b"]);
+    expect(days.get(d(12))).toEqual(["b", "a"]);
+    expect(days.get(d(14))).toEqual(["a", "b"]);
+  });
+
+  it("leaves out a proposal everyone agreed on, which is drawn as agreed", () => {
+    const agreed = w(10, 12, ["b"]);
+    const days = proposedDays([agreed, w(12, 13, ["a"])], [agreed]);
+    expect([...days.keys()]).toEqual([d(12), d(13)]);
+    expect(days.get(d(12))).toEqual(["a"]);
+  });
+
+  it("finds where a run of proposed days starts and ends", () => {
+    const days = proposedDays([w(10, 12, ["b"]), w(13, 14, ["a"])], []);
+    expect(runEdges(days, d(10))).toEqual({ start: true, end: false });
+    expect(runEdges(days, d(12))).toEqual({ start: false, end: false });
+    expect(runEdges(days, d(14))).toEqual({ start: false, end: true });
+    expect(runEdges(days, d(11))).toEqual({ start: false, end: false });
   });
 });

@@ -1,4 +1,4 @@
-import { Flag } from "lucide-react";
+import { CalendarPlus, Flag } from "lucide-react";
 import { type KeyboardEvent, useId, useRef } from "react";
 import { cx, DayIcon } from "~/components/planner/ui";
 import { formatRange } from "~/lib/dates";
@@ -14,22 +14,32 @@ const CHECKED: Record<Vote, string> = {
   no: "bg-red-soft text-ink ring-1 ring-inset ring-red",
 };
 
+/** Which list a row is in, which decides what else it offers. */
+export type RowKind = "agreed" | "proposed" | "suggested";
+
 /**
  * One window of dates: how long, what each member spends on it, which holidays help, and your vote.
- * `onVote(null)` clears your vote.
+ * `onVote(null)` clears your vote. A proposed row says who proposed it, and you can withdraw your own
+ * proposal. An agreed row can go into your plan.
  */
 export function WindowRow({
   w,
+  kind,
   members,
   me,
   myVote,
   onVote,
+  onWithdraw,
+  onAddToPlan,
 }: {
   w: ScoredWindow;
+  kind: RowKind;
   members: Map<string, MemberRecord>;
   me: string;
   myVote: Vote | undefined;
   onVote: (vote: Vote | null) => void;
+  onWithdraw: () => void;
+  onAddToPlan: () => void;
 }) {
   const id = useId();
   const counts = voteCounts(members.values(), w.key);
@@ -98,8 +108,43 @@ export function WindowRow({
               ))}
             </ul>
           )}
+          {kind === "proposed" && w.proposedBy.length > 0 && (
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[13px] font-semibold text-muted">
+              <span id={`${id}-by`}>{t.proposedBy}</span>
+              <ul aria-labelledby={`${id}-by`} className="flex -space-x-1">
+                {w.proposedBy.map((memberId) => (
+                  <li key={memberId} className="rounded-full ring-2 ring-card">
+                    <Avatar
+                      name={name(memberId)}
+                      color={members.get(memberId)?.color ?? "#888888"}
+                      size={22}
+                    />
+                    <span className="sr-only">
+                      {memberId === me ? t.nameYou(name(memberId)) : name(memberId)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              {w.proposedBy.includes(me) && (
+                <button
+                  type="button"
+                  onClick={onWithdraw}
+                  className="ml-1 rounded-full border border-line bg-card-2 px-3 py-1 font-bold text-ink transition-[transform,border-color] duration-150 ease-[var(--ease-out)] hover:border-red active:scale-[0.97]"
+                >
+                  {t.withdraw}
+                </button>
+              )}
+            </div>
+          )}
         </div>
-        <VoteControl value={myVote} counts={counts} onVote={onVote} />
+        <div className="flex shrink-0 flex-wrap items-center gap-2 self-start md:flex-nowrap md:self-center">
+          <VoteControl value={myVote} counts={counts} onVote={onVote} />
+          {kind === "agreed" && (
+            <button type="button" onClick={onAddToPlan} className="btn btn-primary h-[46px]">
+              <CalendarPlus size={16} strokeWidth={2.4} /> {t.addToPlan}
+            </button>
+          )}
+        </div>
       </article>
     </li>
   );
@@ -130,7 +175,7 @@ function VoteControl({
     <div
       role="radiogroup"
       aria-label={t.yourVote}
-      className="flex shrink-0 self-start rounded-full border border-line bg-card-2 p-1 md:self-center"
+      className="flex shrink-0 rounded-full border border-line bg-card-2 p-1"
     >
       {VOTES.map((v, i) => (
         <button

@@ -364,3 +364,108 @@ test("a full group shows the full screen instead of the join form", async ({ pag
   for (const s of sessions) s.close();
   await other.close();
 });
+
+/** "Sun 8 Nov": how a day's accessible name starts. */
+function dayName(m: { year: number; month: number }, day: number) {
+  return `${WEEKDAYS[new Date(Date.UTC(m.year, m.month - 1, day)).getUTCDay()]} ${day} ${SHORT[m.month - 1]}`;
+}
+
+/** Opens "Propose dates" and taps the first and last day of a range in the given month. */
+async function pickRange(
+  p: Page,
+  isMobile: boolean,
+  m: { year: number; month: number },
+  a: number,
+  b: number,
+) {
+  await p.getByRole("button", { name: "Propose dates" }).click();
+  const sheet = p.getByRole("dialog", { name: "Propose dates" });
+  await expect(sheet).toBeVisible();
+  // Phones show one month at a time, starting with this one.
+  if (isMobile && m.month !== monthFromNow(0).month)
+    await sheet.getByRole("button", { name: "Next month" }).click();
+  await sheet.getByRole("button", { name: new RegExp(`^${dayName(m, a)},`) }).click();
+  await sheet.getByRole("button", { name: new RegExp(`^${dayName(m, b)},`) }).click();
+  return sheet;
+}
+
+test("propose and add to plan", async ({ page, browser, isMobile }) => {
+  const { other, second } = await twoMembers(page, browser);
+  const next = monthFromNow(1);
+  const dates = `8–12 ${SHORT[next.month - 1]}`;
+
+  // Alex proposes the 8th to the 12th of next month.
+  const sheet = await pickRange(second, isMobile, next, 12, 8);
+  const summary = sheet.getByText(/^5 days, costs you \d+ leave$/);
+  await expect(summary).toBeVisible();
+  const cost = Number(/costs you (\d+)/.exec((await summary.textContent()) ?? "")?.[1]);
+  await second.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
+  expect(await violations(second)).toEqual([]);
+  await sheet.getByRole("button", { name: "Propose dates" }).click();
+  await expect(sheet).toBeHidden();
+  await expect(second.getByRole("button", { name: "Propose dates" })).toBeFocused();
+
+  // Sam sees it under "Proposed", with Alex's initial.
+  const row = page
+    .getByRole("region", { name: "Proposed" })
+    .getByRole("article", { name: dates, exact: true });
+  await expect(row.getByRole("list", { name: "Proposed by" })).toHaveText("AAlex");
+  await expect(row.getByRole("button", { name: "Withdraw" })).toHaveCount(0);
+
+  // The shared calendar outlines the proposed days and says who proposed them.
+  await expect(page.getByRole("list", { name: "Legend" })).toContainText("Proposed");
+  if (isMobile) await page.getByRole("button", { name: "Next month" }).click();
+  const inside = page.getByRole("button", { name: new RegExp(`^${dayName(next, 10)},`) });
+  await expect(inside).toHaveAccessibleName(/ Proposed by Alex\.$/);
+  await expect(inside).toHaveAttribute("data-pr", "");
+  await expect(page.getByRole("button", { name: new RegExp(`^${dayName(next, 13)},`) })).not.toHaveAttribute(
+    "data-pr",
+  );
+
+  await row.getByRole("radio", { name: /^Works/ }).click();
+  const theirs = second
+    .getByRole("region", { name: "Proposed" })
+    .getByRole("article", { name: dates, exact: true });
+  await theirs.getByRole("radio", { name: /^Works/ }).click();
+
+  const agreed = page
+    .getByRole("region", { name: "Works for everyone" })
+    .getByRole("article", { name: dates });
+  await expect(agreed).toBeVisible();
+  // Only agreed dates go into a plan.
+  await expect(row.getByRole("button", { name: "Add to my plan" })).toHaveCount(0);
+  await agreed.getByRole("button", { name: "Add to my plan" }).click();
+
+  await expect(page).toHaveURL(/\/[a-z]{2}\/\d{4}\/\?(.*&)?lk=/);
+  await expect(page.locator("section[aria-label='Your plan'] p[aria-live]")).toContainText("leave days");
+  // Every working day of the trip is a leave day in the plan.
+  await expect(page.locator('.day[data-k="locked"]')).toHaveCount(cost);
+  for (let day = 8; day <= 12; day++) {
+    const cell = page.getByRole("button", { name: new RegExp(`^${dayName(next, day)},`) });
+    await expect(cell).toHaveAttribute("data-k", /^(locked|weekend|holiday|custom)$/);
+  }
+  await other.close();
+});
+
+test("withdrawing takes back only your proposal", async ({ page, browser, isMobile }) => {
+  const { other, second } = await twoMembers(page, browser);
+  const next = monthFromNow(1);
+  const dates = `15–19 ${SHORT[next.month - 1]}`;
+
+  for (const p of [page, second]) {
+    const sheet = await pickRange(p, isMobile, next, 15, 19);
+    await sheet.getByRole("button", { name: "Propose dates" }).click();
+    await expect(sheet).toBeHidden();
+  }
+  const row = (p: Page) =>
+    p.getByRole("region", { name: "Proposed" }).getByRole("article", { name: dates, exact: true });
+  await expect(row(page).getByRole("list", { name: "Proposed by" })).toHaveText("SSam (you)AAlex");
+
+  await row(second).getByRole("button", { name: "Withdraw" }).click();
+  await expect(row(page).getByRole("list", { name: "Proposed by" })).toHaveText("SSam (you)");
+  await expect(row(second).getByRole("button", { name: "Withdraw" })).toHaveCount(0);
+
+  await row(page).getByRole("button", { name: "Withdraw" }).click();
+  for (const p of [page, second]) await expect(p.getByRole("region", { name: "Proposed" })).toHaveCount(0);
+  await other.close();
+});

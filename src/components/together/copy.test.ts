@@ -52,6 +52,13 @@ describe("dayLabel", () => {
     expect(dayLabel(mon, "blocked", ["Epiphany"], ["Alex"])).toBe("Mon 11 Jan, you can't. Alex can't.");
   });
 
+  it("says who proposed dates that cover the day", () => {
+    expect(dayLabel(mon, "work", [], ["Alex"], ["Sam", "Alex"])).toBe(
+      "Mon 11 Jan, workday. Alex can't. Proposed by Sam and Alex.",
+    );
+    expect(dayLabel(mon, "work", [], [], [])).toBe("Mon 11 Jan, workday.");
+  });
+
   it("calls an ordinary day a workday", () => {
     expect(dayLabel(dayNum(2027, 1, 12), "work", [], [])).toBe("Tue 12 Jan, workday.");
   });
