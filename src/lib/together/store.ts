@@ -1,4 +1,4 @@
-import { type Envelope, isEnvelope } from "./protocol";
+import { type Envelope, isEnvelope, type PutMsg, type RemoveMsg } from "./protocol";
 
 export interface Membership {
   groupId: string;
@@ -30,6 +30,16 @@ export type StorageLike = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 const membershipKey = (groupId: string) => `${PREFIX}${groupId}`;
 const PREFIX = "lm:together:v1:";
 const cacheKey = (groupId: string) => `lm:together:cache:v1:${groupId}`;
+const pendingKey = (groupId: string) => `lm:together:pending:v1:${groupId}`;
+
+/**
+ * A message sent but not yet acknowledged, kept so it's sent again after a reload. A put keeps the
+ * field patches that made it and the server version they were applied to, so they can be applied
+ * again on top of a newer record.
+ */
+export type StoredPending =
+  | { key: string; msg: PutMsg; patches: object[]; base: number; tries: number }
+  | { key: string; msg: RemoveMsg };
 
 /** The browser's localStorage, or null where there is none (or it throws). */
 function local(): StorageLike | null {
@@ -49,11 +59,23 @@ function read(key: string, s: StorageLike | null): unknown {
   }
 }
 
-function write(key: string, value: unknown, s: StorageLike | null): void {
+/** Whether the value was stored. */
+function write(key: string, value: unknown, s: StorageLike | null): boolean {
+  if (!s) return false;
   try {
-    s?.setItem(key, JSON.stringify(value));
+    s.setItem(key, JSON.stringify(value));
+    return true;
   } catch {
     // Full or blocked storage: the session still works, it just won't be remembered.
+    return false;
+  }
+}
+
+function remove(key: string, s: StorageLike | null): void {
+  try {
+    s?.removeItem(key);
+  } catch {
+    // Nothing to do.
   }
 }
 
@@ -124,16 +146,13 @@ export function listMemberships(s: ListableStorage | null = local() as ListableS
   });
 }
 
-export function saveMembership(m: Membership, s: StorageLike | null = local()): void {
-  write(membershipKey(m.groupId), m, s);
+/** Whether the membership was stored: false where there's no storage, or it's full or blocked. */
+export function saveMembership(m: Membership, s: StorageLike | null = local()): boolean {
+  return write(membershipKey(m.groupId), m, s);
 }
 
 export function forgetMembership(groupId: string, s: StorageLike | null = local()): void {
-  try {
-    s?.removeItem(membershipKey(groupId));
-  } catch {
-    // Nothing to do.
-  }
+  remove(membershipKey(groupId), s);
 }
 
 export function loadCache(groupId: string, s: StorageLike | null = local()): Envelope[] {
@@ -145,12 +164,38 @@ export function saveCache(groupId: string, envs: Envelope[], s: StorageLike | nu
   write(cacheKey(groupId), envs, s);
 }
 
-/** Leaves this browser's copy of a group: the membership and the cached envelopes. */
+function isPending(v: unknown): v is StoredPending {
+  if (!v || typeof v !== "object") return false;
+  const p = v as Record<string, unknown>;
+  const msg = p.msg as Record<string, unknown> | null;
+  if (typeof p.key !== "string" || !msg || typeof msg !== "object" || typeof msg.secret !== "string") {
+    return false;
+  }
+  if (msg.t === "remove") return typeof msg.memberId === "string";
+  return (
+    msg.t === "put" &&
+    isEnvelope(msg.env) &&
+    Array.isArray(p.patches) &&
+    p.patches.every((x) => x !== null && typeof x === "object" && !Array.isArray(x)) &&
+    Number.isSafeInteger(p.base) &&
+    Number.isSafeInteger(p.tries)
+  );
+}
+
+export function loadPending(groupId: string, s: StorageLike | null = local()): StoredPending[] {
+  const v = read(pendingKey(groupId), s);
+  return Array.isArray(v) ? v.filter(isPending) : [];
+}
+
+/** Keeps what's still unsent, or clears the key when nothing is. */
+export function savePending(groupId: string, list: StoredPending[], s: StorageLike | null = local()): void {
+  if (list.length === 0) remove(pendingKey(groupId), s);
+  else write(pendingKey(groupId), list, s);
+}
+
+/** Leaves this browser's copy of a group: the membership, the cached envelopes and unsent edits. */
 export function forgetGroup(groupId: string, s: StorageLike | null = local()): void {
   forgetMembership(groupId, s);
-  try {
-    s?.removeItem(cacheKey(groupId));
-  } catch {
-    // Nothing to do.
-  }
+  remove(cacheKey(groupId), s);
+  remove(pendingKey(groupId), s);
 }

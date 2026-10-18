@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { dayNum } from "~/lib/dates";
 import {
   applyPut,
   applyRemove,
@@ -16,8 +17,15 @@ import {
   randomId,
   type ServerMsg,
 } from "./protocol";
-import { BACKOFF_MS, GroupSession, type SessionDeps, type SocketLike, socketUrl } from "./session";
-import { loadCache, loadMembership, type StorageLike, saveMembership } from "./store";
+import {
+  BACKOFF_MS,
+  GroupSession,
+  type SessionDeps,
+  type SocketLike,
+  socketUrl,
+  Unreachable,
+} from "./session";
+import { loadCache, loadMembership, loadPending, type StorageLike, saveMembership } from "./store";
 
 const GROUP: GroupRecord = {
   name: "Lisbon 2027",
@@ -132,6 +140,8 @@ class FakeServer {
     this.sockets.add(s);
     s.onopen?.();
     this.deliver(s, snapshot(this.room));
+    // As the Durable Object does: a deleted group's snapshot is followed by gone.
+    if (this.room.deleted) this.deliver(s, { t: "error", code: "gone" });
   }
 
   deliver(s: FakeSocket, msg: ServerMsg): void {
@@ -359,7 +369,7 @@ describe("GroupSession", () => {
     expect(loadCache(link.groupId, storage)).toEqual([]);
   });
 
-  it("forgets the membership and cache when the group is gone", async () => {
+  it("forgets the membership, cache and unsent edits when the server says gone, and writes none back", async () => {
     const server = new FakeServer();
     const { b } = await createAndJoin(server);
     const personal = b.personalLink() as PersonalLink;
@@ -367,11 +377,30 @@ describe("GroupSession", () => {
     const c = server.session(personal, { storage });
     await until(() => expect(c.state.group).not.toBeNull());
     expect(loadMembership(personal.groupId, storage)).not.toBeNull();
+    c.close();
+    server.room.envs.clear();
+    server.room.deleted = true;
+    const d = server.session(personal, { storage });
+    await until(() => expect(d.state.error).toBe("gone"));
+    await until(() => expect(loadMembership(personal.groupId, storage)).toBeNull());
+    await new Promise((r) => setTimeout(r, 20));
+    expect([...storage.data.keys()].filter((k) => k.includes(personal.groupId))).toEqual([]);
+  });
+
+  it("keeps the membership and cache when a snapshot has no group but the server never said gone", async () => {
+    const server = new FakeServer();
+    const { b } = await createAndJoin(server);
+    const personal = b.personalLink() as PersonalLink;
+    const storage = memoryStorage();
+    const c = server.session(personal, { storage });
+    await until(() => expect(loadCache(personal.groupId, storage).length).toBeGreaterThan(0));
+    c.close();
     server.room.envs.clear();
     const d = server.session(personal, { storage });
     await until(() => expect(d.state.error).toBe("gone"));
-    expect(loadMembership(personal.groupId, storage)).toBeNull();
-    expect(loadCache(personal.groupId, storage)).toEqual([]);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(loadMembership(personal.groupId, storage)?.memberId).toBe(personal.memberId);
+    expect(loadCache(personal.groupId, storage).length).toBeGreaterThan(0);
   });
 
   describe("summary", () => {
@@ -500,16 +529,65 @@ describe("GroupSession", () => {
     expect(offline.state.isAdmin).toBe(true);
   });
 
-  it("saves a personal link as the membership, over a stored one", async () => {
+  it("saves a personal link as the membership when nothing is stored", async () => {
     const server = new FakeServer();
     const { b } = await createAndJoin(server);
     const personal = b.personalLink() as PersonalLink;
     const storage = memoryStorage();
-    saveMembership({ ...personal, memberId: "ZZZZZZZZ", secret: randomId(16), groupName: "Old" }, storage);
     const c = server.session(personal, { storage });
     expect(c.state.me).toBe(personal.memberId);
+    expect(c.state.choice).toBeNull();
     expect(loadMembership(personal.groupId, storage)?.memberId).toBe(personal.memberId);
     await until(() => expect(loadMembership(personal.groupId, storage)?.groupName).toBe("Lisbon 2027"));
+  });
+
+  describe("another member's personal link", () => {
+    async function setup() {
+      const server = new FakeServer();
+      const { a, b } = await createAndJoin(server);
+      const storage = memoryStorage();
+      // This device is Sam's, the admin. Then Alex's personal link is opened on it.
+      saveMembership({ ...(a.personalLink() as PersonalLink), groupName: "Lisbon 2027" }, storage);
+      const stored = storage.data.get(`lm:together:v1:${(a.personalLink() as PersonalLink).groupId}`);
+      const alex = b.personalLink() as PersonalLink;
+      const c = server.session(alex, { storage });
+      return { a, b, alex, storage, stored, c };
+    }
+
+    it("asks first, and writes no membership until the choice is made", async () => {
+      const { a, alex, storage, stored, c } = await setup();
+      const writes = vi.spyOn(storage, "setItem");
+      expect(c.state.me).toBeNull();
+      await until(() => expect(c.state.loaded).toBe(true));
+      expect(c.state.choice).toEqual({ link: alex.memberId, stored: a.state.me, losesAdmin: true });
+      expect(c.state.me).toBeNull();
+      expect(c.personalLink()).toBeNull();
+      c.noteSummary({ agreed: 1 });
+      await new Promise((r) => setTimeout(r, 20));
+      expect(writes.mock.calls.filter(([k]) => k.startsWith("lm:together:v1:"))).toEqual([]);
+      expect(storage.data.get(`lm:together:v1:${alex.groupId}`)).toBe(stored);
+    });
+
+    it("stays as the stored member, admin secret and all", async () => {
+      const { a, alex, storage, stored, c } = await setup();
+      await until(() => expect(c.state.choice).not.toBeNull());
+      await c.choose("stored");
+      expect(c.state.choice).toBeNull();
+      expect(c.state.me).toBe(a.state.me);
+      expect(c.state.isAdmin).toBe(true);
+      expect(loadMembership(alex.groupId, storage)?.admin).toBe(JSON.parse(stored ?? "{}").admin);
+      expect(loadMembership(alex.groupId, storage)?.memberId).toBe(a.state.me);
+    });
+
+    it("switches to the link's member when asked", async () => {
+      const { alex, storage, c } = await setup();
+      await until(() => expect(c.state.choice).not.toBeNull());
+      await c.choose("link");
+      expect(c.state.choice).toBeNull();
+      expect(c.state.me).toBe(alex.memberId);
+      expect(c.state.isAdmin).toBe(false);
+      expect(loadMembership(alex.groupId, storage)?.memberId).toBe(alex.memberId);
+    });
   });
 
   it("uses the stored membership for a plain invite", async () => {
@@ -698,6 +776,138 @@ describe("GroupSession", () => {
     const n = seen.length;
     await s.updateMe({ name: "Sammy" });
     expect(seen.length).toBe(n);
+  });
+});
+
+const DAY = dayNum(2027, 6, 10);
+const KEY = "2027-06-07..2027-06-11" as const;
+
+describe("one member on two devices", () => {
+  for (const clock of ["the same clock", "a clock ahead"] as const) {
+    it(`keeps both devices' changes to different fields (${clock})`, async () => {
+      const server = new FakeServer();
+      const { a, b } = await createAndJoin(server);
+      const personal = b.personalLink() as PersonalLink;
+      const base = 5_000_000_000_000;
+      const one = server.session(personal, { now: () => base });
+      const two = server.session(personal, { now: () => base + (clock === "a clock ahead" ? 10 : 0) });
+      await until(() => {
+        expect(one.state.members.has(personal.memberId)).toBe(true);
+        expect(two.state.members.has(personal.memberId)).toBe(true);
+      });
+      const replies = vi.spyOn(server, "deliver");
+
+      server.pause();
+      await one.updateMe({ blocked: [DAY] });
+      await two.updateMe({ votes: { [KEY]: "yes" } });
+      server.resume();
+
+      for (const s of [a, b, one, two]) {
+        await until(() =>
+          expect(s.state.members.get(personal.memberId)).toMatchObject({
+            blocked: [DAY],
+            votes: { [KEY]: "yes" },
+          }),
+        );
+      }
+      await new Promise((r) => setTimeout(r, 30));
+      for (const s of [a, b, one, two]) {
+        expect(s.state.members.get(personal.memberId)).toMatchObject({
+          blocked: [DAY],
+          votes: { [KEY]: "yes" },
+        });
+      }
+      expect(server.room.envs.get(`member:${personal.memberId}`)?.version).toBeGreaterThan(base);
+      const staleReplies = replies.mock.calls.filter(([, m]) => m.t === "error" && m.code === "stale");
+      // With the same clock the second write is refused as stale; with a clock ahead it lands on top.
+      expect(staleReplies.length).toBe(clock === "the same clock" ? 1 : 0);
+    });
+  }
+});
+
+describe("saving", () => {
+  it("reports unsaved edits until the server acknowledges them", async () => {
+    const server = new FakeServer();
+    const { b } = await createAndJoin(server);
+    await until(() => expect(b.state.saving).toBe(false));
+    server.pause();
+    await b.updateMe({ allowance: 9 });
+    expect(b.state.saving).toBe(true);
+    server.resume();
+    await until(() => expect(b.state.saving).toBe(false));
+  });
+
+  it("keeps unsent edits across a reload and sends them", async () => {
+    const server = new FakeServer();
+    const { a, b } = await createAndJoin(server);
+    const personal = b.personalLink() as PersonalLink;
+    const storage = memoryStorage();
+    const c = server.session(personal, { storage, timers: manualTimers().timers });
+    await until(() => expect(c.state.members.has(personal.memberId)).toBe(true));
+    server.up = false;
+    server.drop(server.all.at(-1) as FakeSocket);
+    await until(() => expect(c.state.status).toBe("connecting"));
+    await c.updateMe({ name: "Offline edit" });
+    expect(loadPending(personal.groupId, storage).length).toBe(1);
+    c.close();
+
+    server.up = true;
+    const d = server.session(personal, { storage });
+    expect(d.state.me).toBe(personal.memberId);
+    await until(() => expect(a.state.members.get(personal.memberId)?.name).toBe("Offline edit"));
+    await until(() => expect(d.state.saving).toBe(false));
+    expect(loadPending(personal.groupId, storage)).toEqual([]);
+  });
+
+  it("resolves create only once the server has the group", async () => {
+    const server = new FakeServer();
+    const storage = memoryStorage();
+    const link = newGroup();
+    const s = server.session(link, { storage });
+    await until(() => expect(s.state.loaded).toBe(true));
+    server.pause();
+    let done = false;
+    const created = s.create(GROUP, member("Sam")).then(() => {
+      done = true;
+    });
+    await new Promise((r) => setTimeout(r, 30));
+    expect(done).toBe(false);
+    // Nothing is kept for a group the server doesn't have yet.
+    expect(loadMembership(link.groupId, storage)).toBeNull();
+    server.resume();
+    await created;
+    expect(server.room.envs.has("group")).toBe(true);
+    expect(loadMembership(link.groupId, storage)?.admin).toBe(link.admin);
+  });
+
+  it("rejects create when the server can't be reached, and keeps nothing", async () => {
+    const server = new FakeServer();
+    server.up = false;
+    const storage = memoryStorage();
+    const s = server.session(newGroup(), { storage, timers: manualTimers().timers });
+    await expect(s.create(GROUP, member("Sam"))).rejects.toBeInstanceOf(Unreachable);
+    expect(storage.data.size).toBe(0);
+  });
+
+  it("says whether the membership was saved", async () => {
+    const server = new FakeServer();
+    const ok = server.session(newGroup());
+    await ok.create(GROUP, member("Sam"));
+    expect(ok.saved).toBe(true);
+
+    const throwing = {
+      ...memoryStorage(),
+      setItem: () => {
+        throw new Error("quota");
+      },
+    };
+    const full = server.session(newGroup(), { storage: throwing });
+    await full.create(GROUP, member("Kim"));
+    expect(full.saved).toBe(false);
+
+    const none = server.session(newGroup(), { storage: null });
+    await none.create(GROUP, member("Jo"));
+    expect(none.saved).toBe(false);
   });
 });
 
