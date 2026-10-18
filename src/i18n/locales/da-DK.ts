@@ -1,4 +1,6 @@
-import type { Copy } from "../types";
+import type { Copy, Plural } from "../types";
+
+const p = (one: string, many: string = one): Plural => ({ one, few: many, many });
 
 export const daDK: Copy = {
   chrome: {
@@ -78,7 +80,7 @@ export const daDK: Copy = {
     regionalHint: "Nogle helligdage gælder kun i visse regioner. Vælg din, hvis planen skal passe.",
     year: "År",
     leaveYouHave: "Feriedage du har",
-    leaveUnit: "feriedage",
+    leaveUnit: p("feriedag", "feriedage"),
     fewer: "Færre {label}",
     more: "Flere {label}",
     style: "Stil",
@@ -92,7 +94,7 @@ export const daDK: Copy = {
     shortest: "Korteste pause",
     longestBreak: "Længste pause",
     noLimit: "Ingen grænse",
-    nDays: "{n} dage",
+    nDays: p("{n} dag", "{n} dage"),
     favouriteMonths: "Yndlingsmåneder",
     monthsHint: "Planlæggeren hælder til fri i de her måneder.",
     workDays: "Dage du arbejder",
@@ -100,9 +102,9 @@ export const daDK: Copy = {
     yourDays: "Dine dage",
     yourDaysHint:
       "Tryk på en dag i kalenderen for at beholde den som ferie, spærre den eller markere den som fri uden at den koster ferie (for eksempel en lukket virksomhed).",
-    kept: "{n} låst",
-    blockedCount: "{n} spærret",
-    daysOffCount: "{n} fri",
+    kept: p("{n} låst"),
+    blockedCount: p("{n} spærret"),
+    daysOffCount: p("{n} fri"),
     clearAll: "Ryd alt",
     edit: "Ret",
     showPlan: "Vis min plan",
@@ -111,7 +113,7 @@ export const daDK: Copy = {
     updating: "Opdaterer",
     heroLeave: { one: "{n} feriedag", few: "{n} feriedage", many: "{n} feriedage" },
     heroBecome: { one: "bliver", few: "bliver", many: "bliver" },
-    heroOff: "{n} fridage",
+    heroOff: p("{n} fridag", "{n} fridage"),
     heroEmpty: "Ingen ferie lagt ind endnu",
     quipNone: "Læg feriedage ind i indstillingerne for at se, hvor pauserne lander.",
     quipRatio: "Det er {ratio} fridage pr. feriedag.",
@@ -131,9 +133,9 @@ export const daDK: Copy = {
     usedOf: "{used} af {budget} brugt",
     now: "nu",
     tomorrow: "i morgen",
-    inDays: "om {n} dage",
-    inWeeks: "om {n} uger",
-    inMonths: "om {n} måneder",
+    inDays: p("om {n} dag", "om {n} dage"),
+    inWeeks: p("om {n} uge", "om {n} uger"),
+    inMonths: p("om {n} måned", "om {n} måneder"),
     legend: "Forklaring",
     legendLeave: "Ferie",
     legendLocked: "Låst",
@@ -143,7 +145,7 @@ export const daDK: Copy = {
     calendar: "Kalender",
     prevMonth: "Forrige måned",
     nextMonth: "Næste måned",
-    leaveCount: "{n} ferie",
+    leaveCount: p("{n} ferie"),
     tapDay: "Tryk på en dag for at ændre den",
     kindWork: "hverdag",
     kindWeekend: "weekend",
@@ -224,7 +226,7 @@ export const daDK: Copy = {
   },
   holiday: {
     title: "Helligdage i {country} {year}",
-    intro: "{count} nationale helligdage",
+    intro: p("{count} national helligdag", "{count} nationale helligdage"),
     regional: ", plus regionale",
     bridgeNote: "Helligdage på en tirsdag eller torsdag er de bedste klemmedage.",
     table: "Tabel over helligdage",

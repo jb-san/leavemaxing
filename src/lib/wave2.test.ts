@@ -55,7 +55,11 @@ describe("wave 2 locales", () => {
     expect(frFr?.translations.faq.map((item) => item.answer).join(" ")).toMatch(/solidarité/);
     expect(nlBe?.translations.faq[0]?.answer).not.toBe(nlNl?.translations.faq[0]?.answer);
     expect(nlBe?.translations.intro).toContain("België");
-    expect(nlBe?.translations.leaveDays).toBe("verlofdagen");
+    expect(nlBe?.translations.leaveDays).toEqual({
+      one: "{n} verlofdag",
+      few: "{n} verlofdagen",
+      many: "{n} verlofdagen",
+    });
     expect(locales["cs-CZ"]?.translations.h1).toBe("Prodloužené víkendy {year}");
   });
 

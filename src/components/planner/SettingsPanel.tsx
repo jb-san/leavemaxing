@@ -103,7 +103,8 @@ export function SettingsPanel({
           onChange={(n) => set({ budget: n })}
           min={0}
           max={MAX_BUDGET}
-          label={p.leaveUnit}
+          label={p.leaveUnit.many}
+          valueName={i18n.count(s.budget, p.leaveUnit)}
           big
         />
       </div>
@@ -150,7 +151,7 @@ export function SettingsPanel({
                 min={1}
                 max={30}
                 label={i18n.code === "en" ? "days in the shortest break" : p.shortest}
-                format={(n) => (i18n.code === "en" ? `${n}d` : i18n.text(p.nDays, { n }))}
+                format={(n) => (i18n.code === "en" ? `${n}d` : i18n.countText(n, p.nDays))}
                 onChange={(n) =>
                   set({ minBreak: n, maxBreak: s.maxBreak !== null && s.maxBreak < n ? n : s.maxBreak })
                 }
@@ -172,7 +173,7 @@ export function SettingsPanel({
                   (_, i) => Math.max(2, s.minBreak) + i,
                 ).map((n) => (
                   <option key={n} value={n}>
-                    {i18n.text(p.nDays, { n })}
+                    {i18n.countText(n, p.nDays)}
                   </option>
                 ))}
               </select>
@@ -245,13 +246,13 @@ export function SettingsPanel({
             {edits > 0 && (
               <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
                 {s.locked.length > 0 && (
-                  <span className="chip py-1">🔒 {i18n.text(p.kept, { n: s.locked.length })}</span>
+                  <span className="chip py-1">🔒 {i18n.countText(s.locked.length, p.kept)}</span>
                 )}
                 {s.blocked.length > 0 && (
-                  <span className="chip py-1">✕ {i18n.text(p.blockedCount, { n: s.blocked.length })}</span>
+                  <span className="chip py-1">✕ {i18n.countText(s.blocked.length, p.blockedCount)}</span>
                 )}
                 {s.customOff.length > 0 && (
-                  <span className="chip py-1">★ {i18n.text(p.daysOffCount, { n: s.customOff.length })}</span>
+                  <span className="chip py-1">★ {i18n.countText(s.customOff.length, p.daysOffCount)}</span>
                 )}
                 <button
                   type="button"

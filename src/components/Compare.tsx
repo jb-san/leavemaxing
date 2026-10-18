@@ -1,6 +1,7 @@
 import { ArrowRight, Plus, Trophy, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { countries, countryByCode, placeName } from "~/data";
+import { englishNoun } from "~/i18n/format";
 import { type DayNum, leaveYearRange, localToday, MONTHS_SHORT } from "~/lib/dates";
 import { detectCountry } from "~/lib/detect";
 import { loadHolidayFile } from "~/lib/holidays";
@@ -233,10 +234,14 @@ export default function Compare({ years }: { years: number[] }) {
                   <div className="rounded-2xl bg-hero p-4 text-hero-ink">
                     <p className="font-display text-3xl font-extrabold leading-none">
                       {plan.stats.daysOff}{" "}
-                      <span className="text-base font-bold text-hero-muted">days off</span>
+                      <span className="text-base font-bold text-hero-muted">
+                        {englishNoun(plan.stats.daysOff, "day off", "days off")}
+                      </span>
                     </p>
                     <p className="mt-1 text-sm text-hero-muted">
-                      {plan.stats.breaksWithLeave} breaks, the longest {plan.stats.longest} days.{" "}
+                      {plan.stats.breaksWithLeave}{" "}
+                      {englishNoun(plan.stats.breaksWithLeave, "break", "breaks")}, the longest{" "}
+                      {plan.stats.longest} {englishNoun(plan.stats.longest, "day", "days")}.{" "}
                       {plan.stats.multiplier.toFixed(1)} days off per leave day.
                     </p>
                   </div>

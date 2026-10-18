@@ -22,6 +22,7 @@ describe("Holiday data generation", () => {
       const midsummerEve = file.holidays.find((h: { name: string }) => h.name === "Midsummer Eve");
       expect(midsummerEve).toBeDefined();
       expect(midsummerEve?.local).toBe("Midsommarafton");
+      expect(midsummerEve?.date).toBe("2027-06-25");
     });
 
     it("includes Christmas Eve as a de facto holiday", () => {
@@ -100,6 +101,17 @@ describe("Holiday data generation", () => {
       const dates = file.holidays.map((h: { date: string }) => h.date);
       const sortedDates = [...dates].sort();
       expect(dates).toEqual(sortedDates);
+    });
+
+    it("keeps Ukraine's holiday files and leaves it out of the days-off ranking", () => {
+      const year = new Date().getFullYear() + 1;
+      const file = readHolidayFile("UA", year);
+      expect(file.holidays.length).toBeGreaterThan(0);
+      const best = JSON.parse(readFileSync(join(generated, `best-${year}.json`), "utf8")) as {
+        rows: Array<{ code: string }>;
+      };
+      expect(best.rows.some((row) => row.code === "UA")).toBe(false);
+      expect(best.rows.length).toBeGreaterThan(200);
     });
 
     it("no duplicate dates in a single country file", () => {

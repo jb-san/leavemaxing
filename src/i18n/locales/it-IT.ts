@@ -1,6 +1,6 @@
 import type { Copy } from "../types";
 
-const p = (one: string, many: string) => ({ one, few: many, many });
+const p = (one: string, many = one) => ({ one, few: many, many });
 
 export const itIT: Copy = {
   chrome: {
@@ -79,7 +79,7 @@ export const itIT: Copy = {
     regionalHint: "Alcune festività valgono solo in certe zone. Scegli la tua per un piano preciso.",
     year: "Anno",
     leaveYouHave: "Giorni di ferie che hai",
-    leaveUnit: "giorni di ferie",
+    leaveUnit: p("giorno di ferie", "giorni di ferie"),
     fewer: "Meno {label}",
     more: "Più {label}",
     style: "Stile",
@@ -93,7 +93,7 @@ export const itIT: Copy = {
     shortest: "Riposo più corto",
     longestBreak: "Riposo più lungo",
     noLimit: "Nessun limite",
-    nDays: "{n} giorni",
+    nDays: p("{n} giorno", "{n} giorni"),
     favouriteMonths: "Mesi preferiti",
     monthsHint: "Il pianificatore preferisce i riposi in questi mesi.",
     workDays: "Giorni in cui lavori",
@@ -101,9 +101,9 @@ export const itIT: Copy = {
     yourDays: "I tuoi giorni",
     yourDaysHint:
       "Tocca un giorno del calendario per tenerlo come ferie, bloccarlo o segnarlo come riposo senza consumare ferie (chiusura aziendale, per esempio).",
-    kept: "{n} fissati",
-    blockedCount: "{n} bloccati",
-    daysOffCount: "{n} liberi",
+    kept: p("{n} fissato", "{n} fissati"),
+    blockedCount: p("{n} bloccato", "{n} bloccati"),
+    daysOffCount: p("{n} libero", "{n} liberi"),
     clearAll: "Cancella tutto",
     edit: "Modifica",
     showPlan: "Mostra il piano",
@@ -112,7 +112,7 @@ export const itIT: Copy = {
     updating: "Aggiornamento",
     heroLeave: p("{n} giorno di ferie", "{n} giorni di ferie"),
     heroBecome: p("diventa", "diventano"),
-    heroOff: "{n} giorni liberi",
+    heroOff: p("{n} giorno libero", "{n} giorni liberi"),
     heroEmpty: "Nessuna ferie prevista",
     quipNone: "Inserisci i giorni di ferie nelle impostazioni per vedere dove cadono i riposi.",
     quipRatio: "Sono {ratio} giorni liberi per ogni giorno di ferie.",
@@ -132,9 +132,9 @@ export const itIT: Copy = {
     usedOf: "{used} di {budget} usati",
     now: "ora",
     tomorrow: "domani",
-    inDays: "tra {n} giorni",
-    inWeeks: "tra {n} settimane",
-    inMonths: "tra {n} mesi",
+    inDays: p("tra {n} giorno", "tra {n} giorni"),
+    inWeeks: p("tra {n} settimana", "tra {n} settimane"),
+    inMonths: p("tra {n} mese", "tra {n} mesi"),
     legend: "Legenda",
     legendLeave: "Ferie",
     legendLocked: "Fissato",
@@ -144,7 +144,7 @@ export const itIT: Copy = {
     calendar: "Calendario",
     prevMonth: "Mese precedente",
     nextMonth: "Mese successivo",
-    leaveCount: "{n} di ferie",
+    leaveCount: p("{n} di ferie"),
     tapDay: "Tocca un giorno per modificarlo",
     kindWork: "giorno lavorativo",
     kindWeekend: "weekend",
@@ -225,7 +225,7 @@ export const itIT: Copy = {
   },
   holiday: {
     title: "Festività in {country} nel {year}",
-    intro: "{count} festività nazionali",
+    intro: p("{count} festività nazionale", "{count} festività nazionali"),
     regional: ", più quelle locali",
     bridgeNote: "Una festività di martedì o di giovedì è il ponte migliore.",
     table: "Tabella delle festività",

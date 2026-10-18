@@ -57,6 +57,7 @@ const other = localizedBestYears().find((item) => item !== year);
 const country = countryByCode.get(locale.country);
 const place = countryName(locale.country, ui, country?.name ?? locale.country);
 const mine = data.rows.find((row) => row.code === locale.country);
+const ranked = mine !== undefined;
 const seasonal = bestPageText({
   localeCode: locale.code,
   year,
@@ -69,6 +70,8 @@ const seasonal = bestPageText({
   topOff: top?.results[DEFAULT]?.daysOff ?? 0,
   isTop: top?.code === locale.country,
   uiLocale: ui,
+  ranked,
+  notice: ranked ? undefined : locale.translations.notice,
 });
 const title = seasonal.title;
 const description = seasonal.description;

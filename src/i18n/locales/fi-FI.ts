@@ -1,6 +1,6 @@
 import type { Copy } from "../types";
 
-const p = (one: string, many: string) => ({ one, few: many, many });
+const p = (one: string, many = one) => ({ one, few: many, many });
 
 export const fiFI: Copy = {
   chrome: {
@@ -81,7 +81,7 @@ export const fiFI: Copy = {
     regionalHint: "Osa pyhistä koskee vain tiettyjä alueita. Valitse omasi, jos haluat tarkan suunnitelman.",
     year: "Vuosi",
     leaveYouHave: "Lomapäiviä sinulla on",
-    leaveUnit: "lomapäivää",
+    leaveUnit: p("lomapäivä", "lomapäivää"),
     fewer: "Vähemmän: {label}",
     more: "Enemmän: {label}",
     style: "Tyyli",
@@ -95,7 +95,7 @@ export const fiFI: Copy = {
     shortest: "Lyhin jakso",
     longestBreak: "Pisin jakso",
     noLimit: "Ei rajaa",
-    nDays: "{n} päivää",
+    nDays: p("{n} päivä", "{n} päivää"),
     favouriteMonths: "Suosikkikuukaudet",
     monthsHint: "Suunnittelija painottaa vapaita näihin kuukausiin.",
     workDays: "Päivät, jolloin työskentelet",
@@ -103,9 +103,9 @@ export const fiFI: Copy = {
     yourDays: "Omat päiväsi",
     yourDaysHint:
       "Napauta kalenterin päivää, jos haluat pitää sen lomana, estää sen tai merkitä sen vapaaksi ilman lomapäivää (esimerkiksi työpaikan sulku).",
-    kept: "{n} lukittu",
-    blockedCount: "{n} estetty",
-    daysOffCount: "{n} vapaata",
+    kept: p("{n} lukittu"),
+    blockedCount: p("{n} estetty"),
+    daysOffCount: p("{n} vapaa", "{n} vapaata"),
     clearAll: "Tyhjennä",
     edit: "Muokkaa",
     showPlan: "Näytä suunnitelma",
@@ -114,7 +114,7 @@ export const fiFI: Copy = {
     updating: "Päivitetään",
     heroLeave: p("{n} lomapäivä", "{n} lomapäivää"),
     heroBecome: p("tuottaa", "tuottavat"),
-    heroOff: "{n} vapaapäivää",
+    heroOff: p("{n} vapaapäivä", "{n} vapaapäivää"),
     heroEmpty: "Lomaa ei ole vielä suunniteltu",
     quipNone: "Lisää lomapäiviä asetuksissa, niin näet mihin vapaat osuvat.",
     quipRatio: "Se on {ratio} vapaapäivää jokaista lomapäivää kohti.",
@@ -134,9 +134,9 @@ export const fiFI: Copy = {
     usedOf: "{used} / {budget} käytetty",
     now: "nyt",
     tomorrow: "huomenna",
-    inDays: "{n} päivän päästä",
-    inWeeks: "{n} viikon päästä",
-    inMonths: "{n} kuukauden päästä",
+    inDays: p("{n} päivän päästä"),
+    inWeeks: p("{n} viikon päästä"),
+    inMonths: p("{n} kuukauden päästä"),
     legend: "Selite",
     legendLeave: "Loma",
     legendLocked: "Lukittu",
@@ -146,7 +146,7 @@ export const fiFI: Copy = {
     calendar: "Kalenteri",
     prevMonth: "Edellinen kuukausi",
     nextMonth: "Seuraava kuukausi",
-    leaveCount: "{n} lomaa",
+    leaveCount: p("{n} lomaa"),
     tapDay: "Napauta päivää muuttaaksesi sitä",
     kindWork: "arkipäivä",
     kindWeekend: "viikonloppu",
@@ -227,7 +227,7 @@ export const fiFI: Copy = {
   },
   holiday: {
     title: "Pyhäpäivät maassa {country} vuonna {year}",
-    intro: "{count} valtakunnallista pyhäpäivää",
+    intro: p("{count} valtakunnallinen pyhäpäivä", "{count} valtakunnallista pyhäpäivää"),
     regional: ", lisäksi alueellisia",
     bridgeNote: "Tiistain ja torstain pyhät ovat parhaita välipäiviä.",
     table: "Pyhäpäivätaulukko",

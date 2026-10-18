@@ -118,6 +118,7 @@ describe("Ukrainian locale", () => {
     });
     expect(locales["uk-UA"]?.slug).toMatch(/^[a-z0-9-]+$/);
     expect(locales["uk-UA"]?.translations.notice).toMatch(/воєнн/);
+    expect(locales["uk-UA"]?.translations.notice).toMatch(/робоч/);
     const english = "https://leavemaxxing.com/ua/2027/";
     const localized = "https://leavemaxxing.com/uk-ua/dovhi-vykhidni-2027/";
     expect(localizedPageAlternates("uk-UA", localized, english)).toEqual([

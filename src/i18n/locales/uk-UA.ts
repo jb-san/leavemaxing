@@ -1,6 +1,6 @@
 import type { Copy, Plural } from "../types";
 
-const p = (one: string, few: string, many: string): Plural => ({ one, few, many });
+const p = (one: string, few = one, many = few): Plural => ({ one, few, many });
 
 export const ukUA: Copy = {
   chrome: {
@@ -80,7 +80,7 @@ export const ukUA: Copy = {
     regionalHint: "Частина свят діє лише в окремих регіонах. Обери свій, якщо план має бути точним.",
     year: "Рік",
     leaveYouHave: "Дні відпустки, які маєш",
-    leaveUnit: "днів відпустки",
+    leaveUnit: p("день відпустки", "дні відпустки", "днів відпустки"),
     fewer: "Менше {label}",
     more: "Більше {label}",
     style: "Стиль",
@@ -94,7 +94,7 @@ export const ukUA: Copy = {
     shortest: "Найкоротша перерва",
     longestBreak: "Найдовша перерва",
     noLimit: "Без межі",
-    nDays: "{n} днів",
+    nDays: p("{n} день", "{n} дні", "{n} днів"),
     favouriteMonths: "Улюблені місяці",
     monthsHint: "Планувальник тяжіє до перерв у цих місяцях.",
     workDays: "Дні, коли працюєш",
@@ -102,9 +102,9 @@ export const ukUA: Copy = {
     yourDays: "Твої дні",
     yourDaysHint:
       "Торкнись будь-якого дня в календарі, щоб лишити його відпусткою, заблокувати або позначити вихідним (наприклад, простій на фірмі).",
-    kept: "{n} зафіксовано",
-    blockedCount: "{n} заблоковано",
-    daysOffCount: "{n} вихідних",
+    kept: p("{n} зафіксовано"),
+    blockedCount: p("{n} заблоковано"),
+    daysOffCount: p("{n} вихідний", "{n} вихідні", "{n} вихідних"),
     clearAll: "Очистити все",
     edit: "Змінити",
     showPlan: "Показати план",
@@ -113,7 +113,7 @@ export const ukUA: Copy = {
     updating: "Оновлюється",
     heroLeave: p("{n} день відпустки", "{n} дні відпустки", "{n} днів відпустки"),
     heroBecome: p("стає", "стають", "стають"),
-    heroOff: "{n} вільних днів",
+    heroOff: p("{n} вільний день", "{n} вільні дні", "{n} вільних днів"),
     heroEmpty: "Відпустку ще не розкладено",
     quipNone: "Додай дні відпустки в налаштуваннях, щоб побачити, куди ляжуть перерви.",
     quipRatio: "Це {ratio} вільних днів на кожен день відпустки.",
@@ -133,9 +133,9 @@ export const ukUA: Copy = {
     usedOf: "{used} із {budget} використано",
     now: "зараз",
     tomorrow: "завтра",
-    inDays: "за {n} дн.",
-    inWeeks: "за {n} тиж.",
-    inMonths: "за {n} міс.",
+    inDays: p("за {n} день", "за {n} дні", "за {n} днів"),
+    inWeeks: p("за {n} тиждень", "за {n} тижні", "за {n} тижнів"),
+    inMonths: p("за {n} місяць", "за {n} місяці", "за {n} місяців"),
     legend: "Легенда",
     legendLeave: "Відпустка",
     legendLocked: "Зафіксовано",
@@ -145,7 +145,7 @@ export const ukUA: Copy = {
     calendar: "Календар",
     prevMonth: "Попередній місяць",
     nextMonth: "Наступний місяць",
-    leaveCount: "{n} відпустки",
+    leaveCount: p("{n} відпустки"),
     tapDay: "Торкнись дня, щоб змінити його",
     kindWork: "робочий день",
     kindWeekend: "вихідний",
@@ -225,7 +225,11 @@ export const ukUA: Copy = {
   },
   holiday: {
     title: "Державні свята: {country}, {year}",
-    intro: "{count} загальнодержавних свят",
+    intro: p(
+      "{count} загальнодержавне свято",
+      "{count} загальнодержавні свята",
+      "{count} загальнодержавних свят",
+    ),
     regional: ", плюс регіональні",
     bridgeNote: "Свята у вівторок або четвер дають найкращі довгі вихідні.",
     table: "Таблиця свят",

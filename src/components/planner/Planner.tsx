@@ -270,7 +270,7 @@ function PlannerApp(props: PlannerProps) {
         ? {}
         : {
             headline: `${i18n.text(i18n.plural(stats.leaveUsed, p.heroLeave), { n: stats.leaveUsed })} ${i18n.plural(stats.leaveUsed, p.heroBecome)}`,
-            subhead: i18n.text(p.heroOff, { n: stats.daysOff }),
+            subhead: i18n.countText(stats.daysOff, p.heroOff),
             months: i18n.monthsShort,
             storyLines: [
               i18n.text(p.breaksWith, {

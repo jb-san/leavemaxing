@@ -48,7 +48,7 @@ export function HeroCard({
       : countdown(i18n, next.start - today)
     : p.noneLeft;
   const leave = splitCount(i18n.plural(stats.leaveUsed, p.heroLeave));
-  const off = splitCount(p.heroOff);
+  const off = splitCount(i18n.plural(stats.daysOff, p.heroOff));
 
   return (
     <section
@@ -154,9 +154,9 @@ function countdown(i18n: ReturnType<typeof useI18n>, days: number): string {
   const p = i18n.m.planner;
   if (days <= 0) return p.now;
   if (days === 1) return p.tomorrow;
-  if (days < 14) return i18n.text(p.inDays, { n: days });
-  if (days < 60) return i18n.text(p.inWeeks, { n: Math.round(days / 7) });
-  return i18n.text(p.inMonths, { n: Math.round(days / 30.4) });
+  if (days < 14) return i18n.countText(days, p.inDays);
+  if (days < 60) return i18n.countText(Math.round(days / 7), p.inWeeks);
+  return i18n.countText(Math.round(days / 30.4), p.inMonths);
 }
 
 function Stat({ value, label }: { value: string; label: string }) {

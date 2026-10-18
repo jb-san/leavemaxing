@@ -1,4 +1,5 @@
 import { mascotSvg, moodFor } from "~/components/Mascot";
+import { englishCount } from "~/i18n/format";
 import { type DayNum, MONTHS_SHORT, parts } from "./dates";
 import type { Plan } from "./planner/types";
 
@@ -109,12 +110,16 @@ export async function drawShareCard(
   ctx.fillStyle = C.lime;
   const line1Y = top + (story ? 100 : 76) + bigSize * 1.15;
   ctx.fillText(
-    data.headline ?? `${stats.leaveUsed} leave ${stats.leaveUsed === 1 ? "day" : "days"} become`,
+    data.headline ?? `${englishCount(stats.leaveUsed, "leave day", "leave days")} become`,
     inner,
     line1Y,
   );
   ctx.fillStyle = C.ink;
-  ctx.fillText(data.subhead ?? `${stats.daysOff} days off`, inner, line1Y + bigSize * 1.05);
+  ctx.fillText(
+    data.subhead ?? englishCount(stats.daysOff, "day off", "days off"),
+    inner,
+    line1Y + bigSize * 1.05,
+  );
 
   // Multiplier badge
   const r = story ? 120 : 92;

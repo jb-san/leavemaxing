@@ -1,5 +1,7 @@
-import type { Copy } from "../types";
+import type { Copy, Plural } from "../types";
 import { svSE } from "./sv-SE";
+
+const p = (one: string, many: string = one): Plural => ({ one, few: many, many });
 
 /** Norwegian bokmål. Built from the Swedish structure, then rewritten where the words differ. */
 export const nbNO: Copy = {
@@ -83,7 +85,7 @@ export const nbNO: Copy = {
     regionalHint: "Noen helligdager gjelder bare i visse regioner. Velg din hvis planen skal stemme.",
     year: "År",
     leaveYouHave: "Feriedager du har",
-    leaveUnit: "feriedager",
+    leaveUnit: p("feriedag", "feriedager"),
     fewer: "Færre {label}",
     more: "Flere {label}",
     style: "Stil",
@@ -97,7 +99,7 @@ export const nbNO: Copy = {
     shortest: "Korteste fri",
     longestBreak: "Lengste fri",
     noLimit: "Ingen grense",
-    nDays: "{n} dager",
+    nDays: p("{n} dag", "{n} dager"),
     favouriteMonths: "Favorittmåneder",
     monthsHint: "Planleggeren heller mot fri i disse månedene.",
     workDays: "Dager du jobber",
@@ -105,9 +107,9 @@ export const nbNO: Copy = {
     yourDays: "Dine dager",
     yourDaysHint:
       "Trykk på en dag i kalenderen for å beholde den som ferie, sperre den, eller markere den som fri uten at den trekker ferie (for eksempel en stengt bedrift).",
-    kept: "{n} låst",
-    blockedCount: "{n} sperret",
-    daysOffCount: "{n} fri",
+    kept: p("{n} låst"),
+    blockedCount: p("{n} sperret"),
+    daysOffCount: p("{n} fri"),
     clearAll: "Tøm alt",
     edit: "Endre",
     showPlan: "Vis planen min",
@@ -116,7 +118,7 @@ export const nbNO: Copy = {
     updating: "Oppdaterer",
     heroLeave: { one: "{n} feriedag", few: "{n} feriedager", many: "{n} feriedager" },
     heroBecome: { one: "blir", few: "blir", many: "blir" },
-    heroOff: "{n} fridager",
+    heroOff: p("{n} fridag", "{n} fridager"),
     heroEmpty: "Ingen ferie lagt inn ennå",
     quipNone: "Legg inn feriedager i innstillingene for å se hvor friperiodene havner.",
     quipRatio: "Det er {ratio} fridager per feriedag.",
@@ -136,9 +138,9 @@ export const nbNO: Copy = {
     usedOf: "{used} av {budget} brukt",
     now: "nå",
     tomorrow: "i morgen",
-    inDays: "om {n} dager",
-    inWeeks: "om {n} uker",
-    inMonths: "om {n} måneder",
+    inDays: p("om {n} dag", "om {n} dager"),
+    inWeeks: p("om {n} uke", "om {n} uker"),
+    inMonths: p("om {n} måned", "om {n} måneder"),
     legend: "Forklaring",
     legendLeave: "Ferie",
     legendLocked: "Låst",
@@ -148,7 +150,7 @@ export const nbNO: Copy = {
     calendar: "Kalender",
     prevMonth: "Forrige måned",
     nextMonth: "Neste måned",
-    leaveCount: "{n} ferie",
+    leaveCount: p("{n} ferie"),
     tapDay: "Trykk på en dag for å endre den",
     kindWork: "hverdag",
     kindWeekend: "helg",
@@ -229,7 +231,7 @@ export const nbNO: Copy = {
   },
   holiday: {
     title: "Helligdager i {country} {year}",
-    intro: "{count} nasjonale helligdager",
+    intro: p("{count} nasjonal helligdag", "{count} nasjonale helligdager"),
     regional: ", pluss regionale",
     bridgeNote: "Helligdager på en tirsdag eller torsdag er de beste inneklemte dagene.",
     table: "Tabell over helligdager",

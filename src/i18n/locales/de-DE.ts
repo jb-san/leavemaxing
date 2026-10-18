@@ -1,4 +1,6 @@
-import type { Copy } from "../types";
+import type { Copy, Plural } from "../types";
+
+const p = (one: string, many: string = one): Plural => ({ one, few: many, many });
 
 export const deDE: Copy = {
   chrome: {
@@ -80,7 +82,7 @@ export const deDE: Copy = {
       "Manche Feiertage gelten nur in einzelnen Bundesländern. Wähl deins für einen genauen Plan.",
     year: "Jahr",
     leaveYouHave: "Urlaubstage, die du hast",
-    leaveUnit: "Urlaubstage",
+    leaveUnit: p("Urlaubstag", "Urlaubstage"),
     fewer: "Weniger {label}",
     more: "Mehr {label}",
     style: "Stil",
@@ -94,7 +96,7 @@ export const deDE: Copy = {
     shortest: "Kürzester Abschnitt",
     longestBreak: "Längster Abschnitt",
     noLimit: "Keine Grenze",
-    nDays: "{n} Tage",
+    nDays: p("{n} Tag", "{n} Tage"),
     favouriteMonths: "Lieblingsmonate",
     monthsHint: "Der Planer bevorzugt freie Abschnitte in diesen Monaten.",
     workDays: "Tage, an denen du arbeitest",
@@ -102,9 +104,9 @@ export const deDE: Copy = {
     yourDays: "Deine Tage",
     yourDaysHint:
       "Tippe einen Tag im Kalender an, um ihn als Urlaub zu behalten, zu sperren oder als freien Tag zu markieren (etwa Betriebsferien).",
-    kept: "{n} behalten",
-    blockedCount: "{n} gesperrt",
-    daysOffCount: "{n} frei",
+    kept: p("{n} behalten"),
+    blockedCount: p("{n} gesperrt"),
+    daysOffCount: p("{n} frei"),
     clearAll: "Alles löschen",
     edit: "Ändern",
     showPlan: "Plan anzeigen",
@@ -113,7 +115,7 @@ export const deDE: Copy = {
     updating: "Wird aktualisiert",
     heroLeave: { one: "{n} Urlaubstag", few: "{n} Urlaubstage", many: "{n} Urlaubstage" },
     heroBecome: { one: "wird", few: "werden", many: "werden" },
-    heroOff: "{n} freie Tage",
+    heroOff: p("{n} freier Tag", "{n} freie Tage"),
     heroEmpty: "Noch kein Urlaub geplant",
     quipNone: "Trag in den Einstellungen Urlaubstage ein, dann siehst du, wo die freien Abschnitte liegen.",
     quipRatio: "Das sind {ratio} freie Tage pro Urlaubstag.",
@@ -133,9 +135,9 @@ export const deDE: Copy = {
     usedOf: "{used} von {budget} verplant",
     now: "jetzt",
     tomorrow: "morgen",
-    inDays: "in {n} Tagen",
-    inWeeks: "in {n} Wochen",
-    inMonths: "in {n} Monaten",
+    inDays: p("in {n} Tag", "in {n} Tagen"),
+    inWeeks: p("in {n} Woche", "in {n} Wochen"),
+    inMonths: p("in {n} Monat", "in {n} Monaten"),
     legend: "Legende",
     legendLeave: "Urlaub",
     legendLocked: "Festgelegt",
@@ -145,7 +147,7 @@ export const deDE: Copy = {
     calendar: "Kalender",
     prevMonth: "Vorheriger Monat",
     nextMonth: "Nächster Monat",
-    leaveCount: "{n} Urlaub",
+    leaveCount: p("{n} Urlaub"),
     tapDay: "Tag antippen, um ihn zu ändern",
     kindWork: "Werktag",
     kindWeekend: "Wochenende",
@@ -227,7 +229,7 @@ export const deDE: Copy = {
   },
   holiday: {
     title: "Feiertage in {country} {year}",
-    intro: "{count} gesetzliche Feiertage",
+    intro: p("{count} gesetzlicher Feiertag", "{count} gesetzliche Feiertage"),
     regional: ", dazu regionale",
     bridgeNote: "Feiertage an einem Dienstag oder Donnerstag sind die besten Brückentage.",
     table: "Tabelle der Feiertage",

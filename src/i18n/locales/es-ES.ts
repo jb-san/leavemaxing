@@ -1,6 +1,6 @@
 import type { Copy } from "../types";
 
-const p = (one: string, many: string) => ({ one, few: many, many });
+const p = (one: string, many = one) => ({ one, few: many, many });
 
 export const esES: Copy = {
   chrome: {
@@ -80,7 +80,7 @@ export const esES: Copy = {
     regionalHint: "Algunos festivos solo valen en ciertas comunidades. Elige la tuya para un plan exacto.",
     year: "Año",
     leaveYouHave: "Días de vacaciones que tienes",
-    leaveUnit: "días de vacaciones",
+    leaveUnit: p("día de vacaciones", "días de vacaciones"),
     fewer: "Menos {label}",
     more: "Más {label}",
     style: "Estilo",
@@ -94,7 +94,7 @@ export const esES: Copy = {
     shortest: "Descanso más corto",
     longestBreak: "Descanso más largo",
     noLimit: "Sin límite",
-    nDays: "{n} días",
+    nDays: p("{n} día", "{n} días"),
     favouriteMonths: "Meses preferidos",
     monthsHint: "El planificador inclina los descansos hacia estos meses.",
     workDays: "Días que trabajas",
@@ -102,9 +102,9 @@ export const esES: Copy = {
     yourDays: "Tus días",
     yourDaysHint:
       "Toca un día del calendario para dejarlo como vacaciones, bloquearlo o marcarlo como libre sin que gaste vacaciones (un cierre de empresa, por ejemplo).",
-    kept: "{n} fijados",
-    blockedCount: "{n} bloqueados",
-    daysOffCount: "{n} libres",
+    kept: p("{n} fijado", "{n} fijados"),
+    blockedCount: p("{n} bloqueado", "{n} bloqueados"),
+    daysOffCount: p("{n} libre", "{n} libres"),
     clearAll: "Borrar todo",
     edit: "Editar",
     showPlan: "Ver mi plan",
@@ -113,7 +113,7 @@ export const esES: Copy = {
     updating: "Actualizando",
     heroLeave: p("{n} día de vacaciones", "{n} días de vacaciones"),
     heroBecome: p("se convierte en", "se convierten en"),
-    heroOff: "{n} días libres",
+    heroOff: p("{n} día libre", "{n} días libres"),
     heroEmpty: "Todavía no hay vacaciones",
     quipNone: "Indica los días de vacaciones en los ajustes para ver dónde caen los descansos.",
     quipRatio: "Son {ratio} días libres por cada día de vacaciones.",
@@ -133,9 +133,9 @@ export const esES: Copy = {
     usedOf: "{used} de {budget} usados",
     now: "ahora",
     tomorrow: "mañana",
-    inDays: "en {n} días",
-    inWeeks: "en {n} semanas",
-    inMonths: "en {n} meses",
+    inDays: p("en {n} día", "en {n} días"),
+    inWeeks: p("en {n} semana", "en {n} semanas"),
+    inMonths: p("en {n} mes", "en {n} meses"),
     legend: "Leyenda",
     legendLeave: "Vacaciones",
     legendLocked: "Fijado",
@@ -145,7 +145,7 @@ export const esES: Copy = {
     calendar: "Calendario",
     prevMonth: "Mes anterior",
     nextMonth: "Mes siguiente",
-    leaveCount: "{n} de vacaciones",
+    leaveCount: p("{n} de vacaciones"),
     tapDay: "Toca un día para cambiarlo",
     kindWork: "laborable",
     kindWeekend: "fin de semana",
@@ -225,7 +225,7 @@ export const esES: Copy = {
   },
   holiday: {
     title: "Festivos en {country} en {year}",
-    intro: "{count} festivos nacionales",
+    intro: p("{count} festivo nacional", "{count} festivos nacionales"),
     regional: ", más los autonómicos",
     bridgeNote: "Un festivo en martes o en jueves es el mejor puente.",
     table: "Tabla de festivos",

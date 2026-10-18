@@ -15,7 +15,7 @@ export const frBE: Copy = {
   planner: {
     ...frFR.planner,
     leaveYouHave: "Jours de congé dont vous disposez",
-    leaveUnit: "jours de congé",
+    leaveUnit: { one: "jour de congé", few: "jours de congé", many: "jours de congé" },
     heroLeave: { one: "{n} jour de congé", few: "{n} jours de congé", many: "{n} jours de congé" },
     leaveDay: { one: "jour de congé", few: "jours de congé", many: "jours de congé" },
     quipNone: "Indiquez vos jours de congé dans les réglages pour voir où tombent les repos.",

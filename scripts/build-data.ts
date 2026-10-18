@@ -33,7 +33,7 @@ export const BEST_BUDGETS = [10, 15, 20, 25, 30];
 const bestYears = [thisYear, thisYear + 1];
 
 const pkg = JSON.parse(readFileSync(join(root, "node_modules/date-holidays/package.json"), "utf8"));
-const stamp = JSON.stringify({ v: pkg.version, years, extraYear, script: 4 });
+const stamp = JSON.stringify({ v: pkg.version, years, extraYear, script: 5 });
 const stampFile = join(publicData, ".stamp");
 if (
   existsSync(stampFile) &&
@@ -83,49 +83,52 @@ console.log(`wrote ${files.size} holiday files for ${countries.length} countries
 
 // Build-time ranking: where does a leave budget go furthest?
 for (const year of bestYears) {
-  const rows = countries.map((c) => {
-    const holidays = resolveHolidays(
-      [
-        files.get(`${c.code}/${year - 1}`),
-        files.get(`${c.code}/${year}`),
-        files.get(`${c.code}/${year + 1}`),
-      ],
-      null,
-    );
-    const results: Record<number, { daysOff: number; multiplier: number; longest: number }> = {};
-    for (const budget of BEST_BUDGETS) {
-      const p = plan({
-        year,
-        yearStart: 1,
-        budget,
-        holidays,
-        workWeek: defaultWorkWeek(c.code),
-        customOff: [],
-        locked: [],
-        blocked: [],
-        style: "balanced",
-        minBreak: 3,
-        maxBreak: null,
-        months: [],
-        today: fromIso(`${year}-01-01`),
-      });
-      results[budget] = {
-        daysOff: p.stats.daysOff,
-        multiplier: Math.round(p.stats.multiplier * 100) / 100,
-        longest: p.stats.longest,
+  // Ukraine's public holidays are working days under martial law, so a days-off rank would mislead.
+  const rows = countries
+    .filter((c) => c.code !== "UA")
+    .map((c) => {
+      const holidays = resolveHolidays(
+        [
+          files.get(`${c.code}/${year - 1}`),
+          files.get(`${c.code}/${year}`),
+          files.get(`${c.code}/${year + 1}`),
+        ],
+        null,
+      );
+      const results: Record<number, { daysOff: number; multiplier: number; longest: number }> = {};
+      for (const budget of BEST_BUDGETS) {
+        const p = plan({
+          year,
+          yearStart: 1,
+          budget,
+          holidays,
+          workWeek: defaultWorkWeek(c.code),
+          customOff: [],
+          locked: [],
+          blocked: [],
+          style: "balanced",
+          minBreak: 3,
+          maxBreak: null,
+          months: [],
+          today: fromIso(`${year}-01-01`),
+        });
+        results[budget] = {
+          daysOff: p.stats.daysOff,
+          multiplier: Math.round(p.stats.multiplier * 100) / 100,
+          longest: p.stats.longest,
+        };
+      }
+      const publicHolidays = holidays.filter(
+        (h) => h.day >= fromIso(`${year}-01-01`) && h.day <= fromIso(`${year}-12-31`),
+      );
+      return {
+        code: c.code,
+        name: c.name,
+        flag: c.flag,
+        holidays: new Set(publicHolidays.map((h) => h.day)).size,
+        results,
       };
-    }
-    const publicHolidays = holidays.filter(
-      (h) => h.day >= fromIso(`${year}-01-01`) && h.day <= fromIso(`${year}-12-31`),
-    );
-    return {
-      code: c.code,
-      name: c.name,
-      flag: c.flag,
-      holidays: new Set(publicHolidays.map((h) => h.day)).size,
-      results,
-    };
-  });
+    });
   writeFileSync(join(generated, `best-${year}.json`), JSON.stringify({ year, budgets: BEST_BUDGETS, rows }));
   console.log(`ranked ${rows.length} countries for ${year}`);
 }

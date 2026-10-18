@@ -5,11 +5,12 @@ import Planner from "~/components/planner/Planner";
 import { countryByCode } from "~/data";
 import { readHolidayFile, filesFor, buildToday } from "~/data/server";
 import { publishedRegionCodes } from "~/lib/regionSets";
-import { locales, replaceTokens, getLocale, isRegionalCountry } from "~/data/locales";
+import { locales, replaceTokens, getLocale, isRegionalCountry, sidebarHeading } from "~/data/locales";
 import { SITE } from "~/data/site";
 import Base from "~/layouts/Base.astro";
 import { intlLocale } from "~/i18n";
-import { countryName, formatRangeLocale } from "~/i18n/format";
+import { countText, countryName, formatRangeLocale } from "~/i18n/format";
+import type { Plural } from "~/i18n/types";
 import { regionalPageAlternates } from "~/lib/hreflang";
 import { regionCopy } from "~/lib/regionLabels";
 import { defaultSettings } from "~/lib/settings";
@@ -123,6 +124,7 @@ const top = [...fullPlan.breaks]
   .filter((b) => b.leave > 0)
   .sort((a, b) => b.length / b.leave - a.length / a.leave)
   .slice(0, 3);
+const units = (n: number, forms: Plural) => countText(locale.lang, n, forms).toLowerCase();
 
 const place = regionPlace(locale.country, regionCode, country.regions[regionCode] ?? regionCode);
 const seasonal = localizedSeasonal({
@@ -238,14 +240,14 @@ const regionalHolidays = file.holidays.filter(h =>
               <div class="flex items-baseline gap-2 mb-2">
                 <span class="text-3xl font-extrabold text-lime-ink">{bridgePlan.multiplier.toFixed(1)}×</span>
                 <span class="text-muted">
-                  {bridgePlan.budget} {locale.translations.leaveDays.toLowerCase()} → {bridgePlan.daysOff} {locale.translations.daysOff.toLowerCase()}
+                  {units(bridgePlan.budget, locale.translations.leaveDays)} → {units(bridgePlan.daysOff, locale.translations.daysOff)}
                 </span>
               </div>
               <div class="text-sm space-y-1">
                 {bridgePlan.breaks.slice(0, 3).map((br) => {
                   return (
                     <div class="text-muted">
-                      {rangeText(br.start, br.end)}: {br.leave} {locale.translations.leaveDays.toLowerCase()} → {br.length} {locale.translations.totalDays}
+                      {rangeText(br.start, br.end)}: {units(br.leave, locale.translations.leaveDays)} → {units(br.length, locale.translations.totalDays)}
                     </div>
                   );
                 })}
@@ -288,7 +290,7 @@ const regionalHolidays = file.holidays.filter(h =>
       {
         top.length > 0 && (
           <section class="card p-5 sm:p-6">
-            <h2 class="text-xl font-bold">{locale.translations.bestPlansHeading.replace(` ${year}`, '')}</h2>
+            <h2 class="text-xl font-bold">{sidebarHeading(locale.translations.bestPlansHeading, year)}</h2>
             <p class="mt-1 text-sm text-muted">
               {locale.translations.withBudget ? replaceTokens(locale.translations.withBudget, { budget: settings.budget }) : ""}
             </p>
@@ -301,7 +303,7 @@ const regionalHolidays = file.holidays.filter(h =>
                   <span class="text-sm">
                     <span class="block font-bold">{rangeText(b.start, b.end)}</span>
                     <span class="text-muted">
-                      {b.leave} {locale.translations.leaveDays.toLowerCase()} → {b.length} {locale.translations.totalDays}
+                      {units(b.leave, locale.translations.leaveDays)} → {units(b.length, locale.translations.totalDays)}
                     </span>
                   </span>
                 </li>

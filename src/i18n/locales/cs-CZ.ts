@@ -1,6 +1,6 @@
 import type { Copy, Plural } from "../types";
 
-const p = (one: string, few: string, many: string): Plural => ({ one, few, many });
+const p = (one: string, few = one, many = few): Plural => ({ one, few, many });
 
 export const csCZ: Copy = {
   chrome: {
@@ -79,7 +79,7 @@ export const csCZ: Copy = {
     regionalHint: "Některé svátky platí jen v určitých regionech. Vyber svůj, ať je plán přesný.",
     year: "Rok",
     leaveYouHave: "Dnů dovolené, které máš",
-    leaveUnit: "dnů dovolené",
+    leaveUnit: p("den dovolené", "dny dovolené", "dnů dovolené"),
     fewer: "Míň: {label}",
     more: "Víc: {label}",
     style: "Styl",
@@ -93,7 +93,7 @@ export const csCZ: Copy = {
     shortest: "Nejkratší volno",
     longestBreak: "Nejdelší volno",
     noLimit: "Bez limitu",
-    nDays: "{n} dní",
+    nDays: p("{n} den", "{n} dny", "{n} dní"),
     favouriteMonths: "Oblíbené měsíce",
     monthsHint: "Plánovač tlačí volna do těchto měsíců.",
     workDays: "Dny, kdy pracuješ",
@@ -101,9 +101,9 @@ export const csCZ: Copy = {
     yourDays: "Tvoje dny",
     yourDaysHint:
       "Ťukni na den v kalendáři, ať ho necháš jako dovolenou, zablokuješ ho, nebo označíš jako volno bez čerpání (třeba celozávodní volno).",
-    kept: "{n} držených",
-    blockedCount: "{n} blokovaných",
-    daysOffCount: "{n} volných",
+    kept: p("{n} držený", "{n} držené", "{n} držených"),
+    blockedCount: p("{n} blokovaný", "{n} blokované", "{n} blokovaných"),
+    daysOffCount: p("{n} volný", "{n} volné", "{n} volných"),
     clearAll: "Vymazat vše",
     edit: "Upravit",
     showPlan: "Ukázat plán",
@@ -112,7 +112,7 @@ export const csCZ: Copy = {
     updating: "Aktualizuje se",
     heroLeave: p("{n} den dovolené", "{n} dny dovolené", "{n} dnů dovolené"),
     heroBecome: p("udělá", "udělají", "udělá"),
-    heroOff: "{n} volných dnů",
+    heroOff: p("{n} volný den", "{n} volné dny", "{n} volných dnů"),
     heroEmpty: "Dovolená ještě není naplánovaná",
     quipNone: "Do nastavení zadej dny dovolené, ať vidíš, kam volna padnou.",
     quipRatio: "To je {ratio} volného dne na každý den dovolené.",
@@ -132,9 +132,9 @@ export const csCZ: Copy = {
     usedOf: "{used} z {budget} využito",
     now: "teď",
     tomorrow: "zítra",
-    inDays: "za {n} dní",
-    inWeeks: "za {n} týdnů",
-    inMonths: "za {n} měsíců",
+    inDays: p("za {n} den", "za {n} dny", "za {n} dní"),
+    inWeeks: p("za {n} týden", "za {n} týdny", "za {n} týdnů"),
+    inMonths: p("za {n} měsíc", "za {n} měsíce", "za {n} měsíců"),
     legend: "Legenda",
     legendLeave: "Dovolená",
     legendLocked: "Držené",
@@ -144,7 +144,7 @@ export const csCZ: Copy = {
     calendar: "Kalendář",
     prevMonth: "Předchozí měsíc",
     nextMonth: "Další měsíc",
-    leaveCount: "{n} dovolené",
+    leaveCount: p("{n} dovolené"),
     tapDay: "Ťukni na den a změň ho",
     kindWork: "pracovní den",
     kindWeekend: "víkend",
@@ -224,7 +224,7 @@ export const csCZ: Copy = {
   },
   holiday: {
     title: "Státní svátky v zemi {country} v roce {year}",
-    intro: "{count} celostátních svátků",
+    intro: p("{count} celostátní svátek", "{count} celostátní svátky", "{count} celostátních svátků"),
     regional: ", plus regionální",
     bridgeNote: "Svátek v úterý nebo ve čtvrtek je nejlepší prodloužený víkend.",
     table: "Tabulka svátků",

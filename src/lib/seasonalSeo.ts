@@ -1,4 +1,4 @@
-import { replaceTokens } from "~/data/locales";
+import { locales, replaceTokens, UKRAINE_MARTIAL_LAW_NOTICE } from "~/data/locales";
 import { formatDayMonthLocale, formatRangeLocale, pluralCategory } from "~/i18n/format";
 import { type BridgeCluster, type BridgeFacts, findBridgeFacts } from "./bridgeFacts";
 import { BUILD_DATE, formatBuildDate } from "./buildDate";
@@ -6,7 +6,13 @@ import { fromIso } from "./dates";
 import type { HolidayFile } from "./holidays";
 import type { Break } from "./planner/types";
 import { regionCopy } from "./regionLabels";
-import { type Forms, type SeasonalCopy, seasonalCopy } from "./seasonalCopy";
+import {
+  type Forms,
+  type SeasonalCopy,
+  type SeasonalPhrases,
+  seasonalCopy,
+  seasonalPhrases,
+} from "./seasonalCopy";
 
 /** Locative used after the year in titles, descriptions, and questions. */
 export const NATIONAL_WHERE: Record<string, string> = {
@@ -114,6 +120,30 @@ function fill(template: string, tokens: Record<string, string | number>): string
   return out;
 }
 
+function phrasesFor(code: string): SeasonalPhrases {
+  const phrases = seasonalPhrases[code];
+  if (!phrases) throw new Error(`No seasonal phrases for ${code}`);
+  return phrases;
+}
+
+/** The phrase for `n`, chosen with this locale's plural category rather than another count in the sentence. */
+function countPhrase(locale: string, n: number, forms: Forms): string {
+  const cat = pluralCategory(locale, n);
+  const template = cat === "one" ? forms.one : cat === "few" && forms.few ? forms.few : forms.many;
+  return fill(template, { n });
+}
+
+const UKRAINE_FAQ: Record<string, FaqItem> = {
+  en: {
+    question: "Are public holidays days off in Ukraine right now?",
+    answer: UKRAINE_MARTIAL_LAW_NOTICE,
+  },
+  "uk-UA": {
+    question: "Чи є державні свята вихідними зараз?",
+    answer: locales["uk-UA"]?.translations.notice ?? "",
+  },
+};
+
 function formText(locale: string, n: number, forms: Forms, tokens: Record<string, string | number>): string {
   const cat = pluralCategory(locale, n);
   const template = cat === "one" ? forms.one : cat === "few" && forms.few ? forms.few : forms.many;
@@ -149,6 +179,7 @@ export function seasonalText(input: {
   fit?: boolean;
 }): SeasonalText {
   const copy = copyFor(input.localeCode);
+  const phrases = phrasesFor(input.localeCode);
   const count = copy.countKind === "bridges" ? input.facts.bridges : input.facts.days;
   const base = {
     year: input.year,
@@ -157,6 +188,7 @@ export function seasonalText(input: {
     budget: input.budget,
     leave: input.budget,
     total: input.daysOff,
+    totalOff: countPhrase(input.uiLocale, input.daysOff, phrases.offPhrase),
     multiplier: input.multiplier.toFixed(1),
   };
   const best = input.facts.best;
@@ -164,7 +196,7 @@ export function seasonalText(input: {
     ? {
         ...base,
         leave: best.leave,
-        length: best.length,
+        lengthOff: countPhrase(input.uiLocale, best.length, phrases.lengthOff),
         when: whenLabel(best, input.uiLocale),
         holiday: joinNames(best.holidays, copy.and),
         range: formatRangeLocale(input.uiLocale, best.start, best.end),
@@ -174,7 +206,8 @@ export function seasonalText(input: {
     ? {
         ...base,
         leave: input.longest.leave,
-        length: input.longest.length,
+        lengthOff: countPhrase(input.uiLocale, input.longest.length, phrases.lengthOff),
+        lengthSpan: countPhrase(input.uiLocale, input.longest.length, phrases.spanPhrase),
         range: formatRangeLocale(input.uiLocale, input.longest.start, input.longest.end),
       }
     : base;
@@ -238,11 +271,14 @@ export function localizedSeasonal(input: {
   uiLocale: string;
   fit?: boolean;
 }): SeasonalText {
-  return seasonalText({
+  const text = seasonalText({
     ...input,
     facts: findBridgeFacts(input.file, input.country, input.region, input.localeCode),
     longest: longestFromBreaks(input.breaks),
   });
+  const martial = input.country === "UA" ? UKRAINE_FAQ[input.localeCode] : undefined;
+  if (!martial?.answer) return text;
+  return { ...text, faq: [...text.faq, martial] };
 }
 
 export function englishCountryTitle(place: string, year: number): string {
@@ -261,8 +297,13 @@ export function bestPageText(input: {
   topOff: number;
   isTop: boolean;
   uiLocale: string;
+  /** False when this country is left out of the ranking. Ukraine is. */
+  ranked?: boolean;
+  /** Shown in place of a days-off claim when the country is unranked. */
+  notice?: string;
 }): Pick<SeasonalText, "title" | "description" | "intro" | "updatedLabel" | "updatedDate"> {
   const copy = copyFor(input.localeCode);
+  const phrases = phrasesFor(input.localeCode);
   const tokens = {
     year: input.year,
     where: input.where,
@@ -272,7 +313,21 @@ export function bestPageText(input: {
     off: input.off,
     topName: input.topName,
     topOff: input.topOff,
+    offPhrase: countPhrase(input.uiLocale, input.off, phrases.offPhrase),
+    withOff: countPhrase(input.uiLocale, input.topOff, phrases.withOffPhrase),
   };
+  const updatedLabel = fill(copy.updated, { date: formatBuildDate(input.uiLocale) });
+  if (input.ranked === false) {
+    return {
+      title: fill(copy.bestTitle, tokens),
+      description: fill(copy.bestUnrankedDescription ?? copy.bestDescription, tokens),
+      intro: [input.notice, fill(copy.bestFollow, tokens), fill(copy.bestMethod, tokens)].filter(
+        (item): item is string => Boolean(item),
+      ),
+      updatedLabel,
+      updatedDate: BUILD_DATE,
+    };
+  }
   const intro = input.isTop
     ? [fill(copy.bestLeadTop, tokens), fill(copy.bestMethod, tokens)]
     : [fill(copy.bestLead, tokens), fill(copy.bestFollow, tokens), fill(copy.bestMethod, tokens)];
@@ -280,7 +335,7 @@ export function bestPageText(input: {
     title: fill(copy.bestTitle, tokens),
     description: fill(copy.bestDescription, tokens),
     intro,
-    updatedLabel: fill(copy.updated, { date: formatBuildDate(input.uiLocale) }),
+    updatedLabel,
     updatedDate: BUILD_DATE,
   };
 }

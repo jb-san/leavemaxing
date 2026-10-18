@@ -1,6 +1,6 @@
 import type { Copy } from "../types";
 
-const p = (one: string, many: string) => ({ one, few: many, many });
+const p = (one: string, many = one) => ({ one, few: many, many });
 
 export const nlNL: Copy = {
   chrome: {
@@ -82,7 +82,7 @@ export const nlNL: Copy = {
       "Sommige feestdagen gelden alleen in bepaalde regio's. Kies de jouwe voor een precies plan.",
     year: "Jaar",
     leaveYouHave: "Vakantiedagen die je hebt",
-    leaveUnit: "vakantiedagen",
+    leaveUnit: p("vakantiedag", "vakantiedagen"),
     fewer: "Minder {label}",
     more: "Meer {label}",
     style: "Stijl",
@@ -96,7 +96,7 @@ export const nlNL: Copy = {
     shortest: "Kortste periode",
     longestBreak: "Langste periode",
     noLimit: "Geen limiet",
-    nDays: "{n} dagen",
+    nDays: p("{n} dag", "{n} dagen"),
     favouriteMonths: "Favoriete maanden",
     monthsHint: "De planner geeft de voorkeur aan vrij in deze maanden.",
     workDays: "Dagen waarop je werkt",
@@ -104,9 +104,9 @@ export const nlNL: Copy = {
     yourDays: "Jouw dagen",
     yourDaysHint:
       "Tik een dag in de kalender aan om hem als vakantie te houden, te blokkeren of als vrije dag te markeren zonder dat hij vakantie kost (bijvoorbeeld een bedrijfssluiting).",
-    kept: "{n} vastgezet",
-    blockedCount: "{n} geblokkeerd",
-    daysOffCount: "{n} vrij",
+    kept: p("{n} vastgezet"),
+    blockedCount: p("{n} geblokkeerd"),
+    daysOffCount: p("{n} vrij"),
     clearAll: "Alles wissen",
     edit: "Wijzig",
     showPlan: "Toon mijn plan",
@@ -115,7 +115,7 @@ export const nlNL: Copy = {
     updating: "Bijwerken",
     heroLeave: p("{n} vakantiedag", "{n} vakantiedagen"),
     heroBecome: p("wordt", "worden"),
-    heroOff: "{n} vrije dagen",
+    heroOff: p("{n} vrije dag", "{n} vrije dagen"),
     heroEmpty: "Nog geen vakantie gepland",
     quipNone: "Vul vakantiedagen in bij de instellingen om te zien waar de vrije periodes vallen.",
     quipRatio: "Dat is {ratio} vrije dagen per vakantiedag.",
@@ -135,9 +135,9 @@ export const nlNL: Copy = {
     usedOf: "{used} van {budget} gebruikt",
     now: "nu",
     tomorrow: "morgen",
-    inDays: "over {n} dagen",
-    inWeeks: "over {n} weken",
-    inMonths: "over {n} maanden",
+    inDays: p("over {n} dag", "over {n} dagen"),
+    inWeeks: p("over {n} week", "over {n} weken"),
+    inMonths: p("over {n} maand", "over {n} maanden"),
     legend: "Legenda",
     legendLeave: "Vakantie",
     legendLocked: "Vastgezet",
@@ -147,7 +147,7 @@ export const nlNL: Copy = {
     calendar: "Kalender",
     prevMonth: "Vorige maand",
     nextMonth: "Volgende maand",
-    leaveCount: "{n} vakantie",
+    leaveCount: p("{n} vakantie"),
     tapDay: "Tik een dag aan om hem te wijzigen",
     kindWork: "werkdag",
     kindWeekend: "weekend",
@@ -228,7 +228,7 @@ export const nlNL: Copy = {
   },
   holiday: {
     title: "Feestdagen in {country} {year}",
-    intro: "{count} nationale feestdagen",
+    intro: p("{count} nationale feestdag", "{count} nationale feestdagen"),
     regional: ", plus regionale",
     bridgeNote: "Feestdagen op een dinsdag of donderdag zijn de beste brugdagen.",
     table: "Tabel met feestdagen",

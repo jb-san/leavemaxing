@@ -1,4 +1,6 @@
-import type { Copy } from "../types";
+import type { Copy, Plural } from "../types";
+
+const p = (one: string, many: string = one): Plural => ({ one, few: many, many });
 
 export const svSE: Copy = {
   chrome: {
@@ -77,7 +79,7 @@ export const svSE: Copy = {
     regionalHint: "Vissa helgdagar gäller bara i vissa regioner. Välj din om planen ska stämma.",
     year: "År",
     leaveYouHave: "Semesterdagar du har",
-    leaveUnit: "semesterdagar",
+    leaveUnit: p("semesterdag", "semesterdagar"),
     fewer: "Färre {label}",
     more: "Fler {label}",
     style: "Stil",
@@ -91,7 +93,7 @@ export const svSE: Copy = {
     shortest: "Kortaste ledigheten",
     longestBreak: "Längsta ledigheten",
     noLimit: "Ingen gräns",
-    nDays: "{n} dagar",
+    nDays: p("{n} dag", "{n} dagar"),
     favouriteMonths: "Favoritmånader",
     monthsHint: "Planeraren lutar åt ledighet de här månaderna.",
     workDays: "Dagar du jobbar",
@@ -99,9 +101,9 @@ export const svSE: Copy = {
     yourDays: "Dina dagar",
     yourDaysHint:
       "Tryck på en dag i kalendern för att behålla den som semester, spärra den eller markera den som ledig utan att den drar semester (till exempel en stängd arbetsplats).",
-    kept: "{n} låsta",
-    blockedCount: "{n} spärrade",
-    daysOffCount: "{n} lediga",
+    kept: p("{n} låst", "{n} låsta"),
+    blockedCount: p("{n} spärrad", "{n} spärrade"),
+    daysOffCount: p("{n} ledig", "{n} lediga"),
     clearAll: "Rensa allt",
     edit: "Ändra",
     showPlan: "Visa min plan",
@@ -110,7 +112,7 @@ export const svSE: Copy = {
     updating: "Uppdaterar",
     heroLeave: { one: "{n} semesterdag", few: "{n} semesterdagar", many: "{n} semesterdagar" },
     heroBecome: { one: "blir", few: "blir", many: "blir" },
-    heroOff: "{n} lediga dagar",
+    heroOff: p("{n} ledig dag", "{n} lediga dagar"),
     heroEmpty: "Ingen semester inlagd än",
     quipNone: "Lägg in semesterdagar i inställningarna så ser du var ledigheterna hamnar.",
     quipRatio: "Det är {ratio} lediga dagar per semesterdag.",
@@ -130,9 +132,9 @@ export const svSE: Copy = {
     usedOf: "{used} av {budget} använda",
     now: "nu",
     tomorrow: "i morgon",
-    inDays: "om {n} dagar",
-    inWeeks: "om {n} veckor",
-    inMonths: "om {n} månader",
+    inDays: p("om {n} dag", "om {n} dagar"),
+    inWeeks: p("om {n} vecka", "om {n} veckor"),
+    inMonths: p("om {n} månad", "om {n} månader"),
     legend: "Förklaring",
     legendLeave: "Semester",
     legendLocked: "Låst",
@@ -142,7 +144,7 @@ export const svSE: Copy = {
     calendar: "Kalender",
     prevMonth: "Föregående månad",
     nextMonth: "Nästa månad",
-    leaveCount: "{n} semester",
+    leaveCount: p("{n} semester"),
     tapDay: "Tryck på en dag för att ändra den",
     kindWork: "vardag",
     kindWeekend: "helg",
@@ -223,7 +225,7 @@ export const svSE: Copy = {
   },
   holiday: {
     title: "Helgdagar i {country} {year}",
-    intro: "{count} nationella helgdagar",
+    intro: p("{count} nationell helgdag", "{count} nationella helgdagar"),
     regional: ", plus regionala",
     bridgeNote: "Helgdagar på en tisdag eller torsdag är de bästa klämdagarna.",
     table: "Tabell över helgdagar",

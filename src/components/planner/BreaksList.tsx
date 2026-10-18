@@ -13,9 +13,9 @@ export function BreaksList({ plan, today }: { plan: Plan; today: DayNum }) {
   const when = (days: number) => {
     if (days <= 0) return p.now;
     if (days === 1) return p.tomorrow;
-    if (days < 14) return i18n.text(p.inDays, { n: days });
-    if (days < 60) return i18n.text(p.inWeeks, { n: Math.round(days / 7) });
-    return i18n.text(p.inMonths, { n: Math.round(days / 30.4) });
+    if (days < 14) return i18n.countText(days, p.inDays);
+    if (days < 60) return i18n.countText(Math.round(days / 7), p.inWeeks);
+    return i18n.countText(Math.round(days / 30.4), p.inMonths);
   };
   return (
     <section aria-labelledby="breaks-title" className="card p-5 sm:p-6">

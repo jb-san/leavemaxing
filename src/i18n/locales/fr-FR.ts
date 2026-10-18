@@ -1,6 +1,6 @@
 import type { Copy } from "../types";
 
-const p = (one: string, many: string) => ({ one, few: many, many });
+const p = (one: string, many = one) => ({ one, few: many, many });
 
 export const frFR: Copy = {
   chrome: {
@@ -82,7 +82,7 @@ export const frFR: Copy = {
       "Certains jours fériés ne valent que dans certaines régions. Choisissez la vôtre pour un plan exact.",
     year: "Année",
     leaveYouHave: "Jours de congés dont vous disposez",
-    leaveUnit: "jours de congés",
+    leaveUnit: p("jour de congé", "jours de congés"),
     fewer: "Moins de {label}",
     more: "Plus de {label}",
     style: "Style",
@@ -96,7 +96,7 @@ export const frFR: Copy = {
     shortest: "Repos le plus court",
     longestBreak: "Repos le plus long",
     noLimit: "Sans limite",
-    nDays: "{n} jours",
+    nDays: p("{n} jour", "{n} jours"),
     favouriteMonths: "Mois préférés",
     monthsHint: "Le planificateur privilégie les repos dans ces mois.",
     workDays: "Jours travaillés",
@@ -104,9 +104,9 @@ export const frFR: Copy = {
     yourDays: "Vos jours",
     yourDaysHint:
       "Touchez un jour du calendrier pour le garder en congé, le bloquer ou le marquer comme repos sans qu’il consomme de congé (fermeture de l’entreprise, par exemple).",
-    kept: "{n} gardés",
-    blockedCount: "{n} bloqués",
-    daysOffCount: "{n} en repos",
+    kept: p("{n} gardé", "{n} gardés"),
+    blockedCount: p("{n} bloqué", "{n} bloqués"),
+    daysOffCount: p("{n} en repos"),
     clearAll: "Tout effacer",
     edit: "Modifier",
     showPlan: "Voir mon plan",
@@ -115,7 +115,7 @@ export const frFR: Copy = {
     updating: "Mise à jour",
     heroLeave: p("{n} jour de congé", "{n} jours de congés"),
     heroBecome: p("devient", "deviennent"),
-    heroOff: "{n} jours de repos",
+    heroOff: p("{n} jour de repos", "{n} jours de repos"),
     heroEmpty: "Aucun congé prévu pour l’instant",
     quipNone: "Indiquez vos jours de congés dans les réglages pour voir où tombent les repos.",
     quipRatio: "Cela fait {ratio} jours de repos par jour de congé.",
@@ -135,9 +135,9 @@ export const frFR: Copy = {
     usedOf: "{used} sur {budget} utilisés",
     now: "maintenant",
     tomorrow: "demain",
-    inDays: "dans {n} jours",
-    inWeeks: "dans {n} semaines",
-    inMonths: "dans {n} mois",
+    inDays: p("dans {n} jour", "dans {n} jours"),
+    inWeeks: p("dans {n} semaine", "dans {n} semaines"),
+    inMonths: p("dans {n} mois"),
     legend: "Légende",
     legendLeave: "Congé",
     legendLocked: "Fixé",
@@ -147,7 +147,7 @@ export const frFR: Copy = {
     calendar: "Calendrier",
     prevMonth: "Mois précédent",
     nextMonth: "Mois suivant",
-    leaveCount: "{n} congé",
+    leaveCount: p("{n} congé"),
     tapDay: "Touchez un jour pour le modifier",
     kindWork: "jour ouvré",
     kindWeekend: "week-end",
@@ -230,7 +230,7 @@ export const frFR: Copy = {
   },
   holiday: {
     title: "Jours fériés en {country} en {year}",
-    intro: "{count} jours fériés nationaux",
+    intro: p("{count} jour férié national", "{count} jours fériés nationaux"),
     regional: ", plus les locaux",
     bridgeNote: "Un férié un mardi ou un jeudi fait le meilleur pont.",
     table: "Tableau des jours fériés",
