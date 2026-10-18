@@ -90,6 +90,12 @@ const jsonLd = {
     </div>
   </div>
 
+  {
+    locale.translations.notice && (
+      <p class="mb-6 max-w-[70ch] text-sm text-muted">{locale.translations.notice}</p>
+    )
+  }
+
   <Planner
     client:load
     initial={settings}

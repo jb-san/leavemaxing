@@ -216,6 +216,7 @@ const regionalHolidays = file.holidays.filter(h =>
   </div>
 
   <div class="prose prose-slate max-w-none mb-8">
+    {locale.translations.notice && <p class="mb-3 text-sm text-muted">{locale.translations.notice}</p>}
     <p class="text-lg">
       {replaceTokens(locale.translations.intro, {
         year,
