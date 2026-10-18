@@ -49,6 +49,10 @@ export const LIMITS = {
   rateWindowMs: 10_000,
   minLength: 3,
   maxLength: 21,
+  /** Characters in a member's name. */
+  name: 40,
+  /** Leave days a member can bring. */
+  allowance: 80,
 } as const;
 
 /** Each has at least 3:1 contrast against both #ffffff and #1e293b. */
@@ -63,10 +67,8 @@ export const MEMBER_COLORS: readonly string[] = [
   "#db2777",
 ];
 
-const MAX_NAME = 40;
 const MAX_GROUP_NAME = 60;
 const MAX_MONTHS = 24;
-const MAX_ALLOWANCE = 80;
 const B64URL = /^[A-Za-z0-9_-]*$/;
 const WINDOW_KEY = /^\d{4}-\d{2}-\d{2}\.\.\d{4}-\d{2}-\d{2}$/;
 
@@ -184,14 +186,14 @@ export function sanitizeMember(v: unknown): MemberRecord | null {
   }
 
   return {
-    name: name.slice(0, MAX_NAME),
+    name: name.slice(0, LIMITS.name),
     color: MEMBER_COLORS.find((c) => c === String(color).toLowerCase()) ?? (MEMBER_COLORS[0] as string),
     country,
     region: typeof region === "string" ? region : null,
     workWeek: workWeek as boolean[],
     customOff: days(v.customOff),
     blocked: days(v.blocked),
-    allowance: Math.min(MAX_ALLOWANCE, Math.max(0, allowance)),
+    allowance: Math.min(LIMITS.allowance, Math.max(0, allowance)),
     proposals,
     votes,
   };

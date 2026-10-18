@@ -147,7 +147,28 @@ export const t = {
   voteOn: (dates: string) => `Your vote on ${dates}`,
   voteWords: { yes: "Works", maybe: "Maybe", no: "Can't", none: "No vote yet" },
   removeAsk: (name: string) => `Remove ${name}?`,
+  removeHint: "They can rejoin with the invite link unless you start a new group.",
+  sharedDays: (n: number) =>
+    `${n} ${n === 1 ? "day" : "days"} you marked in your own plan will be shared with the group.`,
+  dontShare: "Don't share them",
   confirm: "Confirm",
+  cancel: "Cancel",
+} as const;
+
+/** The group cards in My plans, which show only what the membership keeps, without decrypting. */
+export const plansCopy = {
+  groupPlan: "Group plan",
+  people: (n: number) => `${n} ${n === 1 ? "person" : "people"}`,
+  agreed: (n: number) => `${n} ${n === 1 ? "date works" : "dates work"} for everyone`,
+  openToSee: "Open it to see who is in.",
+  youCreated: "You created it",
+  open: "Open",
+  openAria: (name: string) => `Open ${name}`,
+  removeAria: (name: string) => `Remove ${name} from this browser`,
+  stillWorks: "Your personal link still works.",
+  removeConfirm: "Remove? You stay in the group.",
+  copyPersonal: "Copy personal link",
+  copied: "Copied",
   cancel: "Cancel",
 } as const;
 

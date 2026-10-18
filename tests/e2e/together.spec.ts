@@ -238,6 +238,43 @@ test("join via invite", async ({ page, browser }) => {
   await other.close();
 });
 
+test("joining says which of your own days go to the group, and can leave them out", async ({
+  page,
+  browser,
+}) => {
+  await createGroup(page);
+  const invite = await page.getByRole("dialog").getByLabel("Link").inputValue();
+  const next = monthFromNow(1);
+  const day = (m: { year: number; month: number }, d: number) =>
+    Date.UTC(m.year, m.month - 1, d) / 86_400_000;
+  const other = await newContext(browser);
+  // A solo plan in this browser: two days in the group's months, one long after them.
+  await other.addInitScript((last) => localStorage.setItem("lm:last:v1", JSON.stringify(last)), {
+    country: "DE",
+    region: null,
+    year: next.year,
+    yearStart: 1,
+    budget: 20,
+    style: "balanced",
+    minBreak: 3,
+    maxBreak: null,
+    months: [],
+    workWeek: [true, true, true, true, true, false, false],
+    locked: [],
+    blocked: [day(next, 10)],
+    customOff: [day(next, 11), day(monthFromNow(20), 3)],
+  });
+  const second = await other.newPage();
+  await second.goto(invite);
+  const note = second.getByText("2 days you marked in your own plan will be shared with the group.");
+  await expect(note).toBeVisible();
+  expect(await violations(second)).toEqual([]);
+  await second.getByRole("button", { name: "Don't share them" }).click();
+  await expect(note).toBeHidden();
+  await expect(second.getByRole("button", { name: "Join group" })).toBeFocused();
+  await other.close();
+});
+
 test("broken link", async ({ page }) => {
   await page.goto("/together/#abc");
   await expect(page.getByText("This link is incomplete. Ask for the invite again.")).toBeVisible();
@@ -362,6 +399,9 @@ test("settings keep a name typed just before closing, and the admin can remove a
   await page.getByRole("button", { name: /Edit$/ }).click();
   await sheet.getByRole("button", { name: "Remove Alex" }).click();
   await expect(sheet.getByText("Remove Alex?")).toBeVisible();
+  await expect(
+    sheet.getByText("They can rejoin with the invite link unless you start a new group."),
+  ).toBeVisible();
   await expect(sheet.getByRole("button", { name: "Cancel" })).toBeFocused();
   await sheet.getByRole("button", { name: "Confirm" }).click();
   await expect(second.getByText("You were removed from this group.")).toBeVisible();
@@ -451,6 +491,9 @@ test("propose and add to plan", async ({ page, browser, isMobile }) => {
   const summary = sheet.getByText(/^5 days, costs you \d+ leave$/);
   await expect(summary).toBeVisible();
   const cost = Number(/costs you (\d+)/.exec((await summary.textContent()) ?? "")?.[1]);
+  // The sheet's month cards and the calendar's under it don't share ids.
+  const ids = await second.evaluate(() => [...document.querySelectorAll("[id]")].map((e) => e.id));
+  expect(ids.filter((id, i) => ids.indexOf(id) !== i)).toEqual([]);
   await second.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
   expect(await violations(second)).toEqual([]);
   await sheet.getByRole("button", { name: "Propose dates" }).click();
@@ -684,10 +727,23 @@ test("group shows in My plans", async ({ page, browser }) => {
 
   await second.goto("/plans/");
   const again = second.getByRole("listitem").filter({ hasText: "Lisbon 2027" });
-  await again.getByRole("button", { name: "Remove Lisbon 2027 from this browser" }).click();
+  const trash = again.getByRole("button", { name: "Remove Lisbon 2027 from this browser" });
+  await trash.click();
   await expect(again.getByText("Your personal link still works.")).toBeVisible();
+  // Cancel hands focus back to the trash button.
+  await again.getByRole("button", { name: "Cancel" }).click();
+  await expect(trash).toBeFocused();
+  await trash.click();
+  // The personal link can be kept before this browser forgets the group.
+  await other.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await again.getByRole("button", { name: "Copy personal link" }).click();
+  await expect(again.getByRole("button", { name: "Copied" })).toBeVisible();
+  const copied = await second.evaluate(() => navigator.clipboard.readText());
+  expect(parseFragment(new URL(copied).hash)).toMatchObject({ memberId: expect.any(String) });
   await again.getByRole("button", { name: /^Remove\? You stay in the group/ }).click();
   await expect(second.getByText("Lisbon 2027")).toHaveCount(0);
+  // No groups are left, so focus goes to the heading of your own plans.
+  await expect(second.getByRole("heading", { name: "Your plans" })).toBeFocused();
   await expect(second.getByRole("heading", { name: "No saved plans yet" })).toBeVisible();
   await expect(second.getByRole("link", { name: "Plan with friends" })).toBeVisible();
   await other.close();

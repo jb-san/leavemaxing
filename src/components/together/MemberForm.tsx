@@ -6,12 +6,10 @@ import { countries, countryByCode } from "~/data";
 import { detectCountry } from "~/lib/detect";
 import { loadLast } from "~/lib/storage";
 import { textOn } from "~/lib/together/member";
-import { MEMBER_COLORS, type MemberRecord } from "~/lib/together/protocol";
+import { LIMITS, MEMBER_COLORS, type MemberRecord } from "~/lib/together/protocol";
 import { defaultWorkWeek } from "~/lib/weekends";
 import { COLOR_NAMES, t } from "./copy";
 
-const MAX_NAME = 40;
-const MAX_ALLOWANCE = 80;
 const FALLBACK_COUNTRY = "US";
 
 /** A new member, prefilled from the last solo plan in this browser, or a guess at the country. */
@@ -74,7 +72,7 @@ export function MemberForm({
           <input
             id={`${id}-name`}
             value={value.name}
-            maxLength={MAX_NAME}
+            maxLength={LIMITS.name}
             required
             pattern=".*\S.*"
             autoComplete="given-name"
@@ -120,7 +118,7 @@ export function MemberForm({
             value={value.allowance}
             onChange={(n) => set({ allowance: n })}
             min={0}
-            max={MAX_ALLOWANCE}
+            max={LIMITS.allowance}
             label={t.allowanceAria}
             size="field"
           />

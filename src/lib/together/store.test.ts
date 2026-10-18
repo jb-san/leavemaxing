@@ -66,6 +66,26 @@ describe("listMemberships", () => {
     expect(got?.summary).toBeUndefined();
   });
 
+  it("drops a summary whose days aren't real ISO dates", () => {
+    const s = memoryStorage();
+    const ok = { from: "2027-06-01", to: "2027-06-30", members: 2, agreed: 1, updatedAt: 1 };
+    for (const [id, bad] of [
+      ["a", { from: "2027-02-31" }],
+      ["b", { to: "June" }],
+      ["c", { from: "2027-6-1" }],
+    ] as const) {
+      s.setItem(`lm:together:v1:${id}`, JSON.stringify({ ...m(id, id), summary: { ...ok, ...bad } }));
+    }
+    s.setItem("lm:together:v1:d", JSON.stringify({ ...m("d", "d"), summary: ok }));
+    const got = listMemberships(s);
+    expect(got.map((x) => [x.groupId, x.summary !== undefined])).toEqual([
+      ["d", true],
+      ["a", false],
+      ["b", false],
+      ["c", false],
+    ]);
+  });
+
   it("returns an empty list when storage throws or is missing", () => {
     const boom = () => {
       throw new Error("blocked");

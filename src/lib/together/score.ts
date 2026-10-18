@@ -156,10 +156,18 @@ function fromKeys(members: ScoreMember[], days: Days[], keys: Map<WindowKey, str
 
 export function scoreWindows(group: GroupRecord, members: ScoreMember[], today: DayNum): Scored {
   const days = members.map(daysOf);
+  // Proposals, votes and agreed dates that start before today, or fall outside the group's months,
+  // are history: no list, no calendar band and no agreed count.
+  const range = groupRange(group);
+  const current = (k: WindowKey) => {
+    const w = parseWindowKey(k);
+    return w !== null && w.start >= today && w.start >= range.start && w.end <= range.end;
+  };
 
   const proposed = new Map<WindowKey, string[]>();
   for (const m of members) {
     for (const k of m.record.proposals) {
+      if (!current(k)) continue;
       const by = proposed.get(k) ?? [];
       if (!by.includes(m.id)) by.push(m.id);
       proposed.set(k, by);
@@ -170,7 +178,9 @@ export function scoreWindows(group: GroupRecord, members: ScoreMember[], today: 
   const agreedKeys = new Map<WindowKey, string[]>();
   if (members.length > 0) {
     for (const k of Object.keys(members[0]?.record.votes ?? {}) as WindowKey[]) {
-      if (members.every((m) => m.record.votes[k] === "yes")) agreedKeys.set(k, proposed.get(k) ?? []);
+      if (current(k) && members.every((m) => m.record.votes[k] === "yes")) {
+        agreedKeys.set(k, proposed.get(k) ?? []);
+      }
     }
   }
   const agreed = fromKeys(members, days, agreedKeys);
@@ -178,13 +188,10 @@ export function scoreWindows(group: GroupRecord, members: ScoreMember[], today: 
 
   // Scored the way proposals are, once each, when nothing else already lists them.
   const listed = new Set([...ranked, ...proposals, ...agreed].map((w) => w.key));
-  const range = groupRange(group);
   const votedKeys = new Map<WindowKey, string[]>();
   for (const m of members) {
     for (const k of Object.keys(m.record.votes) as WindowKey[]) {
-      const w = parseWindowKey(k);
-      if (!w || listed.has(k) || w.start < today || w.start < range.start || w.end > range.end) continue;
-      votedKeys.set(k, []);
+      if (current(k) && !listed.has(k)) votedKeys.set(k, []);
     }
   }
 

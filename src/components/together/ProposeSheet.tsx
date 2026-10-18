@@ -71,6 +71,7 @@ export function ProposeSheet({
               {...m}
               today={today}
               sundayFirst={shared.sundayFirst}
+              idPrefix="propose-"
               renderDay={(d, cell) => (
                 <SharedDay
                   key={d}

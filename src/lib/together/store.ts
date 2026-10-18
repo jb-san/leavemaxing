@@ -1,3 +1,4 @@
+import { fromIso, toIso } from "../dates";
 import { type Envelope, isEnvelope, type PutMsg, type RemoveMsg } from "./protocol";
 
 export interface Membership {
@@ -79,12 +80,16 @@ function remove(key: string, s: StorageLike | null): void {
   }
 }
 
+/** A real day written as an ISO date, not just something shaped like one. */
+const isIsoDay = (v: unknown): v is string =>
+  typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) && toIso(fromIso(v)) === v;
+
 function isSummary(v: unknown): v is MembershipSummary {
   if (!v || typeof v !== "object") return false;
   const m = v as Record<string, unknown>;
   return (
-    typeof m.from === "string" &&
-    typeof m.to === "string" &&
+    isIsoDay(m.from) &&
+    isIsoDay(m.to) &&
     Number.isFinite(m.members) &&
     Number.isFinite(m.agreed) &&
     Number.isFinite(m.updatedAt)

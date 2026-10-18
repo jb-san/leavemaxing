@@ -221,6 +221,7 @@ function TripSettings({
                   >
                     {t.cancel}
                   </button>
+                  <span className="basis-full text-sm text-muted">{t.removeHint}</span>
                 </span>
               ) : (
                 <button

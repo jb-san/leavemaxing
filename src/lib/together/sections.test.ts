@@ -42,6 +42,13 @@ describe("sections", () => {
     expect(out).toEqual({ agreed: [b], proposals: [p], suggested: [a, c], voted: [], empty: false });
   });
 
+  it("shows an agreed proposal only under Works for everyone", () => {
+    const [p, q] = [win(10), win(20)];
+    const out = sections(scored({ proposals: [p, q], agreed: [p] }));
+    expect(out.agreed).toEqual([p]);
+    expect(out.proposals).toEqual([q]);
+  });
+
   it("lists voted windows on their own, after the suggestions", () => {
     const [a, v] = [win(10), win(50)];
     expect(sections(scored({ ranked: [a], voted: [v] }))).toMatchObject({ suggested: [a], voted: [v] });

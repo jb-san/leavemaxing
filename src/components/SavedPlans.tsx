@@ -20,19 +20,33 @@ export default function SavedPlans() {
   const [editing, setEditing] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<string | null>(null);
   const [confirmGroup, setConfirmGroup] = useState<string | null>(null);
-  const top = useRef<HTMLDivElement>(null);
+  // Once groups have been listed, the page keeps its two sections even after the last group goes.
+  const [hadGroups, setHadGroups] = useState(false);
+  // Where focus goes once a removed group's card is gone.
+  const [focusNext, setFocusNext] = useState<"groups" | "yours" | null>(null);
+  const groupsHeading = useRef<HTMLHeadingElement>(null);
+  const yoursHeading = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
     setPlans(loadPlans());
-    setGroups(listMemberships());
+    const found = listMemberships();
+    setGroups(found);
+    setHadGroups(found.length > 0);
   }, []);
+
+  useEffect(() => {
+    if (!focusNext) return;
+    (focusNext === "groups" ? groupsHeading : yoursHeading).current?.focus();
+    setFocusNext(null);
+  }, [focusNext]);
 
   const update = (next: SavedPlan[]) => {
     setPlans(next);
     savePlans(next);
   };
 
-  const Title = groups.length > 0 ? "h3" : "h2";
+  const sectioned = groups.length > 0 || hadGroups;
+  const Title = sectioned ? "h3" : "h2";
   const solo =
     plans === null ? null : plans.length === 0 ? (
       groups.length > 0 ? (
@@ -45,7 +59,7 @@ export default function SavedPlans() {
       ) : (
         <div className="card flex flex-col items-center gap-4 p-10 text-center">
           <Mascot size={88} mood="sleepy" title="" />
-          <h2 className="text-2xl font-bold">No saved plans yet</h2>
+          <Title className="text-2xl font-bold">No saved plans yet</Title>
           <p className="max-w-md text-muted">
             Build a plan you like, then press <strong>Save plan</strong>. It's kept in this browser, so you
             can come back and compare.
@@ -153,7 +167,7 @@ export default function SavedPlans() {
     );
 
   return (
-    <div ref={top} tabIndex={-1} className="flex flex-col gap-8 outline-none">
+    <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-2 pb-0 pt-2">
         <h1 className="text-[clamp(32px,4.4vw,52px)] font-extrabold leading-none">My plans</h1>
         <p className="text-muted">
@@ -165,7 +179,7 @@ export default function SavedPlans() {
       {plans === null && <div className="card h-40 animate-pulse" />}
       {groups.length > 0 && (
         <section className="flex flex-col gap-4" aria-labelledby="group-plans">
-          <h2 id="group-plans" className="text-xl font-bold">
+          <h2 ref={groupsHeading} id="group-plans" tabIndex={-1} className="text-xl font-bold">
             Group plans
           </h2>
           <ul className={GRID}>
@@ -178,9 +192,11 @@ export default function SavedPlans() {
                 onCancel={() => setConfirmGroup(null)}
                 onRemove={() => {
                   forgetGroup(m.groupId);
-                  setGroups(groups.filter((x) => x.groupId !== m.groupId));
+                  const left = groups.filter((x) => x.groupId !== m.groupId);
+                  setGroups(left);
                   setConfirmGroup(null);
-                  top.current?.focus();
+                  // The card has gone, so focus moves to the heading of what's still listed.
+                  setFocusNext(left.length > 0 ? "groups" : "yours");
                 }}
               />
             ))}
@@ -189,12 +205,9 @@ export default function SavedPlans() {
         </section>
       )}
       {solo && !(groups.length > 0 && plans?.length === 0) && (
-        <section
-          className="flex flex-col gap-4"
-          aria-labelledby={groups.length > 0 ? "your-plans" : undefined}
-        >
-          {groups.length > 0 && (
-            <h2 id="your-plans" className="text-xl font-bold">
+        <section className="flex flex-col gap-4" aria-labelledby={sectioned ? "your-plans" : undefined}>
+          {sectioned && (
+            <h2 ref={yoursHeading} id="your-plans" tabIndex={-1} className="text-xl font-bold">
               Your plans
             </h2>
           )}

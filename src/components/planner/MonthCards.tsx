@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useI18n } from "~/i18n/context";
 import { type DayNum, dayNum, daysInMonth, weekdayMon0 } from "~/lib/dates";
+import { ARROW_STEPS, arrowStep } from "./arrowStep";
 import { cx } from "./ui";
 
 type Month = { year: number; month: number };
@@ -74,17 +75,16 @@ export function MonthCarousel({
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
-    const delta = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }[e.key];
+    const delta = ARROW_STEPS[e.key];
     const current = (e.target as HTMLElement).dataset.day;
     if (!delta || current === undefined) return;
     const at = (day: number) => scroller.current?.querySelector<HTMLButtonElement>(`[data-day="${day}"]`);
     // Disabled days (past ones, in Together) are stepped over in the same direction.
-    let day = Number(current) + delta;
-    let target = at(day);
-    while (target?.disabled) {
-      day += delta;
-      target = at(day);
-    }
+    const day = arrowStep(Number(current), delta, (d) => {
+      const button = at(d);
+      return button ? (button.disabled ? "disabled" : "enabled") : undefined;
+    });
+    const target = day === null ? null : at(day);
     if (target) {
       e.preventDefault();
       target.focus();
@@ -180,12 +180,15 @@ export function MonthGrid({
   today,
   sundayFirst,
   badge,
+  idPrefix = "",
   renderDay,
 }: {
   year: number;
   month: number;
   today: DayNum;
   sundayFirst: boolean;
+  /** Put before the card's `m-YYYY-M` id, so two calendars on one page don't share ids. */
+  idPrefix?: string;
   /** Shown next to the month name in the card title. */
   badge?: ReactNode;
   renderDay: (day: DayNum, cell: DayCell) => ReactNode;
@@ -201,7 +204,7 @@ export function MonthGrid({
   return (
     <div
       className="card h-full px-3 pb-4 pt-4 sm:px-3.5"
-      id={`m-${year}-${month}`}
+      id={`${idPrefix}m-${year}-${month}`}
       data-past={first + count <= today ? "" : undefined}
     >
       <h3 className="hidden items-baseline justify-between px-1.5 pb-3 text-lg font-bold sm:flex">

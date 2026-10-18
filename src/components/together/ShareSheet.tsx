@@ -1,17 +1,9 @@
 import { Check, Copy, Share2, TriangleAlert } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { cx, Sheet } from "~/components/planner/ui";
+import { copyText } from "./clipboard";
 import { t } from "./copy";
 import { QrCode } from "./QrCode";
-
-async function copyText(text: string): Promise<boolean> {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 /** A link as a big QR code, with copy and the phone's own share sheet. A `warning` marks a private link. */
 export function ShareSheet({

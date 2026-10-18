@@ -25,6 +25,7 @@ export function JoinGroup({
   const [me, setMe] = useState<MemberRecord>(defaultMember);
   const [busy, setBusy] = useState(false);
   const joining = useRef(false);
+  const joinButton = useRef<HTMLButtonElement>(null);
   const { group, members } = state;
   if (!group) return null;
   // The server would refuse one more, so don't ask for details that can't be used.
@@ -33,6 +34,9 @@ export function JoinGroup({
 
   const creator = members.get(group.createdBy);
   const taken = [...members.values()].map((m) => m.color);
+  // Days carried over from this browser's own plan, inside the group's months, go with the join.
+  const carried = forJoining(me, group.months);
+  const sharedDays = new Set([...carried.blocked, ...carried.customOff]).size;
 
   const submit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -79,9 +83,27 @@ export function JoinGroup({
 
       <MemberForm value={me} onChange={setMe} taken={taken} />
 
+      {sharedDays > 0 && (
+        <div className="card flex flex-col items-start gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <p className="font-semibold">{t.sharedDays(sharedDays)}</p>
+          <button
+            type="button"
+            className="btn btn-soft shrink-0"
+            onClick={() => {
+              setMe((m) => ({ ...m, blocked: [], customOff: [] }));
+              // The note goes with its button, so focus moves on to joining.
+              joinButton.current?.focus();
+            }}
+          >
+            {t.dontShare}
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
         <p className="text-sm text-muted">{t.joinHint}</p>
         <button
+          ref={joinButton}
           type="submit"
           disabled={busy}
           className="btn btn-primary px-7 py-3.5 text-base disabled:opacity-60"

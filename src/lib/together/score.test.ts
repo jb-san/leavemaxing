@@ -252,6 +252,29 @@ describe("scoreWindows", () => {
     }
   });
 
+  describe("past and out-of-range windows", () => {
+    const past = key(3, 7);
+    const outside = windowKey(d(6, 7), d(6, 11));
+    const now = key(10, 14);
+
+    it("leaves proposals that start before today or fall outside the months out", () => {
+      const a = member("a", { proposals: [past, outside, now] });
+      const { proposals } = scoreWindows(group(), [a], d(5, 5));
+      expect(proposals.map((w) => w.key)).toEqual([now]);
+    });
+
+    it("leaves agreed dates that start before today or fall outside the months out", () => {
+      const votes = { [past]: "yes", [outside]: "yes", [now]: "yes" } as const;
+      const { agreed } = scoreWindows(group(), [member("a", { votes }), member("b", { votes })], d(5, 5));
+      expect(agreed.map((w) => w.key)).toEqual([now]);
+    });
+
+    it("keeps a window that starts today", () => {
+      const a = member("a", { proposals: [now] });
+      expect(scoreWindows(group(), [a], d(5, 10)).proposals.map((w) => w.key)).toEqual([now]);
+    });
+  });
+
   describe("voted windows", () => {
     // Monday to Thursday: the ranking always stretches it back over the weekend, so it's never ranked.
     const k = key(10, 13);

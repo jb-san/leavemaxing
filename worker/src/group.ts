@@ -106,8 +106,12 @@ export class Group extends DurableObject<Env> {
       await this.ctx.storage.setAlarm(at);
       return;
     }
-    await this.ctx.storage.deleteAll();
-    await this.ctx.storage.put("deleted", true);
+    // Both writes are queued before anything is awaited, so workerd commits them together: an
+    // eviction can't fall between them and leave an empty, undeleted group for an invite to re-create.
+    // The marker goes last, so the deleteAll doesn't take it with everything else.
+    const cleared = this.ctx.storage.deleteAll();
+    const marked = this.ctx.storage.put("deleted", true);
+    await Promise.all([cleared, marked]);
     this.room = markDeleted();
     for (const ws of this.ctx.getWebSockets()) ws.close(GONE, "gone");
   }
