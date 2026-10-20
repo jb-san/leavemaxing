@@ -18,6 +18,7 @@ export const nlNL: Copy = {
     footerAbout: "Over",
     footerContact: "Contact",
     footerPrivacy: "Privacy",
+    footerPrivacySettings: "Privacy-instellingen",
     footerNav: "Voettekst",
     langLabel: "Taal",
     themeLabel: "Kleurthema",

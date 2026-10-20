@@ -18,6 +18,7 @@ export const fiFI: Copy = {
     footerAbout: "Tietoa",
     footerContact: "Yhteys",
     footerPrivacy: "Tietosuoja",
+    footerPrivacySettings: "Tietosuoja-asetukset",
     footerNav: "Alatunniste",
     langLabel: "Kieli",
     themeLabel: "Väriteema",

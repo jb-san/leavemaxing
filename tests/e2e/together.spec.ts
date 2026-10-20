@@ -1,12 +1,14 @@
 import AxeBuilder from "@axe-core/playwright";
-import { type Browser, type BrowserContext, expect, type Page, test } from "@playwright/test";
+import type { Browser, BrowserContext, Page } from "@playwright/test";
 import { parseFragment } from "../../src/lib/together/link";
 import { LIMITS, MEMBER_COLORS, type MemberRecord } from "../../src/lib/together/protocol";
 import { GroupSession } from "../../src/lib/together/session";
+import { blockAdHosts, expect, test } from "./fixtures";
 
 /** Keep test runs out of the real analytics. Every context this spec uses goes through here. */
 async function blockAnalytics(context: BrowserContext): Promise<BrowserContext> {
   await context.route("**/analytics.vril.tech/**", (r) => r.abort());
+  await blockAdHosts(context);
   return context;
 }
 

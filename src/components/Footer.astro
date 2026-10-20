@@ -31,8 +31,18 @@ const year = new Date().getFullYear();
       <a href={localeAboutPath(locale)} class="hover:text-ink">{c.footerAbout}</a>
       <a href={localeContactPath(locale)} class="hover:text-ink">{c.footerContact}</a>
       <a href="/privacy-policy/" class="hover:text-ink">{c.footerPrivacy}</a>
+      <button type="button" class="appearance-none bg-transparent p-0 hover:text-ink" data-privacy-settings>{c.footerPrivacySettings}</button>
       <a href={SITE.links.github} class="hover:text-ink">GitHub</a>
       <a href={SITE.links.linkedin} class="hover:text-ink">LinkedIn</a>
     </nav>
   </div>
+  <script is:inline>
+    document.addEventListener("click", (event) => {
+      const node = event.target instanceof Element ? event.target.closest("[data-privacy-settings]") : null;
+      if (!node) return;
+      window.googlefc = window.googlefc || {};
+      googlefc.callbackQueue = googlefc.callbackQueue || [];
+      window.googlefc && googlefc.callbackQueue.push(googlefc.showRevocationMessage);
+    });
+  </script>
 </footer>

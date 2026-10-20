@@ -19,6 +19,7 @@ export const en: Copy = {
     footerAbout: "About",
     footerContact: "Contact",
     footerPrivacy: "Privacy",
+    footerPrivacySettings: "Privacy settings",
     footerNav: "Footer",
     langLabel: "Language",
     themeLabel: "Colour theme",

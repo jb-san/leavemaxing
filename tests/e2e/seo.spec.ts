@@ -1,4 +1,6 @@
-import { expect, test } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { expect, test } from "./fixtures";
 
 const pages = [
   {
@@ -65,4 +67,40 @@ test("home and country pages link both bridge years", async ({ page }) => {
   await expect(page).toHaveTitle(/Klämdagar 2027/);
   await expect(page.locator("time")).toHaveAttribute("datetime", /^\d{4}-\d{2}-\d{2}$/);
   await expect(page.getByRole("link", { name: "Klämdagar 2027" })).toBeVisible();
+});
+
+const ADSENSE =
+  '<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1457689618305369" crossorigin="anonymous"></script>';
+
+test("every page carries the AdSense tag, and ads.txt is published", async ({ page }) => {
+  test.skip(test.info().project.name !== "desktop", "the built files are the same for both browsers");
+  const root = join(process.cwd(), "dist");
+  expect(readFileSync(join(root, "index.html"), "utf8")).toContain(ADSENSE);
+  expect(readFileSync(join(root, "de-de/index.html"), "utf8")).toContain(ADSENSE);
+  expect(readFileSync(join(root, "privacy-policy/index.html"), "utf8")).toContain(ADSENSE);
+  await page.goto("/de-de/");
+  const script = page.locator(
+    'script[src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1457689618305369"]',
+  );
+  await expect(script).toHaveCount(1);
+  await expect(script).toHaveJSProperty("async", true);
+  await expect(script).toHaveAttribute("crossorigin", "anonymous");
+  const ads = await page.request.get("/ads.txt");
+  expect(ads.ok()).toBe(true);
+  expect((await ads.text()).trim()).toBe("google.com, pub-1457689618305369, DIRECT, f08c47fec0942fa0");
+});
+
+test("privacy settings queues Google's consent message without leaving the page", async ({ page }) => {
+  await page.goto("/de-de/");
+  await page.getByRole("button", { name: "Datenschutzeinstellungen" }).click();
+  await expect(page).toHaveURL(/\/de-de\/$/);
+  const queued = await page.evaluate(() => {
+    const g = (
+      window as unknown as {
+        googlefc?: { callbackQueue?: unknown[]; showRevocationMessage?: unknown };
+      }
+    ).googlefc;
+    return g?.callbackQueue?.length === 1 && g.callbackQueue[0] === g.showRevocationMessage;
+  });
+  expect(queued).toBe(true);
 });

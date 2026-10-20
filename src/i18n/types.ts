@@ -25,6 +25,7 @@ export interface Copy {
     footerAbout: string;
     footerContact: string;
     footerPrivacy: string;
+    footerPrivacySettings: string;
     footerNav: string;
     langLabel: string;
     themeLabel: string;
