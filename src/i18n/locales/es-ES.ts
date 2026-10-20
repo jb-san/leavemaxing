@@ -18,6 +18,7 @@ export const esES: Copy = {
     footerAbout: "Acerca de",
     footerContact: "Contacto",
     footerPrivacy: "Privacidad",
+    footerPrivacySettings: "Configuración de privacidad",
     footerNav: "Pie",
     langLabel: "Idioma",
     themeLabel: "Tema de color",

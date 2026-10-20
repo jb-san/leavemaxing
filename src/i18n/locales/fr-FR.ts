@@ -18,6 +18,7 @@ export const frFR: Copy = {
     footerAbout: "À propos",
     footerContact: "Contact",
     footerPrivacy: "Confidentialité",
+    footerPrivacySettings: "Paramètres de confidentialité",
     footerNav: "Pied de page",
     langLabel: "Langue",
     themeLabel: "Thème de couleur",
