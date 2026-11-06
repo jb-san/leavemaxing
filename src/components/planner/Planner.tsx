@@ -2,6 +2,7 @@ import { SlidersHorizontal } from "lucide-react";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { countries, countryByCode, placeName } from "~/data";
 import { I18nProvider, useI18n } from "~/i18n/context";
+import { pageKind, track, type UsageContext, usageProps } from "~/lib/analytics";
 import {
   type DayNum,
   dayNum,
@@ -283,8 +284,21 @@ function PlannerApp(props: PlannerProps) {
     return { plan: result.plan, place, flag: country?.flag ?? "", yearLabel, range, ...localized };
   }, [result.plan, place, country?.flag, yearLabel, i18n, p]);
 
+  const usage = (): UsageContext => ({
+    country: settings.country,
+    year: settings.year,
+    locale: i18n.code,
+    days: settings.budget,
+    page: typeof window === "undefined" ? "planner" : pageKind(window.location.pathname),
+  });
   const onDay = useCallback((day: DayNum, rect: DOMRect) => setMenu({ day, rect }), []);
+  const openDay = (day: DayNum, rect: DOMRect) => {
+    onDay(day, rect);
+    const br = result.plan.breaks.find((b) => b.leave > 0 && day >= b.start && day <= b.end);
+    if (br) track("break_select", usageProps(usage(), { length: br.length, leave: br.leave }));
+  };
   const onDayAction = (day: DayNum, action: DayAction) => {
+    track("day_edit", usageProps(usage(), { action }));
     pendingDelta.current = result.plan.stats.daysOff;
     dispatch({ type: "day", day, action });
   };
@@ -343,8 +357,14 @@ function PlannerApp(props: PlannerProps) {
           range={range}
           today={today}
           loading={loading && !loadError}
-          onShare={() => setDialog("share")}
-          onExport={() => setDialog("export")}
+          onShare={() => {
+            track("share_open", usageProps(usage()));
+            setDialog("share");
+          }}
+          onExport={() => {
+            track("calendar_export", usageProps(usage(), { format: "open" }));
+            setDialog("export");
+          }}
           onSave={() => setDialog("save")}
         />
 
@@ -374,13 +394,13 @@ function PlannerApp(props: PlannerProps) {
             today={shown.today}
             pop={pop}
             sundayFirst={SUNDAY_FIRST.has(settings.country)}
-            onDay={onDay}
+            onDay={openDay}
           />
         ) : (
           <CalendarPlaceholder months={months} />
         )}
 
-        <BreaksList plan={result.plan} today={today} />
+        <BreaksList plan={result.plan} today={today} usage={usage()} />
       </div>
 
       <button
@@ -410,6 +430,7 @@ function PlannerApp(props: PlannerProps) {
         url={url}
         card={card}
         fileName={fileName}
+        usage={usage()}
       />
       <ExportDialog
         open={dialog === "export"}
@@ -417,12 +438,14 @@ function PlannerApp(props: PlannerProps) {
         plan={result.plan}
         calendarName={`leavemaxxing ${yearLabel}`}
         fileName={fileName}
+        usage={usage()}
       />
       <SaveDialog
         open={dialog === "save"}
         onClose={() => setDialog(null)}
         defaultName={`${place} ${yearLabel}`}
         onSave={(name) => {
+          track("plan_save", usageProps(usage()));
           const saved = addPlan({
             name,
             settings,

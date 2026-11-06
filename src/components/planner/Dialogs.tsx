@@ -1,6 +1,7 @@
 import { Check, Copy, Download, Image as ImageIcon, Share2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "~/i18n/context";
+import { track, type UsageContext, usageProps } from "~/lib/analytics";
 import type { DayNum } from "~/lib/dates";
 import { buildIcs, downloadFile, googleCalendarUrl } from "~/lib/ics";
 import type { Plan } from "~/lib/planner/types";
@@ -22,12 +23,14 @@ export function ShareDialog({
   url,
   card,
   fileName,
+  usage,
 }: {
   open: boolean;
   onClose: () => void;
   url: string;
   card: CardData;
   fileName: string;
+  usage: UsageContext;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [format, setFormat] = useState<CardFormat>("wide");
@@ -50,6 +53,7 @@ export function ShareDialog({
   const i18n = useI18n();
   const p = i18n.m.planner;
   const shareImage = async () => {
+    track("share_image", usageProps(usage));
     const canvas = canvasRef.current;
     if (!canvas) return;
     const blob = await canvasToBlob(canvas);
@@ -67,6 +71,7 @@ export function ShareDialog({
   };
 
   const shareLink = async () => {
+    track("share_link", usageProps(usage));
     if (navigator.share) {
       try {
         await navigator.share({ title: p.shareTitle, url });
@@ -98,6 +103,7 @@ export function ShareDialog({
             type="button"
             className="btn btn-soft shrink-0"
             onClick={async () => {
+              track("share_copy", usageProps(usage));
               if (await copyText(url)) {
                 setCopied(true);
                 setTimeout(() => setCopied(false), 2000);
@@ -166,12 +172,14 @@ export function ExportDialog({
   plan,
   calendarName,
   fileName,
+  usage,
 }: {
   open: boolean;
   onClose: () => void;
   plan: Plan;
   calendarName: string;
   fileName: string;
+  usage: UsageContext;
 }) {
   const i18n = useI18n();
   const p = i18n.m.planner;
@@ -196,6 +204,7 @@ export function ExportDialog({
         className="btn btn-primary self-start"
         disabled={breaks.length === 0}
         onClick={() => {
+          track("calendar_export", usageProps(usage, { format: "ics" }));
           downloadFile(
             `${fileName}.ics`,
             buildIcs(plan, { calendarName, includeLeaveDays: days }),
@@ -217,6 +226,10 @@ export function ExportDialog({
                   href={googleCalendarUrl(b, leaveDays)}
                   target="_blank"
                   rel="noopener noreferrer"
+                  data-no-outbound=""
+                  onClick={() =>
+                    track("calendar_export", usageProps(usage, { format: "google", length: b.length }))
+                  }
                 >
                   {i18n.formatRange(b.start, b.end)}
                 </a>

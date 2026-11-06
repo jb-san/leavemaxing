@@ -5,6 +5,8 @@ import Header from "~/components/Header.astro";
 import { locales } from "~/data/locales";
 import { SITE } from "~/data/site";
 import { getCopy, normalizeLocale } from "~/i18n";
+import { pageKind } from "~/lib/analytics";
+import { cleanUrl } from "~/lib/canonical";
 
 interface Props {
   title: string;
@@ -39,12 +41,16 @@ const {
 const localeCode = locale ? normalizeLocale(locale) : "en";
 const copy = getCopy(localeCode);
 const htmlLang = lang ?? locales[localeCode]?.lang ?? "en";
-const canonical = canonicalProp || new URL(Astro.url.pathname, SITE.url).href;
+const canonical = cleanUrl(canonicalProp || Astro.url.pathname, SITE.url);
+const alternates = hreflangs.map(({ lang: hreflang, url }) => ({
+  hreflang,
+  url: cleanUrl(url, SITE.url),
+}));
 const ogImage = new URL(image, SITE.url).href;
 ---
 
 <!doctype html>
-<html lang={htmlLang} data-theme="light">
+<html lang={htmlLang} data-theme="light" data-locale={localeCode} data-page={pageKind(Astro.url.pathname)}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -57,7 +63,7 @@ const ogImage = new URL(image, SITE.url).href;
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
-    {hreflangs.map(({ lang: hreflang, url }) => (
+    {alternates.map(({ hreflang, url }) => (
       <link rel="alternate" hreflang={hreflang} href={url} />
     ))}
     {noindex && <meta name="robots" content="noindex" />}
@@ -105,6 +111,11 @@ const ogImage = new URL(image, SITE.url).href;
     </main>
     <Footer locale={localeCode} copy={copy} />
     <script>
+      import { bindAnalytics } from "~/lib/analytics";
+      import { bindPlanLinks } from "~/lib/planLink";
+
+      bindAnalytics();
+      bindPlanLinks();
       // iOS Safari only applies :active (our press feedback) once the page listens for touches.
       document.addEventListener("touchstart", () => {}, { passive: true });
       if ("serviceWorker" in navigator && import.meta.env.PROD) {
