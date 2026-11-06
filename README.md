@@ -42,7 +42,9 @@ pnpm icons        # regenerate favicons and app icons from the mascot
 ```
 
 Set `PUBLIC_RYBBIT_SITE_ID` (see `.env.example`) to enable analytics via the self-hosted Rybbit at
-`analytics.vril.tech`.
+`analytics.vril.tech`. Custom events for planner use, the language switcher, outbound links, and privacy
+settings are listed in [docs/analytics.md](docs/analytics.md). Canonical, hreflang, and `og:url` are always
+the clean path, without `?d=` or other plan parameters.
 
 ## Deployment
 

@@ -90,6 +90,69 @@ test("every page carries the AdSense tag, and ads.txt is published", async ({ pa
   expect((await ads.text()).trim()).toBe("google.com, pub-1457689618305369, DIRECT, f08c47fec0942fa0");
 });
 
+test("canonical, hreflang, and og:url drop plan query strings", async ({ page }) => {
+  await page.goto("/de-de/brueckentage-2027/?d=10");
+  const canonical = "https://leavemaxxing.com/de-de/brueckentage-2027/";
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", canonical);
+  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute("content", canonical);
+  const alternates = await page
+    .locator('link[rel="alternate"]')
+    .evaluateAll((els) => els.map((el) => el.getAttribute("href") ?? ""));
+  expect(alternates.length).toBeGreaterThan(0);
+  for (const href of alternates) expect(href).not.toMatch(/[?#]/);
+
+  await page.goto("/compare/?c=DE&y=2027&d=15");
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    "href",
+    "https://leavemaxxing.com/compare/",
+  );
+  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
+    "content",
+    "https://leavemaxxing.com/compare/",
+  );
+});
+
+test("ranking and compare links do not publish indexable plan queries", async ({ page }) => {
+  await page.goto("/best/2027/");
+  const english = await page
+    .locator("#ranking a")
+    .evaluateAll((els) => els.map((el) => el.getAttribute("href") ?? ""));
+  expect(english.length).toBeGreaterThan(0);
+  for (const href of english) expect(href).not.toMatch(/[?#]/);
+
+  await page.goto("/de-de/best/2027/");
+  const german = await page
+    .locator("#ranking a")
+    .evaluateAll((els) => els.map((el) => el.getAttribute("href") ?? ""));
+  expect(german.length).toBeGreaterThan(0);
+  for (const href of german) expect(href).not.toMatch(/[?#]/);
+  expect(german).toContain("/de-de/brueckentage-2027/");
+
+  await page.goto("/best/2027/");
+  await page.getByRole("tab", { name: "10" }).click();
+  await page.locator("#panel-10").getByRole("link", { name: "Germany" }).click();
+  await expect(page).toHaveURL(/\/de\/2027\/\?d=10$/);
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    "href",
+    "https://leavemaxxing.com/de/2027/",
+  );
+
+  await page.goto("/compare/?c=DE,MT&y=2027&d=15&s=weekends");
+  const openGermany = page.getByRole("link", { name: "Open Germany" });
+  await expect(openGermany).toBeVisible();
+  expect(await openGermany.getAttribute("href")).toBe("/de/2027/");
+  await openGermany.click();
+  await expect(page).toHaveURL(/\/de\/2027\/\?/);
+  const opened = new URL(page.url());
+  expect(opened.pathname).toBe("/de/2027/");
+  expect(opened.searchParams.get("d")).toBe("15");
+  expect(opened.searchParams.get("s")).toBe("weekends");
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    "href",
+    "https://leavemaxxing.com/de/2027/",
+  );
+});
+
 test("privacy settings queues Google's consent message without leaving the page", async ({ page }) => {
   await page.goto("/de-de/");
   await page.getByRole("button", { name: "Datenschutzeinstellungen" }).click();

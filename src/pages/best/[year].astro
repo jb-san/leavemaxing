@@ -6,6 +6,7 @@ import { SITE } from "~/data/site";
 import { bestAlternates } from "~/i18n/routes";
 import Base from "~/layouts/Base.astro";
 import { shellAlternates } from "~/lib/hreflang";
+import { planLink } from "~/lib/planLink";
 
 interface Row {
   code: string;
@@ -101,11 +102,12 @@ const other = year === new Date().getFullYear() ? year + 1 : year - 1;
             <tbody class="divide-y divide-line tabular-nums">
               {t.rows.map((r, i) => {
                 const res = r.results[t.budget];
+                const href = planLink(`/${r.code.toLowerCase()}/${year}/`, `d=${t.budget}`);
                 return (
                   <tr>
                     <td class="py-2.5 pr-3 font-bold text-muted">{i + 1}</td>
                     <td class="py-2.5 pr-3">
-                      <a class="font-semibold hover:underline" href={`/${r.code.toLowerCase()}/${year}/?d=${t.budget}`}>
+                      <a class="font-semibold hover:underline" href={href.href} data-plan-query={href.query}>
                         <span class="mr-1.5">{r.flag}</span>
                         {r.name}
                       </a>

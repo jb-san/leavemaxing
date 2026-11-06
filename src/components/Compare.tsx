@@ -2,11 +2,13 @@ import { ArrowRight, Plus, Trophy, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { countries, countryByCode, placeName } from "~/data";
 import { englishNoun } from "~/i18n/format";
+import { track, trackDebounced } from "~/lib/analytics";
 import { type DayNum, leaveYearRange, localToday, MONTHS_SHORT } from "~/lib/dates";
 import { detectCountry } from "~/lib/detect";
 import { loadHolidayFile } from "~/lib/holidays";
 import { runPlan } from "~/lib/planClient";
 import { toPlanInput, yearsNeeded } from "~/lib/planInput";
+import { planLink } from "~/lib/planLink";
 import { type Plan, STYLES, type Style } from "~/lib/planner/types";
 import { DEFAULT_BUDGET, defaultSettings, MAX_BUDGET, planPath, toQuery } from "~/lib/settings";
 import { loadLast } from "~/lib/storage";
@@ -129,7 +131,11 @@ export default function Compare({ years }: { years: number[] }) {
                 type="button"
                 role="radio"
                 aria-checked={year === y}
-                onClick={() => setYear(y)}
+                onClick={() => {
+                  if (year === y) return;
+                  track("year_change", { year: y, locale: "en", days: budget, page: "compare" });
+                  setYear(y);
+                }}
                 className="chip px-3"
               >
                 {y}
@@ -144,7 +150,15 @@ export default function Compare({ years }: { years: number[] }) {
           <Stepper
             id="cmp-budget"
             value={budget}
-            onChange={setBudget}
+            onChange={(n) => {
+              setBudget(n);
+              trackDebounced("leave-days", "leave_days_change", {
+                year,
+                locale: "en",
+                days: n,
+                page: "compare",
+              });
+            }}
             min={1}
             max={MAX_BUDGET}
             label="leave days"
@@ -159,7 +173,18 @@ export default function Compare({ years }: { years: number[] }) {
                 type="button"
                 role="radio"
                 aria-checked={style === s.id}
-                onClick={() => setStyle(s.id)}
+                onClick={() => {
+                  if (style === s.id) return;
+                  track("planner_setting", {
+                    year,
+                    locale: "en",
+                    days: budget,
+                    page: "compare",
+                    setting: "style",
+                    value: s.id,
+                  });
+                  setStyle(s.id);
+                }}
                 className="chip"
               >
                 {s.label}
@@ -174,7 +199,7 @@ export default function Compare({ years }: { years: number[] }) {
           const c = countryByCode.get(pick.country);
           const regions = Object.entries(c?.regions ?? {}).sort((a, b) => a[1].localeCompare(b[1]));
           const s = { ...defaultSettings(pick.country, year), region: pick.region, budget, style };
-          const q = toQuery(s).toString();
+          const link = planLink(planPath(pick.country, year), toQuery(s).toString());
           const isBest = best === key(pick) && results.length > 1;
           return (
             <li
@@ -193,9 +218,17 @@ export default function Compare({ years }: { years: number[] }) {
                     countries={countries}
                     value={pick.country}
                     exclude={picks.filter((_, j) => j !== i).map((p) => p.country)}
-                    onChange={(code) =>
-                      setPicks(picks.map((p, j) => (j === i ? { country: code, region: null } : p)))
-                    }
+                    onChange={(code) => {
+                      if (code === pick.country) return;
+                      track("country_change", {
+                        country: code,
+                        year,
+                        locale: "en",
+                        days: budget,
+                        page: "compare",
+                      });
+                      setPicks(picks.map((p, j) => (j === i ? { country: code, region: null } : p)));
+                    }}
                     label={`Country ${i + 1}`}
                   />
                 </div>
@@ -214,9 +247,18 @@ export default function Compare({ years }: { years: number[] }) {
                 <select
                   aria-label={`Region in ${c?.name}`}
                   value={pick.region ?? ""}
-                  onChange={(e) =>
-                    setPicks(picks.map((p, j) => (j === i ? { ...p, region: e.target.value || null } : p)))
-                  }
+                  onChange={(e) => {
+                    const region = e.target.value;
+                    track("region_change", {
+                      country: pick.country,
+                      region: region || "all",
+                      year,
+                      locale: "en",
+                      days: budget,
+                      page: "compare",
+                    });
+                    setPicks(picks.map((p, j) => (j === i ? { ...p, region: region || null } : p)));
+                  }}
                   className="input sm:text-sm"
                 >
                   <option value="">Whole country</option>
@@ -245,7 +287,7 @@ export default function Compare({ years }: { years: number[] }) {
                       {plan.stats.multiplier.toFixed(1)} days off per leave day.
                     </p>
                   </div>
-                  <a href={`${planPath(pick.country, year)}${q ? `?${q}` : ""}`} className="btn btn-soft">
+                  <a href={link.href} data-plan-query={link.query} className="btn btn-soft">
                     Open {placeName(pick.country, pick.region)} <ArrowRight size={16} />
                   </a>
                 </>

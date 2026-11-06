@@ -2,6 +2,7 @@ import { ChevronDown, Info } from "lucide-react";
 import type { Dispatch } from "react";
 import { countries, countryByCode } from "~/data";
 import { useI18n } from "~/i18n/context";
+import { pageKind, track, trackDebounced, usageProps } from "~/lib/analytics";
 import { leaveYearLabel } from "~/lib/dates";
 import type { Style } from "~/lib/planner/types";
 import { regionCopy } from "~/lib/regionLabels";
@@ -31,6 +32,13 @@ export function SettingsPanel({
     { id: "long", label: p.styleLong, hint: p.styleLongHint },
   ];
   const set = (patch: Partial<Settings>) => dispatch({ type: "set", patch });
+  const ctx = () => ({
+    country: s.country,
+    year: s.year,
+    locale: i18n.code,
+    days: s.budget,
+    page: pageKind(window.location.pathname),
+  });
   const country = countryByCode.get(s.country);
   const regions = Object.entries(country?.regions ?? {}).sort((a, b) => a[1].localeCompare(b[1]));
   const edits = s.locked.length + s.blocked.length + s.customOff.length;
@@ -43,14 +51,22 @@ export function SettingsPanel({
         <CountryPicker
           countries={countries}
           value={s.country}
-          onChange={(c) => dispatch({ type: "country", country: c })}
+          onChange={(c) => {
+            if (c === s.country) return;
+            track("country_change", usageProps({ ...ctx(), country: c }));
+            dispatch({ type: "country", country: c });
+          }}
         />
         {regions.length > 0 && (
           <select
             id={id("region")}
             aria-label={p.region}
             value={s.region ?? ""}
-            onChange={(e) => set({ region: e.target.value || null })}
+            onChange={(e) => {
+              const region = e.target.value;
+              set({ region: region || null });
+              track("region_change", usageProps(ctx(), { region: region || "all" }));
+            }}
             className="input appearance-none pr-10 bg-[length:16px] bg-[right_14px_center] bg-no-repeat"
             style={{
               backgroundImage:
@@ -84,7 +100,11 @@ export function SettingsPanel({
               type="button"
               role="radio"
               aria-checked={s.year === y}
-              onClick={() => set({ year: y })}
+              onClick={() => {
+                if (s.year === y) return;
+                track("year_change", usageProps({ ...ctx(), year: y }));
+                set({ year: y });
+              }}
               className="chip px-3 tabular-nums"
             >
               {leaveYearLabel(y, s.yearStart)}
@@ -100,7 +120,10 @@ export function SettingsPanel({
         <Stepper
           id={id("budget")}
           value={s.budget}
-          onChange={(n) => set({ budget: n })}
+          onChange={(n) => {
+            set({ budget: n });
+            trackDebounced("leave-days", "leave_days_change", usageProps({ ...ctx(), days: n }));
+          }}
           min={0}
           max={MAX_BUDGET}
           label={p.leaveUnit.many}
@@ -121,7 +144,11 @@ export function SettingsPanel({
               role="radio"
               aria-checked={s.style === st.id}
               title={st.hint}
-              onClick={() => set({ style: st.id })}
+              onClick={() => {
+                if (s.style === st.id) return;
+                track("planner_setting", usageProps(ctx(), { setting: "style", value: st.id }));
+                set({ style: st.id });
+              }}
               className="chip"
             >
               {st.label}
@@ -152,9 +179,14 @@ export function SettingsPanel({
                 max={30}
                 label={i18n.code === "en" ? "days in the shortest break" : p.shortest}
                 format={(n) => (i18n.code === "en" ? `${n}d` : i18n.countText(n, p.nDays))}
-                onChange={(n) =>
-                  set({ minBreak: n, maxBreak: s.maxBreak !== null && s.maxBreak < n ? n : s.maxBreak })
-                }
+                onChange={(n) => {
+                  set({ minBreak: n, maxBreak: s.maxBreak !== null && s.maxBreak < n ? n : s.maxBreak });
+                  trackDebounced(
+                    "min-break",
+                    "planner_setting",
+                    usageProps(ctx(), { setting: "min_break", value: n }),
+                  );
+                }}
               />
             </div>
             <div className="flex flex-col gap-2">
@@ -164,7 +196,14 @@ export function SettingsPanel({
               <select
                 id={id("max")}
                 value={s.maxBreak ?? ""}
-                onChange={(e) => set({ maxBreak: e.target.value ? Number(e.target.value) : null })}
+                onChange={(e) => {
+                  const value = e.target.value ? Number(e.target.value) : null;
+                  set({ maxBreak: value });
+                  track(
+                    "planner_setting",
+                    usageProps(ctx(), { setting: "max_break", value: value ?? "none" }),
+                  );
+                }}
                 className="input h-full"
               >
                 <option value="">{p.noLimit}</option>
@@ -192,9 +231,10 @@ export function SettingsPanel({
                     type="button"
                     aria-pressed={on}
                     aria-label={i18n.monthsLong[i]}
-                    onClick={() =>
-                      set({ months: on ? s.months.filter((x) => x !== month) : [...s.months, month] })
-                    }
+                    onClick={() => {
+                      set({ months: on ? s.months.filter((x) => x !== month) : [...s.months, month] });
+                      track("planner_setting", usageProps(ctx(), { setting: "month", value: month }));
+                    }}
                     className="chip justify-center px-0 text-xs"
                   >
                     {m}
@@ -213,7 +253,10 @@ export function SettingsPanel({
                   key={d}
                   type="button"
                   aria-pressed={s.workWeek[i]}
-                  onClick={() => set({ workWeek: s.workWeek.map((w, j) => (j === i ? !w : w)) })}
+                  onClick={() => {
+                    set({ workWeek: s.workWeek.map((w, j) => (j === i ? !w : w)) });
+                    track("planner_setting", usageProps(ctx(), { setting: "work_day", value: i }));
+                  }}
                   className="chip justify-center px-0 text-xs"
                 >
                   {d}
@@ -229,7 +272,11 @@ export function SettingsPanel({
             <select
               id={id("ys")}
               value={s.yearStart}
-              onChange={(e) => set({ yearStart: Number(e.target.value) })}
+              onChange={(e) => {
+                const value = Number(e.target.value);
+                set({ yearStart: value });
+                track("planner_setting", usageProps(ctx(), { setting: "year_start", value }));
+              }}
               className="input"
             >
               {i18n.monthsLong.map((m, i) => (
@@ -256,7 +303,10 @@ export function SettingsPanel({
                 )}
                 <button
                   type="button"
-                  onClick={() => dispatch({ type: "resetDays" })}
+                  onClick={() => {
+                    track("planner_setting", usageProps(ctx(), { setting: "clear_days", value: edits }));
+                    dispatch({ type: "resetDays" });
+                  }}
                   className={cx("ml-auto text-muted underline hover:text-ink")}
                 >
                   {p.clearAll}

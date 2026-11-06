@@ -25,6 +25,8 @@ const current = links.find((link) => link.current) ?? links[0];
       links.map((link) => (
         <a
           href={link.href}
+          data-track="language_change"
+          data-track-to={link.code}
           hreflang={link.code === "en" ? "en" : link.code}
           aria-current={link.current ? "true" : undefined}
           class:list={[

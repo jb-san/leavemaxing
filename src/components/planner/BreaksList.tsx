@@ -1,11 +1,12 @@
 import { CalendarPlus } from "lucide-react";
 import { useI18n } from "~/i18n/context";
+import { track, type UsageContext, usageProps } from "~/lib/analytics";
 import type { DayNum } from "~/lib/dates";
 import { googleCalendarUrl } from "~/lib/ics";
 import type { Plan } from "~/lib/planner/types";
 import { cx } from "./ui";
 
-export function BreaksList({ plan, today }: { plan: Plan; today: DayNum }) {
+export function BreaksList({ plan, today, usage }: { plan: Plan; today: DayNum; usage: UsageContext }) {
   const i18n = useI18n();
   const p = i18n.m.planner;
   const leaveDays = [...plan.suggested, ...plan.locked];
@@ -67,6 +68,10 @@ export function BreaksList({ plan, today }: { plan: Plan; today: DayNum }) {
                     href={googleCalendarUrl(b, leaveDays)}
                     target="_blank"
                     rel="noopener noreferrer"
+                    data-no-outbound=""
+                    onClick={() =>
+                      track("calendar_export", usageProps(usage, { format: "google", length: b.length }))
+                    }
                     aria-label={i18n.text(p.addGcal, { range })}
                     title={p.addGcalTitle}
                     className="grid size-9 shrink-0 place-items-center rounded-full text-muted hover:bg-card-2 hover:text-ink"
