@@ -1,5 +1,6 @@
 import { ChevronDown, Info } from "lucide-react";
 import type { Dispatch } from "react";
+import { useOfferedYears } from "~/components/useOfferedYears";
 import { countries, countryByCode } from "~/data";
 import { useI18n } from "~/i18n/context";
 import { pageKind, track, trackDebounced, usageProps } from "~/lib/analytics";
@@ -15,15 +16,19 @@ export function SettingsPanel({
   settings: s,
   dispatch,
   years,
+  buildYear,
   idPrefix,
   localizeRegions = false,
 }: {
   settings: Settings;
   dispatch: Dispatch<Action>;
   years: number[];
+  /** Calendar year of the build. The picker re-filters after mount. */
+  buildYear: number;
   idPrefix: string;
   localizeRegions?: boolean;
 }) {
+  const offered = useOfferedYears(years, buildYear);
   const i18n = useI18n();
   const p = i18n.m.planner;
   const styles: { id: Style; label: string; hint: string }[] = [
@@ -94,7 +99,7 @@ export function SettingsPanel({
           {p.year}
         </span>
         <div role="radiogroup" aria-labelledby={id("year-label")} className="flex flex-wrap gap-1.5">
-          {years.map((y) => (
+          {offered.map((y) => (
             <button
               key={y}
               type="button"

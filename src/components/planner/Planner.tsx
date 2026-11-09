@@ -11,6 +11,7 @@ import {
   leaveYearMonths,
   leaveYearRange,
   localToday,
+  parts,
   weekdayMon0,
 } from "~/lib/dates";
 import { detectCountry } from "~/lib/detect";
@@ -23,6 +24,7 @@ import { regionCopy } from "~/lib/regionLabels";
 import { defaultSettings, fromQuery, planPath, type Settings, shareUrl, toQuery } from "~/lib/settings";
 import { addPlan, loadLast, recordBest, saveLast } from "~/lib/storage";
 import { SUNDAY_FIRST } from "~/lib/weekends";
+import { correctPlanYear, offeredYears, pinnedYear, selectPlanYear, type YearPolicy } from "~/lib/years";
 import { BreaksList } from "./BreaksList";
 import { Calendar, CalendarPlaceholder, Legend } from "./Calendar";
 import { DayMenu } from "./DayMenu";
@@ -43,6 +45,11 @@ export interface PlannerProps {
   localizeRegions?: boolean;
   /** UI locale, for example `de-DE`. English pages omit it. */
   locale?: string;
+  /**
+   * How to replace a past default. Locale homes already move to next year from
+   * October (`late`). Everywhere else stays on the calendar year.
+   */
+  yearPolicy?: YearPolicy;
 }
 
 type Dialog = "settings" | "share" | "export" | "save" | null;
@@ -61,6 +68,7 @@ function PlannerApp(props: PlannerProps) {
   const i18n = useI18n();
   const p = i18n.m.planner;
   const { years, mode } = props;
+  const buildYear = parts(props.today).year;
   const styleName = (id: Style) =>
     id === "weekends" ? p.styleWeekends : id === "long" ? p.styleLong : p.styleBalanced;
   const [settings, rawDispatch] = useReducer(reducer, props.initial);
@@ -101,6 +109,10 @@ function PlannerApp(props: PlannerProps) {
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs once on mount
   useEffect(() => {
     setToday(localToday());
+    const now = new Date();
+    const offered = offeredYears(years, now);
+    const pinned = pinnedYear(window.location.pathname);
+    const policy = props.yearPolicy ?? "calendar";
     const q = new URLSearchParams(window.location.search);
     const base = props.initial;
     let next = base;
@@ -112,14 +124,18 @@ function PlannerApp(props: PlannerProps) {
       const last = loadLast();
       const lastOk = last && countryByCode.has(last.country);
       if (mode === "home" && !props.locale) {
-        if (lastOk && years.includes(last.year)) next = last;
-        else if (lastOk) next = carryPreferences(defaultSettings(last.country, base.year), last);
-        else {
+        // A saved plan for a past year keeps its preferences and opens on a year the picker offers.
+        if (lastOk && offered.includes(last.year)) next = last;
+        else if (lastOk) {
+          next = carryPreferences(defaultSettings(last.country, selectPlanYear(offered, now, policy)), last);
+        } else {
           const guess = detectCountry(new Set(countries.map((c) => c.code)));
           if (guess && guess !== base.country) next = defaultSettings(guess, base.year);
         }
       } else if (lastOk) next = carryPreferences(base, last);
     }
+    const fixed = correctPlanYear(next.year, { offered, pinned, now, policy });
+    if (fixed !== next.year) next = { ...next, year: fixed, locked: [], blocked: [], customOff: [] };
     if (next !== base) rawDispatch({ type: "replace", settings: next });
     setReady(true);
   }, []);
@@ -318,6 +334,7 @@ function PlannerApp(props: PlannerProps) {
           settings={settings}
           dispatch={dispatch}
           years={years}
+          buildYear={buildYear}
           idPrefix="d"
           localizeRegions={props.localizeRegions}
         />
@@ -417,6 +434,7 @@ function PlannerApp(props: PlannerProps) {
           settings={settings}
           dispatch={dispatch}
           years={years}
+          buildYear={buildYear}
           idPrefix="m"
           localizeRegions={props.localizeRegions}
         />

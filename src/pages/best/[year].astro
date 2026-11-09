@@ -2,8 +2,9 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Mascot } from "~/components/Mascot";
+import { OfferedYearLink } from "~/components/YearChoices";
 import { SITE } from "~/data/site";
-import { bestAlternates } from "~/i18n/routes";
+import { bestAlternates, englishBestYears } from "~/i18n/routes";
 import Base from "~/layouts/Base.astro";
 import { shellAlternates } from "~/lib/hreflang";
 import { planLink } from "~/lib/planLink";
@@ -34,7 +35,9 @@ const tables = data.budgets.map((budget) => ({
     .sort((a, b) => (b.results[budget]?.daysOff ?? 0) - (a.results[budget]?.daysOff ?? 0) || a.name.localeCompare(b.name)),
 }));
 const top = tables.find((t) => t.budget === DEFAULT)?.rows[0];
-const other = year === new Date().getFullYear() ? year + 1 : year - 1;
+const ranked = englishBestYears();
+const buildYear = ranked[0] ?? year;
+const other = ranked.find((item) => item !== year);
 ---
 
 <Base
@@ -51,7 +54,19 @@ const other = year === new Date().getFullYear() ? year + 1 : year - 1;
         the country's normal weekend.
       </p>
     </div>
-    <a href={`/best/${other}/`} class="chip shrink-0 bg-card">See {other}</a>
+    {
+      other && (
+        <OfferedYearLink
+          client:load
+          year={other}
+          buildYear={buildYear}
+          years={ranked}
+          href={`/best/${other}/`}
+          label={`See ${other}`}
+          className="chip shrink-0 bg-card"
+        />
+      )
+    }
   </div>
 
   {

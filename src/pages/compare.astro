@@ -2,6 +2,8 @@
 import Compare from "~/components/Compare";
 import { meta } from "~/data";
 import Base from "~/layouts/Base.astro";
+
+const buildYear = new Date().getFullYear();
 ---
 
 <Base
@@ -13,5 +15,5 @@ import Base from "~/layouts/Base.astro";
     <h1 class="text-[clamp(28px,4vw,44px)] font-extrabold leading-tight">Where would your leave go furthest?</h1>
     <p class="max-w-2xl text-muted">Pick up to four countries or regions. They all get the same leave days and style.</p>
   </div>
-  <Compare client:load years={meta.years} />
+  <Compare client:load years={meta.years} buildYear={buildYear} />
 </Base>

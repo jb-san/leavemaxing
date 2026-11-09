@@ -1,5 +1,6 @@
 ---
 import HolidayList from "~/components/HolidayList.astro";
+import { YearLinks } from "~/components/YearChoices";
 import Planner from "~/components/planner/Planner";
 import { countries, countryByCode, meta } from "~/data";
 import { locales, UKRAINE_MARTIAL_LAW_NOTICE } from "~/data/locales";
@@ -61,17 +62,7 @@ const noindex = !shouldIndexCountry(code);
     <HolidayList file={file} />
     <section class="card p-5 sm:p-6">
       <h2 class="text-xl font-bold">Plan another year in {country.name}</h2>
-      <ul class="mt-3 flex flex-wrap gap-2">
-        {
-          meta.years.map((y) => (
-            <li>
-              <a class="chip" href={`/${code.toLowerCase()}/${y}/`}>
-                {y}
-              </a>
-            </li>
-          ))
-        }
-      </ul>
+      <YearLinks client:load years={meta.years} buildYear={year} prefix={`/${code.toLowerCase()}/`} />
     </section>
   </div>
 </Base>

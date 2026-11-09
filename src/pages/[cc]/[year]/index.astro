@@ -1,6 +1,7 @@
 ---
 import HolidayList from "~/components/HolidayList.astro";
 import SeasonalIntro from "~/components/SeasonalIntro.astro";
+import { YearLinks } from "~/components/YearChoices";
 import Planner from "~/components/planner/Planner";
 import { countries, countryByCode, meta, ogYear } from "~/data";
 import { buildToday, readHolidayFile, serverPlan } from "~/data/server";
@@ -52,7 +53,7 @@ const title = seasonal
 const description = seasonal
   ? seasonal.description
   : `The best days to take off in ${country.name} in ${year}. ${settings.budget} leave days around ${country.name}'s public holidays give ${stats.daysOff} days off (${stats.multiplier.toFixed(1)}×). Change the days, region and style to plan your own.`;
-const otherYears = meta.years.filter((y) => y !== year);
+const buildYear = new Date().getFullYear();
 const noindex = !shouldIndexCountry(code) || !shouldIndexYear(year);
 const otherSeasonalYear = year === 2027 ? 2028 : year === 2028 ? 2027 : null;
 const introLinks = [
@@ -147,17 +148,13 @@ const jsonLd = pageJsonLd({
       }
       <section class="card p-5 sm:p-6">
         <h2 class="text-xl font-bold">Other years</h2>
-        <ul class="mt-3 flex flex-wrap gap-2">
-          {
-            otherYears.map((y) => (
-              <li>
-                <a class="chip" href={`/${code.toLowerCase()}/${y}/`}>
-                  {y}
-                </a>
-              </li>
-            ))
-          }
-        </ul>
+        <YearLinks
+          client:load
+          years={meta.years}
+          buildYear={buildYear}
+          skip={year}
+          prefix={`/${code.toLowerCase()}/`}
+        />
       </section>
     </aside>
   </div>
