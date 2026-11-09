@@ -2,6 +2,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Mascot } from "~/components/Mascot";
+import { OfferedYearLink } from "~/components/YearChoices";
 import { countryByCode } from "~/data";
 import { locales } from "~/data/locales";
 import { SITE } from "~/data/site";
@@ -54,7 +55,9 @@ const tables = data.budgets.map((budget) => ({
     ),
 }));
 const top = tables.find((t) => t.budget === DEFAULT)?.rows[0];
-const other = localizedBestYears().find((item) => item !== year);
+const rankedYears = localizedBestYears();
+const buildYear = new Date().getFullYear();
+const other = rankedYears.find((item) => item !== year);
 const country = countryByCode.get(locale.country);
 const place = countryName(locale.country, ui, country?.name ?? locale.country);
 const mine = data.rows.find((row) => row.code === locale.country);
@@ -118,7 +121,19 @@ const text = (template: string, tokens: Record<string, string | number>) => {
         {bridgeLinkLabel(locale.code, year)}
       </a>
     </div>
-    {other && <a href={`/${param}/best/${other}/`} class="chip shrink-0 bg-card">{text(b.seeYear, { year: other })}</a>}
+    {
+      other && (
+        <OfferedYearLink
+          client:load
+          year={other}
+          buildYear={buildYear}
+          years={rankedYears}
+          href={`/${param}/best/${other}/`}
+          label={text(b.seeYear, { year: other })}
+          className="chip shrink-0 bg-card"
+        />
+      )
+    }
   </div>
 
   {

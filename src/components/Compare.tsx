@@ -12,8 +12,10 @@ import { planLink } from "~/lib/planLink";
 import { type Plan, STYLES, type Style } from "~/lib/planner/types";
 import { DEFAULT_BUDGET, defaultSettings, MAX_BUDGET, planPath, toQuery } from "~/lib/settings";
 import { loadLast } from "~/lib/storage";
+import { offeredYears, referencedYear, selectPlanYear } from "~/lib/years";
 import { CountryPicker } from "./planner/CountryPicker";
 import { cx, Stepper } from "./planner/ui";
+import { useOfferedYears } from "./useOfferedYears";
 
 interface Pick {
   country: string;
@@ -41,10 +43,12 @@ function parsePicks(v: string | null): Pick[] {
     .slice(0, MAX);
 }
 
-export default function Compare({ years }: { years: number[] }) {
-  const thisYear = new Date().getFullYear();
+export default function Compare({ years, buildYear }: { years: number[]; buildYear: number }) {
+  const choices = useOfferedYears(years, buildYear);
   const [picks, setPicks] = useState<Pick[]>([]);
-  const [year, setYear] = useState(years.includes(thisYear + 1) ? thisYear + 1 : thisYear);
+  const [year, setYear] = useState(() =>
+    selectPlanYear(offeredYears(years, new Date(buildYear, 0, 1)), new Date(buildYear, 0, 1), "next"),
+  );
   const [budget, setBudget] = useState(DEFAULT_BUDGET);
   const [style, setStyle] = useState<Style>("balanced");
   const [plans, setPlans] = useState<Record<string, Plan | "error">>({});
@@ -53,8 +57,20 @@ export default function Compare({ years }: { years: number[] }) {
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
     let initial = parsePicks(q.get("c"));
-    const y = Number(q.get("y"));
-    if (years.includes(y)) setYear(y);
+    const rawYear = q.get("y");
+    const requested = rawYear === null ? null : Number(rawYear);
+    const now = new Date();
+    const offered = offeredYears(years, now);
+    const fallback = selectPlanYear(offered, now, "next");
+    const builtDefault = selectPlanYear(
+      offeredYears(years, new Date(buildYear, 0, 1)),
+      new Date(buildYear, 0, 1),
+      "next",
+    );
+    const keepDefault =
+      requested === null && builtDefault >= now.getFullYear() && offered.includes(builtDefault);
+    const nextYear = referencedYear(requested, years, keepDefault ? builtDefault : fallback);
+    setYear((current) => (current === nextYear ? current : nextYear));
     const d = Number(q.get("d"));
     if (d > 0 && d <= MAX_BUDGET) setBudget(d);
     const s = q.get("s");
@@ -68,7 +84,7 @@ export default function Compare({ years }: { years: number[] }) {
     }
     setPicks(initial);
     setReady(true);
-  }, [years]);
+  }, [years, buildYear]);
 
   useEffect(() => {
     if (!ready) return;
@@ -125,7 +141,7 @@ export default function Compare({ years }: { years: number[] }) {
         <div className="flex flex-col gap-2">
           <span className="field-label">Year</span>
           <div role="radiogroup" aria-label="Year" className="flex flex-wrap gap-1.5">
-            {years.map((y) => (
+            {choices.map((y) => (
               <button
                 key={y}
                 type="button"
