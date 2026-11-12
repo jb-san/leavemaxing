@@ -1,0 +1,18 @@
+---
+import AdSlot from "~/components/AdSlot.astro";
+import { shouldRenderPlacement } from "~/config/ads";
+
+interface Props {
+  locale?: string;
+}
+
+const { locale } = Astro.props;
+---
+
+{
+  shouldRenderPlacement("desktopSidebar") && (
+    <div class="ad-sidebar">
+      <AdSlot placement="desktopSidebar" locale={locale} />
+    </div>
+  )
+}

@@ -1,4 +1,6 @@
 ---
+import AdSidebar from "~/components/AdSidebar.astro";
+import AdSlot from "~/components/AdSlot.astro";
 import HolidayList from "~/components/HolidayList.astro";
 import SeasonalIntro from "~/components/SeasonalIntro.astro";
 import { YearLinks } from "~/components/YearChoices";
@@ -120,6 +122,8 @@ const jsonLd = pageJsonLd({
 
   <Planner client:load initial={settings} files={files} today={buildToday} mode="page" years={meta.years} />
 
+  <AdSlot placement="plannerBelowResults" clearFab />
+
   <div class="mt-10 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
     <HolidayList file={file} />
     <aside class="flex flex-col gap-5">
@@ -156,8 +160,15 @@ const jsonLd = pageJsonLd({
           prefix={`/${code.toLowerCase()}/`}
         />
       </section>
+      <AdSidebar />
     </aside>
   </div>
+
+  {
+    seasonal && (
+      <AdSlot placement="seoBeforeFaq" clearFab />
+    )
+  }
 
   {
     seasonal && (

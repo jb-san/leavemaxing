@@ -19,6 +19,7 @@ export const ptPT: Copy = {
     footerContact: "Contacto",
     footerPrivacy: "Privacidade",
     footerPrivacySettings: "Definições de privacidade",
+    advertisement: "Anúncio",
     footerNav: "Rodapé",
     langLabel: "Idioma",
     themeLabel: "Tema de cor",

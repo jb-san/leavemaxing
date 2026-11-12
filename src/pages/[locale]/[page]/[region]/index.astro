@@ -1,4 +1,6 @@
 ---
+import AdSidebar from "~/components/AdSidebar.astro";
+import AdSlot from "~/components/AdSlot.astro";
 import HolidayList from "~/components/HolidayList.astro";
 import SeasonalIntro from "~/components/SeasonalIntro.astro";
 import Planner from "~/components/planner/Planner";
@@ -191,7 +193,7 @@ const regionalHolidays = file.holidays.filter(h =>
 <Base 
   title={title} 
   description={description} 
-  lang={locale.lang}
+  lang={locale.code}
   locale={locale.code}
   canonical={canonicalUrl}
   hreflangs={hreflangs}
@@ -257,11 +259,15 @@ const regionalHolidays = file.holidays.filter(h =>
         </div>
       </section>
 
+      <AdSlot placement="seoAfterFirstSection" locale={locale.code} clearFab />
+
       <!-- Holidays List -->
       <section>
         <h2 class="text-2xl font-bold mb-4">{replaceTokens(locale.translations.holidaysHeading, { year })}</h2>
         <HolidayList file={file} localizeRegions locale={locale.code} />
       </section>
+
+      <AdSlot placement="seoBeforeFaq" locale={locale.code} clearFab />
 
       <!-- FAQ Section -->
       <section class="card p-5 sm:p-6">
@@ -351,6 +357,7 @@ const regionalHolidays = file.holidays.filter(h =>
           {locale.translations.calculatorLink}
         </a>
       </section>
+      <AdSidebar locale={locale.code} />
     </aside>
   </div>
 </Base>

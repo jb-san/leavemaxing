@@ -1,0 +1,52 @@
+---
+import { adMinHeight, ADSENSE_CLIENT, shouldRenderPlacement, slotId, type AdPlacement } from "~/config/ads";
+import { getCopy } from "~/i18n";
+
+interface Props {
+  placement: AdPlacement;
+  /** UI locale, for example `de-DE`. English pages omit it. */
+  locale?: string;
+  /**
+   * Keep the unit clear of the planner's fixed mobile button.
+   * Pass this on pages that render `<Planner>`.
+   */
+  clearFab?: boolean;
+}
+
+const { placement, locale, clearFab = false } = Astro.props;
+const id = slotId(placement);
+const show = shouldRenderPlacement(placement);
+const label = getCopy(locale).chrome.advertisement;
+const minHeight = adMinHeight[placement];
+const spacing =
+  placement === "desktopSidebar" ? "my-0" : placement === "plannerBelowResults" ? "mt-16 mb-10" : "mt-12 mb-8";
+---
+
+{
+  show && (
+    <div
+      class:list={["ad-unit min-w-0", spacing, clearFab && "max-lg:mr-20"]}
+      data-ad-placement={placement}
+      data-ad-lazy
+      style={`--ad-min-height: ${minHeight}px`}
+    >
+      <p class="ad-label">{label}</p>
+      <div class="ad-frame">
+        <ins
+          class="adsbygoogle"
+          style="display:block"
+          data-ad-client={ADSENSE_CLIENT}
+          data-ad-slot={id}
+          data-ad-format="auto"
+          data-full-width-responsive="true"
+        />
+      </div>
+    </div>
+  )
+}
+
+<script>
+  import { bindAdSlots } from "~/lib/ads";
+
+  bindAdSlots();
+</script>

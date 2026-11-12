@@ -831,6 +831,39 @@ dialog.sheet[open]::backdrop {
   animation-timing-function: ease;
 }
 
+/*
+ * Manual AdSense units. Min-height avoids layout shift while a unit loads.
+ * An unfilled unit collapses, including its label, so it leaves no empty box.
+ * The sidebar rail only exists at ≥1280px, inside the content column that
+ * already sits beside long-form copy. It never narrows the planner.
+ */
+.ad-label {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.ad-frame {
+  min-height: var(--ad-min-height, 280px);
+}
+.ad-unit:has(ins[data-ad-status="unfilled"]),
+.ad-sidebar:has(ins[data-ad-status="unfilled"]) {
+  display: none;
+}
+.ad-sidebar {
+  display: none;
+}
+@media (min-width: 1280px) {
+  .ad-sidebar {
+    display: block;
+    position: sticky;
+    top: 1.5rem;
+    margin-top: 2.5rem;
+  }
+}
+
 .no-scrollbar {
   scrollbar-width: none;
 }

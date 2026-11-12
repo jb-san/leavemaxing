@@ -1,6 +1,7 @@
 ---
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import AdSlot from "~/components/AdSlot.astro";
 import { Mascot } from "~/components/Mascot";
 import { OfferedYearLink } from "~/components/YearChoices";
 import { countryByCode } from "~/data";
@@ -224,6 +225,8 @@ const text = (template: string, tokens: Record<string, string | number>) => {
       ))
     }
   </section>
+
+  <AdSlot placement="seoBeforeFaq" locale={locale.code} />
 </Base>
 
 <script>

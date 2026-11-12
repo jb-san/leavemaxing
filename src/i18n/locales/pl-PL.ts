@@ -19,6 +19,7 @@ export const plPL: Copy = {
     footerContact: "Kontakt",
     footerPrivacy: "Prywatność",
     footerPrivacySettings: "Ustawienia prywatności",
+    advertisement: "Reklama",
     footerNav: "Stopka",
     langLabel: "Język",
     themeLabel: "Motyw koloru",

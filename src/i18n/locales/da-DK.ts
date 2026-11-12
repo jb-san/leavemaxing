@@ -19,6 +19,7 @@ export const daDK: Copy = {
     footerContact: "Kontakt",
     footerPrivacy: "Privatliv",
     footerPrivacySettings: "Privatlivsindstillinger",
+    advertisement: "Annonce",
     footerNav: "Sidefod",
     langLabel: "Sprog",
     themeLabel: "Farvetema",

@@ -19,6 +19,7 @@ export const deDE: Copy = {
     footerContact: "Kontakt",
     footerPrivacy: "Datenschutz",
     footerPrivacySettings: "Datenschutzeinstellungen",
+    advertisement: "Anzeige",
     footerNav: "Fußzeile",
     langLabel: "Sprache",
     themeLabel: "Farbschema",

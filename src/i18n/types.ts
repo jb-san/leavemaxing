@@ -26,6 +26,8 @@ export interface Copy {
     footerContact: string;
     footerPrivacy: string;
     footerPrivacySettings: string;
+    /** Short label above an ad unit. */
+    advertisement: string;
     footerNav: string;
     langLabel: string;
     themeLabel: string;

@@ -19,6 +19,7 @@ export const ukUA: Copy = {
     footerContact: "Контакт",
     footerPrivacy: "Приватність",
     footerPrivacySettings: "Налаштування приватності",
+    advertisement: "Реклама",
     footerNav: "Підвал",
     langLabel: "Мова",
     themeLabel: "Колірна тема",

@@ -2,6 +2,7 @@
 import "~/styles/global.css";
 import Footer from "~/components/Footer.astro";
 import Header from "~/components/Header.astro";
+import { ADSENSE_CLIENT, consentModeScript } from "~/config/ads";
 import { locales } from "~/data/locales";
 import { SITE } from "~/data/site";
 import { getCopy, normalizeLocale } from "~/i18n";
@@ -54,10 +55,11 @@ const ogImage = new URL(image, SITE.url).href;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <script is:inline set:html={consentModeScript()}></script>
     <script
       is:inline
       async
-      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1457689618305369"
+      src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
       crossorigin="anonymous"
     ></script>
     <title>{title}</title>

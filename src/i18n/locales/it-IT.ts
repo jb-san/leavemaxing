@@ -19,6 +19,7 @@ export const itIT: Copy = {
     footerContact: "Contatti",
     footerPrivacy: "Privacy",
     footerPrivacySettings: "Impostazioni privacy",
+    advertisement: "Annuncio",
     footerNav: "Piè di pagina",
     langLabel: "Lingua",
     themeLabel: "Tema colore",

@@ -19,6 +19,7 @@ export const svSE: Copy = {
     footerContact: "Kontakt",
     footerPrivacy: "Integritet",
     footerPrivacySettings: "Integritetsinställningar",
+    advertisement: "Annons",
     footerNav: "Sidfot",
     langLabel: "Språk",
     themeLabel: "Färgtema",

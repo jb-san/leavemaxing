@@ -1,4 +1,5 @@
 ---
+import AdSlot from "~/components/AdSlot.astro";
 import { Mascot } from "~/components/Mascot";
 import Planner from "~/components/planner/Planner";
 import { countryByCode, meta } from "~/data";
@@ -118,6 +119,8 @@ const jsonLd = {
     localizeRegions
     yearPolicy="late"
   />
+
+  <AdSlot placement="plannerBelowResults" locale={locale.code} clearFab />
 
   <section aria-labelledby="how" class="mt-16">
     <h2 id="how" class="text-3xl font-extrabold">{copy.home.how}</h2>

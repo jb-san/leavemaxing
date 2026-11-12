@@ -1,6 +1,7 @@
 ---
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import AdSlot from "~/components/AdSlot.astro";
 import { Mascot } from "~/components/Mascot";
 import { OfferedYearLink } from "~/components/YearChoices";
 import { SITE } from "~/data/site";
@@ -140,6 +141,8 @@ const other = ranked.find((item) => item !== year);
       ))
     }
   </section>
+
+  <AdSlot placement="seoBeforeFaq" />
 </Base>
 
 <script>
