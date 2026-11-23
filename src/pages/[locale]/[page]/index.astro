@@ -1,9 +1,13 @@
 ---
+import BridgeTable from "~/components/BridgeTable.astro";
 import HolidayList from "~/components/HolidayList.astro";
+import NlSchoolRegions from "~/components/NlSchoolRegions.astro";
+import StateTable from "~/components/StateTable.astro";
+import SwedishMonths from "~/components/SwedishMonths.astro";
 import SeasonalIntro from "~/components/SeasonalIntro.astro";
 import Planner from "~/components/planner/Planner";
 import { countryByCode } from "~/data";
-import { readHolidayFile, filesFor, buildToday } from "~/data/server";
+import { readHolidayFile, filesFor, buildToday, serverPlan } from "~/data/server";
 import { locales, replaceTokens, getLocale, sidebarHeading } from "~/data/locales";
 import { SITE } from "~/data/site";
 import Base from "~/layouts/Base.astro";
@@ -18,6 +22,16 @@ import { calculateBridgePlans } from "~/lib/bridgeDays";
 import { bridgeLinkLabel, localizedSeasonal, pageJsonLd, whereFor } from "~/lib/seasonalSeo";
 import { toPlanInput, yearsNeeded } from "~/lib/planInput";
 import { plan } from "~/lib/planner/plan";
+import {
+  bridgeRows,
+  bridgeTableCopy,
+  dutchSchoolSections,
+  germanStateSummaries,
+  isLandingLocale,
+  liberationDayFaq,
+  swedishMonths,
+  weekendHolidayFaq,
+} from "~/lib/landingPages";
 
 export function getStaticPaths() {
   const paths: Array<{ params: { locale: string; page: string } }> = [];
@@ -131,6 +145,31 @@ const seasonal = localizedSeasonal({
 });
 const title = seasonal.title;
 const description = seasonal.description;
+
+// Computed extras for the de-DE, de-AT, nl-NL, and sv-SE landing pages.
+const landing = isLandingLocale(locale.code) ? locale.code : null;
+const nationalWhere = whereFor(locale.code, null);
+const tableRows = landing ? bridgeRows(file, locale.country, null, locale.code) : [];
+const tableCopy = landing ? bridgeTableCopy(landing, year, nationalWhere, tableRows.length) : null;
+const extraFaq = !landing
+  ? []
+  : landing === "nl-NL"
+    ? [liberationDayFaq(file, year) ?? weekendHolidayFaq(landing, file, locale.country, null, year, nationalWhere)]
+    : [weekendHolidayFaq(landing, file, locale.country, null, year, nationalWhere)];
+const faq = [...seasonal.faq, ...extraFaq];
+const states =
+  locale.code === "de-DE"
+    ? germanStateSummaries(file, country.regions).map((state) => {
+        const stateSettings = { ...defaultSettings(locale.country, year), region: state.code, budget: locale.defaultBudget };
+        return {
+          ...state,
+          daysOff: serverPlan(stateSettings).plan.stats.daysOff,
+          href: `/${localeParam}/${page}/${state.slug}/`,
+        };
+      })
+    : [];
+const nlSections = locale.code === "nl-NL" ? dutchSchoolSections(file, year) : null;
+const months = locale.code === "sv-SE" ? swedishMonths(file, fullPlan.breaks, year, settings.budget) : [];
 const otherYear = year === 2027 ? 2028 : 2027;
 const homeLabel = locale.translations.home ?? countryLabel;
 const jsonLd = pageJsonLd({
@@ -145,7 +184,7 @@ const jsonLd = pageJsonLd({
     { name: countryLabel, item: `${SITE.url}/${locale.country.toLowerCase()}/` },
     { name: `${locale.bridgeTerm} ${year}`, item: canonicalUrl },
   ],
-  faq: seasonal.faq,
+  faq,
 });
 ---
 
@@ -212,6 +251,14 @@ const jsonLd = pageJsonLd({
         </div>
       </section>
 
+      {tableCopy && <BridgeTable rows={tableRows} copy={tableCopy} />}
+
+      {states.length > 0 && <StateTable states={states} year={year} budget={locale.defaultBudget} />}
+
+      {nlSections && <NlSchoolRegions sections={nlSections} />}
+
+      {months.length > 0 && <SwedishMonths months={months} year={year} budget={settings.budget} />}
+
       <!-- Holidays List -->
       <section>
         <h2 class="text-2xl font-bold mb-4">{replaceTokens(locale.translations.holidaysHeading, { year })}</h2>
@@ -222,7 +269,7 @@ const jsonLd = pageJsonLd({
       <section class="card p-5 sm:p-6">
         <h2 class="text-2xl font-bold mb-4">{locale.translations.faqHeading}</h2>
         <div class="space-y-6" data-seasonal-faq>
-          {seasonal.faq.map((item) => (
+          {faq.map((item) => (
             <div>
               <h3 class="font-bold text-lg mb-2">{item.question}</h3>
               <p class="text-muted">{item.answer}</p>

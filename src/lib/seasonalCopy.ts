@@ -536,7 +536,7 @@ export const seasonalCopy: Record<string, SeasonalCopy> = {
     phrase: "Brugdagen",
     and: "en",
     countKind: "days",
-    title: "Brugdagen {year}: alle brugdagen in Nederland",
+    title: "Brugdagen {year}: vrije dagen en feestdagen in Nederland",
     regionTitle: "Brugdagen {year} {where}: langste vakantie",
     description: {
       one: "Brugdagen {year} {where}: {count} brugdag, en {leave} vakantiedagen geven {totalOff}.",

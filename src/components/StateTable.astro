@@ -1,0 +1,63 @@
+---
+import { STATE_TABLE_COPY, type StateSummary } from "~/lib/landingPages";
+
+interface Props {
+  states: Array<StateSummary & { daysOff: number; href: string }>;
+  year: number;
+  budget: number;
+  /** Highlight this state's row. */
+  current?: string | null;
+  hubHref?: string;
+}
+
+const { states, year, budget, current = null, hubHref } = Astro.props;
+const copy = STATE_TABLE_COPY;
+---
+
+<section aria-labelledby="states" class="card min-w-0 p-5 sm:p-6" data-state-table>
+  <h2 id="states" class="text-2xl font-bold">{copy.heading(year)}</h2>
+  <p class="mt-2 text-sm text-muted">{copy.intro(year, budget)}</p>
+  <div class="mt-5 overflow-x-auto" tabindex="0" role="region" aria-label={copy.heading(year)}>
+    <table class="w-full min-w-[560px] text-left text-sm">
+      <thead class="text-xs uppercase tracking-wider text-muted">
+        <tr>
+          <th class="pb-3 pr-4 font-bold">{copy.state}</th>
+          <th class="pb-3 pr-4 font-bold">{copy.holidays}</th>
+          <th class="pb-3 pr-4 font-bold">{copy.workdays}</th>
+          <th class="pb-3 pr-4 font-bold">{copy.bridges}</th>
+          <th class="pb-3 font-bold">{copy.daysOff(budget)}</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-line">
+        {
+          states.map((state) => (
+            <tr class={state.code === current ? "bg-lime/20" : undefined}>
+              <td class="py-2.5 pr-4 font-semibold">
+                {state.code === current ? (
+                  <span aria-current="page">{state.name}</span>
+                ) : (
+                  <a href={state.href} class="underline decoration-lime decoration-2 underline-offset-4 hover:text-lime-ink">
+                    {`Brückentage ${year} ${state.name}`}
+                  </a>
+                )}
+              </td>
+              <td class="py-2.5 pr-4 tabular-nums">{state.total}</td>
+              <td class="py-2.5 pr-4 tabular-nums">{state.workdays}</td>
+              <td class="py-2.5 pr-4 tabular-nums">{state.bridgeDays}</td>
+              <td class="py-2.5 tabular-nums">{state.daysOff}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+  {
+    hubHref && (
+      <p class="mt-4 text-sm font-semibold">
+        <a href={hubHref} class="underline decoration-lime decoration-2 underline-offset-4">
+          {copy.hub(year)}
+        </a>
+      </p>
+    )
+  }
+</section>

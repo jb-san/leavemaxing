@@ -19,7 +19,65 @@ const pages = [
     path: "/de-de/brueckentage-2028/",
     title: "Brückentage 2028: alle Brückentage in Deutschland",
   },
+  {
+    path: "/de-de/brueckentage-2027/bayern/",
+    title: "Brückentage 2027 Bayern: alle Termine und Feiertage",
+  },
+  {
+    path: "/de-at/fenstertage-2027/",
+    title: "Fenstertage 2027: alle Fenstertage in Österreich",
+  },
+  {
+    path: "/nl-nl/brugdagen-2027/",
+    title: "Brugdagen 2027: vrije dagen en feestdagen in Nederland",
+  },
 ];
+
+const landings = [
+  { path: "/de-de/brueckentage-2027/bayern/", h1: "Brückentage 2027 Bayern", lang: "de-DE" },
+  { path: "/de-de/brueckentage-2027/thueringen/", h1: "Brückentage 2027 Thüringen", lang: "de-DE" },
+  { path: "/de-de/brueckentage-2027/hansestadt-bremen/", h1: "Brückentage 2027 Bremen", lang: "de-DE" },
+  { path: "/de-at/fenstertage-2027/", h1: "Fenstertage 2027 Österreich", lang: "de-AT" },
+  { path: "/nl-nl/brugdagen-2027/", h1: "Brugdagen en vrije dagen 2027 in Nederland", lang: "nl-NL" },
+  { path: "/sv-se/klamdagar-2027/", h1: "Klämdagar 2027", lang: "sv-SE" },
+];
+
+test("2027 landing pages carry their H1, clean canonical and hreflang, computed tables, and a sitemap entry", async ({
+  page,
+}) => {
+  test.skip(test.info().project.name !== "desktop", "the built files are the same for both browsers");
+  const sitemap = readFileSync(join(process.cwd(), "dist", "sitemap-0.xml"), "utf8");
+  for (const item of landings) {
+    const url = `https://leavemaxxing.com${item.path}`;
+    expect(sitemap, item.path).toContain(`<loc>${url}</loc>`);
+    await page.goto(`${item.path}?d=7`);
+    await expect(page.locator("h1")).toContainText(item.h1);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", url);
+    await expect(page.locator(`link[rel="alternate"][hreflang="${item.lang}"]`)).toHaveAttribute("href", url);
+    await expect(page.locator("[data-bridge-table] tbody tr").first()).toBeVisible();
+  }
+
+  await page.goto("/de-de/brueckentage-2027/");
+  const states = await page
+    .locator("[data-state-table] a")
+    .evaluateAll((els) => els.map((el) => el.getAttribute("href") ?? ""));
+  expect(new Set(states.filter((href) => /^\/de-de\/brueckentage-2027\/[a-z-]+\/$/.test(href))).size).toBe(
+    16,
+  );
+
+  await page.goto("/de-de/brueckentage-2027/bayern/");
+  await expect(page.locator("[data-state-intro]")).toContainText("Fronleichnam");
+  await expect(page.locator("[data-state-table] a[href='/de-de/brueckentage-2027/']")).toBeVisible();
+
+  await page.goto("/nl-nl/brugdagen-2027/");
+  for (const region of ["noord", "midden", "zuid"]) {
+    await expect(page.locator(`[data-nl-region="${region}"]`)).toContainText("Zomervakantie");
+  }
+
+  await page.goto("/sv-se/klamdagar-2027/");
+  await expect(page.locator("[data-month]")).toHaveCount(12);
+  await expect(page.locator("#maj")).toHaveText("Klämdagar maj 2027");
+});
 
 for (const item of pages) {
   test(`${item.path} publishes computed FAQ data that matches the page`, async ({ page }) => {

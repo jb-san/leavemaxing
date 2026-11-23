@@ -1,0 +1,55 @@
+---
+import type { BridgeRow, BridgeTableCopy } from "~/lib/landingPages";
+
+interface Props {
+  rows: BridgeRow[];
+  copy: BridgeTableCopy;
+  id?: string;
+}
+
+const { rows, copy, id = "bridge-table" } = Astro.props;
+---
+
+<section aria-labelledby={id} class="card min-w-0 p-5 sm:p-6" data-bridge-table>
+  <h2 id={id} class="text-2xl font-bold">{copy.heading}</h2>
+  <p class="mt-2 text-sm text-muted">{rows.length > 0 ? copy.intro : copy.none}</p>
+  {
+    rows.length > 0 && (
+      <div class="mt-5 overflow-x-auto" tabindex="0" role="region" aria-label={copy.heading}>
+        <table class="w-full min-w-[560px] text-left text-sm">
+          <thead class="text-xs uppercase tracking-wider text-muted">
+            <tr>
+              <th class="pb-3 pr-4 font-bold">{copy.colTake}</th>
+              <th class="pb-3 pr-4 font-bold">{copy.colHoliday}</th>
+              <th class="pb-3 pr-4 font-bold">{copy.colLeave}</th>
+              <th class="pb-3 pr-4 font-bold">{copy.colOff}</th>
+              <th class="pb-3 font-bold">{copy.colRatio}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-line">
+            {rows.map((row) => (
+              <tr>
+                <td class="py-3 pr-4 align-top font-semibold">
+                  {row.days.map((day, index) => (
+                    <span class="block" data-date={day}>
+                      {row.dayLabels[index]}
+                    </span>
+                  ))}
+                </td>
+                <td class="py-3 pr-4 align-top">{row.holidays.join(", ")}</td>
+                <td class="py-3 pr-4 align-top tabular-nums">{copy.leave(row.leave)}</td>
+                <td class="py-3 pr-4 align-top">
+                  <span class="font-bold tabular-nums">{copy.off(row.length)}</span>
+                  <span class="block text-xs text-muted">{row.range}</span>
+                </td>
+                <td class="py-3 align-top">
+                  <span class="rounded-xl bg-lime px-2 py-1 font-display font-extrabold text-lime-ink">{row.ratio}×</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+</section>
