@@ -3,7 +3,7 @@ import { Mascot } from "~/components/Mascot";
 import Planner from "~/components/planner/Planner";
 import { countryByCode, meta } from "~/data";
 import { locales } from "~/data/locales";
-import { buildToday, readHolidayFile, serverPlan } from "~/data/server";
+import { plannerProps, readHolidayFile } from "~/data/server";
 import { SITE } from "~/data/site";
 import { getCopy, intlLocale } from "~/i18n";
 import { countryName } from "~/i18n/format";
@@ -29,7 +29,6 @@ const preferred = now.getMonth() >= 9 ? now.getFullYear() + 1 : now.getFullYear(
 const year = meta.years.includes(preferred) ? preferred : now.getFullYear();
 const settings = defaultSettings(locale.country, year);
 settings.budget = locale.defaultBudget;
-const { files } = serverPlan(settings);
 const country = countryByCode.get(locale.country);
 const place = countryName(locale.country, intlLocale(locale.code), country?.name ?? locale.country);
 const bridgeYear = localizedBestYears(now)[0] ?? 2027;
@@ -108,13 +107,10 @@ const jsonLd = {
   </p>
 
   <Planner
-    client:load
-    initial={settings}
-    files={files}
-    today={buildToday}
+    client:afterpaint
+    {...plannerProps(settings, locale.code)}
     mode="home"
     years={meta.years}
-    locale={locale.code}
     localizeRegions
     yearPolicy="late"
   />

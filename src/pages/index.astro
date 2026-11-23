@@ -2,7 +2,7 @@
 import { Mascot } from "~/components/Mascot";
 import Planner from "~/components/planner/Planner";
 import { countryByCode, meta } from "~/data";
-import { buildToday, serverPlan } from "~/data/server";
+import { plannerProps } from "~/data/server";
 import { SITE } from "~/data/site";
 import { homeAlternates } from "~/i18n/routes";
 import Base from "~/layouts/Base.astro";
@@ -11,7 +11,7 @@ import { defaultSettings } from "~/lib/settings";
 
 const year = new Date().getFullYear();
 const settings = defaultSettings("US", year);
-const { files } = serverPlan(settings);
+const planner = plannerProps(settings);
 const popular = ["US", "GB", "DE", "FR", "ES", "IT", "NL", "IE", "MT", "AU", "CA", "IN", "BR", "JP", "SE", "PL"]
   .map((c) => countryByCode.get(c))
   .filter((c) => !!c);
@@ -80,7 +80,7 @@ const steps = [
     </div>
   </div>
 
-  <Planner client:load initial={settings} files={files} today={buildToday} mode="home" years={meta.years} />
+  <Planner client:afterpaint {...planner} mode="home" years={meta.years} />
 
   <section aria-labelledby="how" class="mt-16">
     <h2 id="how" class="text-3xl font-extrabold">How it works</h2>

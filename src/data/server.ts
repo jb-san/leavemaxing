@@ -1,9 +1,12 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { getCopy, normalizeLocale } from "~/i18n";
+import type { PlannerMessages } from "~/i18n/context";
 import { localToday } from "~/lib/dates";
 import type { HolidayFile } from "~/lib/holidays";
 import { toPlanInput, yearsNeeded } from "~/lib/planInput";
 import { plan } from "~/lib/planner/plan";
+import type { Plan } from "~/lib/planner/types";
 import type { Settings } from "~/lib/settings";
 
 const dataDir = join(process.cwd(), "public/data");
@@ -48,4 +51,38 @@ function computePlan(s: Settings) {
     buildToday,
   );
   return { input, plan: plan(input), files };
+}
+
+/**
+ * Props every planner island needs: the starting settings, the holiday files, and the plan
+ * already worked out, so the browser hydrates the same numbers without planning again.
+ * Localized pages also get their locale's strings.
+ */
+export function plannerProps(
+  s: Settings,
+  locale?: string,
+): {
+  initial: Settings;
+  files: HolidayFile[];
+  today: number;
+  plan: Plan;
+  locale?: string;
+  messages?: PlannerMessages;
+} {
+  const code = normalizeLocale(locale);
+  const files = filesFor(s);
+  const input = toPlanInput(
+    s,
+    yearsNeeded(s).map((y) => files.find((f) => f.year === y)),
+    buildToday,
+    code === "en" ? undefined : code,
+  );
+  const shown = code === "en" ? serverPlan(s).plan : plan(input);
+  return {
+    initial: s,
+    files,
+    today: buildToday,
+    plan: shown,
+    ...(code === "en" ? {} : { locale: code, messages: getCopy(code).planner }),
+  };
 }

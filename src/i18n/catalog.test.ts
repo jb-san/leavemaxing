@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { locales } from "~/data/locales";
 import { shouldIndexCountry, shouldIndexPage } from "~/data/sitemap-config";
 import { englishCountryAlternates, localizedPageAlternates, shellAlternates } from "~/lib/hreflang";
-import { catalogs, en } from "./index";
+import { catalogs, en, LOCALE_CODES } from "./index";
 import {
   aboutAlternates,
   bestAlternates,
@@ -26,6 +26,10 @@ describe("translation catalogs", () => {
 
   it("includes English and every shipping locale", () => {
     expect(Object.keys(catalogs).sort()).toEqual(["en", ...Object.keys(locales)].sort());
+  });
+
+  it("lists every catalog in the browser-side locale codes", () => {
+    expect([...LOCALE_CODES].sort()).toEqual(Object.keys(catalogs).sort());
   });
 
   it("gives every locale every English key", () => {
