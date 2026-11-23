@@ -31,12 +31,13 @@ export interface BridgeFacts {
   best: BridgeCluster | null;
 }
 
-export function findBridgeFacts(
+/** Every one- or two-day bridge in the year, best first (days off per leave day, then length). */
+export function listBridgeClusters(
   file: HolidayFile,
   country: string,
   region: string | null,
   locale?: string | null,
-): BridgeFacts {
+): BridgeCluster[] {
   const workWeek = defaultWorkWeek(country);
   const yearStart = fromIso(`${file.year}-01-01`);
   const yearEnd = fromIso(`${file.year}-12-31`);
@@ -119,6 +120,16 @@ export function findBridgeFacts(
     return (a.days[0] ?? "").localeCompare(b.days[0] ?? "");
   });
 
+  return built;
+}
+
+export function findBridgeFacts(
+  file: HolidayFile,
+  country: string,
+  region: string | null,
+  locale?: string | null,
+): BridgeFacts {
+  const built = listBridgeClusters(file, country, region, locale);
   const unique = new Set(built.flatMap((cluster) => cluster.days));
   return { days: unique.size, bridges: built.length, best: built[0] ?? null };
 }

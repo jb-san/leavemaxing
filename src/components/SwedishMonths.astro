@@ -1,0 +1,84 @@
+---
+import { SWEDISH_MONTHS_COPY, type SwedishMonth } from "~/lib/landingPages";
+
+interface Props {
+  months: SwedishMonth[];
+  year: number;
+  budget: number;
+}
+
+const { months, year, budget } = Astro.props;
+const copy = SWEDISH_MONTHS_COPY;
+---
+
+<section aria-labelledby="manader" class="card min-w-0 p-5 sm:p-6" data-months>
+  <h2 id="manader" class="text-2xl font-bold">{copy.heading(year)}</h2>
+  <p class="mt-2 text-sm text-muted">{copy.intro(year, budget)}</p>
+  <nav aria-label="Månader" class="mt-4">
+    <ul class="flex flex-wrap gap-2">
+      {
+        months.map((month) => (
+          <li>
+            <a class="chip capitalize" href={`#${month.id}`}>
+              {month.id}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+  <div class="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+    {
+      months.map((month) => (
+        <section aria-labelledby={month.id} class="border-l-4 border-lime pl-4" data-month={month.month}>
+          <h3 id={month.id} class="scroll-mt-24 text-lg font-bold">
+            {month.heading}
+          </h3>
+          <p class="mt-1 text-sm">{month.summary}</p>
+          <dl class="mt-2 space-y-2 text-sm">
+            <div>
+              <dt class="text-xs font-bold uppercase tracking-wider text-muted">{copy.holidays}</dt>
+              <dd>
+                {month.holidays.length === 0 ? (
+                  <span class="text-muted">{copy.noHolidays}</span>
+                ) : (
+                  <ul>
+                    {month.holidays.map((holiday) => (
+                      <li>
+                        {holiday.name}, {holiday.date}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </dd>
+            </div>
+            {month.bridges.length > 0 && (
+              <div>
+                <dt class="text-xs font-bold uppercase tracking-wider text-muted">{copy.bridges}</dt>
+                <dd>
+                  <ul>
+                    {month.bridges.map((bridge) => (
+                      <li>{copy.bridgeLine(bridge)}</li>
+                    ))}
+                  </ul>
+                </dd>
+              </div>
+            )}
+            {month.breaks.length > 0 && (
+              <div>
+                <dt class="text-xs font-bold uppercase tracking-wider text-muted">{copy.breaks(budget)}</dt>
+                <dd>
+                  <ul>
+                    {month.breaks.map((item) => (
+                      <li>{copy.breakLine(item)}</li>
+                    ))}
+                  </ul>
+                </dd>
+              </div>
+            )}
+          </dl>
+        </section>
+      ))
+    }
+  </div>
+</section>

@@ -188,6 +188,11 @@ export const locales: Record<string, LocaleConfig> = {
             "Je früher, desto besser! Idealerweise planst du deine Fenstertage bereits im Herbst des Vorjahres. So sicherst du dir die beliebten Termine, bevor Kollegen zugreifen.",
         },
         {
+          question: "Was ist der persönliche Feiertag?",
+          answer:
+            "Seit 2019 kannst du in Österreich einmal pro Urlaubsjahr einen Urlaubstag als persönlichen Feiertag festlegen. Du musst ihn mindestens drei Monate vorher schriftlich bekannt geben, er wird von deinem Urlaubsanspruch abgezogen. Weil du diesen Tag selbst bestimmst und nicht vereinbaren musst, eignet er sich für einen begehrten Fenstertag.",
+        },
+        {
           question: "Kann mein Arbeitgeber Fenstertage ablehnen?",
           answer:
             "Der Arbeitgeber muss bei der Urlaubsplanung auf deine Wünsche Rücksicht nehmen. Er kann deinen Urlaub aber verschieben, wenn wichtige betriebliche Interessen oder Urlaubswünsche anderer Arbeitnehmer dem entgegenstehen.",
@@ -496,7 +501,7 @@ export const locales: Record<string, LocaleConfig> = {
       pageTitle: "Brugdagen {year}: Maak van {leave} vakantiedagen {total} vrije dagen",
       pageDescription:
         "De beste brugdagen {year} in Nederland. Met slechts {leave} vakantiedagen krijg je {total} vrije dagen. Optimale vakantieplanning.",
-      h1: "Brugdagen {year}",
+      h1: "Brugdagen en vrije dagen {year} in Nederland",
       h1Region: "Brugdagen {year}",
       holidaysHeading: "Feestdagen {year}",
       bestPlansHeading: "De beste vakantieplannen {year}",

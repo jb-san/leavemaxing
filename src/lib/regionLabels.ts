@@ -89,6 +89,15 @@ export const AUSTRIAN_STATES: Record<string, { slug: string; name: string }> = {
   "9": { slug: "wien", name: "Wien" },
 };
 
+/**
+ * German states keep the slug wave 1 published (from the date-holidays name),
+ * but headings use the name people search for: "Brückentage 2027 Bremen", not "Hansestadt Bremen".
+ */
+export const GERMAN_STATE_NAMES: Record<string, string> = {
+  HB: "Bremen",
+  HH: "Hamburg",
+};
+
 export interface RegionCopy {
   slug: string;
   /** Name used in headings, breadcrumbs, and region lists. */
@@ -147,6 +156,17 @@ export function regionCopy(country: string, code: string, sourceName: string): R
     const slug = state?.slug ?? legacyRegionSlug(name);
     return {
       slug,
+      name,
+      titleRegion: ` ${name}`,
+      descriptionRegion: ` in ${name}`,
+      h1Region: name,
+    };
+  }
+
+  if (country === "DE") {
+    const name = GERMAN_STATE_NAMES[code] ?? sourceName;
+    return {
+      slug: legacyRegionSlug(sourceName),
       name,
       titleRegion: ` ${name}`,
       descriptionRegion: ` in ${name}`,

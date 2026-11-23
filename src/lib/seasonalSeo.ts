@@ -68,6 +68,7 @@ export function whereFor(localeCode: string, regionLabel: string | null): string
   }
   if (localeCode === "de-CH") return `im ${regionLabel}`;
   if (localeCode === "es-ES") return `en ${regionLabel}`;
+  if (localeCode === "de-DE" && regionLabel === "Saarland") return "im Saarland";
   return `in ${regionLabel}`;
 }
 
