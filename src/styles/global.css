@@ -1,5 +1,42 @@
 @import "tailwindcss";
-@import "@fontsource-variable/archivo/wdth.css";
+
+/*
+ * Archivo, trimmed to the weights (400-900) and widths (72%-100%) the site uses by
+ * scripts/instance-fonts.py. Unicode ranges as in @fontsource-variable/archivo.
+ */
+@font-face {
+  font-family: "Archivo Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400 900;
+  font-stretch: 72% 100%;
+  src: url("../assets/fonts/archivo-vietnamese-wght400-900-wdth72-100.woff2") format("woff2-variations");
+  unicode-range:
+    U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301,
+    U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: "Archivo Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400 900;
+  font-stretch: 72% 100%;
+  src: url("../assets/fonts/archivo-latin-ext-wght400-900-wdth72-100.woff2") format("woff2-variations");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Archivo Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400 900;
+  font-stretch: 72% 100%;
+  src: url("../assets/fonts/archivo-latin-wght400-900-wdth72-100.woff2") format("woff2-variations");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 
 /* Cyrillic only, so Latin pages keep Archivo and do not download this face. */
 @font-face {
@@ -37,6 +74,169 @@
   src: url("../../node_modules/@fontsource/noto-sans/files/noto-sans-cyrillic-800-normal.woff2")
     format("woff2");
   unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
+/*
+ * Fallbacks sized like Archivo, so text barely moves when the web font arrives (font-display: swap
+ * otherwise reflows the narrow headings and pushes the planner down: CLS 0.2 on phones).
+ * Arial, Liberation Sans, Arimo and Helvetica share metrics; Roboto covers Android.
+ * size-adjust is Archivo's width over the fallback's for typical copy, measured in Chrome per weight
+ * band and per width (body 100%, headings and .font-display 80%, the hero figure 72%).
+ * The overrides are Archivo's ascent (0.878) and descent (0.21) divided by size-adjust.
+ */
+@font-face {
+  font-family: "Archivo Fallback";
+  src:
+    local("Arial"), local("ArialMT"), local("Liberation Sans"), local("LiberationSans"), local("Arimo"),
+    local("Helvetica");
+  font-weight: 100 549;
+  font-stretch: 90% 200%;
+  size-adjust: 99%;
+  ascent-override: 88.69%;
+  descent-override: 21.21%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Archivo Fallback";
+  src:
+    local("Arial Bold"), local("Arial-BoldMT"), local("Liberation Sans Bold"), local("LiberationSans-Bold"),
+    local("Arimo Bold"), local("Helvetica Bold");
+  font-weight: 550 749;
+  font-stretch: 90% 200%;
+  size-adjust: 97%;
+  ascent-override: 90.52%;
+  descent-override: 21.65%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Archivo Fallback";
+  src:
+    local("Arial Bold"), local("Arial-BoldMT"), local("Liberation Sans Bold"), local("LiberationSans-Bold"),
+    local("Arimo Bold"), local("Helvetica Bold");
+  font-weight: 750 1000;
+  font-stretch: 90% 200%;
+  size-adjust: 103%;
+  ascent-override: 85.24%;
+  descent-override: 20.39%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Archivo Fallback";
+  src:
+    local("Arial"), local("ArialMT"), local("Liberation Sans"), local("LiberationSans"), local("Arimo"),
+    local("Helvetica");
+  font-weight: 100 549;
+  font-stretch: 76% 89%;
+  size-adjust: 81.6%;
+  ascent-override: 107.60%;
+  descent-override: 25.74%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Archivo Fallback";
+  src:
+    local("Arial Bold"), local("Arial-BoldMT"), local("Liberation Sans Bold"), local("LiberationSans-Bold"),
+    local("Arimo Bold"), local("Helvetica Bold");
+  font-weight: 550 749;
+  font-stretch: 76% 89%;
+  size-adjust: 80.5%;
+  ascent-override: 109.07%;
+  descent-override: 26.09%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Archivo Fallback";
+  src:
+    local("Arial Bold"), local("Arial-BoldMT"), local("Liberation Sans Bold"), local("LiberationSans-Bold"),
+    local("Arimo Bold"), local("Helvetica Bold");
+  font-weight: 750 1000;
+  font-stretch: 76% 89%;
+  size-adjust: 85%;
+  ascent-override: 103.29%;
+  descent-override: 24.71%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Archivo Fallback";
+  src:
+    local("Arial Bold"), local("Arial-BoldMT"), local("Liberation Sans Bold"), local("LiberationSans-Bold"),
+    local("Arimo Bold"), local("Helvetica Bold");
+  font-weight: 100 1000;
+  font-stretch: 50% 75%;
+  size-adjust: 77.7%;
+  ascent-override: 113.00%;
+  descent-override: 27.03%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Archivo Fallback Roboto";
+  src: local("Roboto"), local("Roboto-Regular");
+  font-weight: 100 549;
+  font-stretch: 90% 200%;
+  size-adjust: 99.5%;
+  ascent-override: 88.24%;
+  descent-override: 21.11%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Archivo Fallback Roboto";
+  src: local("Roboto Bold"), local("Roboto-Bold");
+  font-weight: 550 749;
+  font-stretch: 90% 200%;
+  size-adjust: 102.4%;
+  ascent-override: 85.74%;
+  descent-override: 20.51%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Archivo Fallback Roboto";
+  src: local("Roboto Bold"), local("Roboto-Bold");
+  font-weight: 750 1000;
+  font-stretch: 90% 200%;
+  size-adjust: 109%;
+  ascent-override: 80.55%;
+  descent-override: 19.27%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Archivo Fallback Roboto";
+  src: local("Roboto"), local("Roboto-Regular");
+  font-weight: 100 549;
+  font-stretch: 76% 89%;
+  size-adjust: 82%;
+  ascent-override: 107.07%;
+  descent-override: 25.61%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Archivo Fallback Roboto";
+  src: local("Roboto Bold"), local("Roboto-Bold");
+  font-weight: 550 749;
+  font-stretch: 76% 89%;
+  size-adjust: 85.3%;
+  ascent-override: 102.93%;
+  descent-override: 24.62%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Archivo Fallback Roboto";
+  src: local("Roboto Bold"), local("Roboto-Bold");
+  font-weight: 750 1000;
+  font-stretch: 76% 89%;
+  size-adjust: 90%;
+  ascent-override: 97.56%;
+  descent-override: 23.33%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Archivo Fallback Roboto";
+  src: local("Roboto Bold"), local("Roboto-Bold");
+  font-weight: 100 1000;
+  font-stretch: 50% 75%;
+  size-adjust: 82.4%;
+  ascent-override: 106.55%;
+  descent-override: 25.49%;
+  line-gap-override: 0%;
 }
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
@@ -136,8 +336,12 @@
   --shadow-card: var(--shadow);
   --shadow-lift: var(--shadow-lg);
   /* One family for Latin. Noto Sans is only the Cyrillic fallback; Archivo still draws every Latin glyph. */
-  --font-display: "Archivo Variable", "Noto Sans", "Arial Narrow", system-ui, sans-serif;
-  --font-sans: "Archivo Variable", "Noto Sans", "Helvetica Neue", system-ui, sans-serif;
+  --font-display:
+    "Archivo Variable", "Noto Sans", "Archivo Fallback", "Archivo Fallback Roboto", "Arial Narrow", system-ui,
+    sans-serif;
+  --font-sans:
+    "Archivo Variable", "Noto Sans", "Archivo Fallback", "Archivo Fallback Roboto", "Helvetica Neue",
+    system-ui, sans-serif;
   --radius-card: 20px;
   --radius-hero: 28px;
   /* Playful overshoot, for small delight moments only (day pops, mascot). */
@@ -762,6 +966,17 @@ dialog.sheet[open]::backdrop {
     opacity: 0;
     transform: translateY(0.3em);
     filter: blur(2px);
+  }
+}
+/*
+ * Numbers in the server-rendered page are already right, so they paint with the first frame.
+ * (Fading them in held back the hero's paint, which is the page's largest contentful paint.)
+ */
+@starting-style {
+  [data-booting] .tick {
+    opacity: 1;
+    transform: none;
+    filter: none;
   }
 }
 

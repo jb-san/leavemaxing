@@ -94,9 +94,20 @@ export function planPath(country: string, year: number): string {
   return `/${country.toLowerCase()}/${year}/`;
 }
 
-export function shareUrl(s: Settings, origin = "https://leavemaxxing.com"): string {
-  const q = toQuery(s).toString();
-  return `${origin}${planPath(s.country, s.year)}${q ? `?${q}` : ""}`;
+/**
+ * The link a plan is shared with: the plan page, the leave days, and every other setting that
+ * differs from the defaults. `d` is always there, even at the default, because the page a link
+ * opens may have a different default (localized pages) and because link previews read it
+ * (functions/_middleware.ts). `path` is the page to open, the English country page by default.
+ */
+export function shareUrl(
+  s: Settings,
+  origin = "https://leavemaxxing.com",
+  path = planPath(s.country, s.year),
+): string {
+  const q = new URLSearchParams({ d: String(s.budget) });
+  for (const [key, value] of toQuery(s)) if (key !== "d") q.set(key, value);
+  return `${origin}${path}?${q}`;
 }
 
 const int = (v: string | null, min: number, max: number): number | null => {

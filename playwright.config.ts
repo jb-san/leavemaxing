@@ -17,6 +17,15 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
     },
     {
+      // The built site with its Pages Functions, for link previews (tests/e2e/share.spec.ts).
+      command: "pnpm exec wrangler pages dev dist --port 8788",
+      url: "http://localhost:8788/robots.txt",
+      reuseExistingServer: !process.env.CI,
+      env: { WRANGLER_SEND_METRICS: "false" },
+      gracefulShutdown: { signal: "SIGTERM", timeout: 5_000 },
+      timeout: 120_000,
+    },
+    {
       // The Together worker. SIGTERM lets wrangler stop workerd, which a hard kill would leave holding the port.
       command: "pnpm worker:dev",
       url: "http://localhost:8787/api/together/health",

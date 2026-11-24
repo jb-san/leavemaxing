@@ -4,7 +4,7 @@ import SeasonalIntro from "~/components/SeasonalIntro.astro";
 import { YearLinks } from "~/components/YearChoices";
 import Planner from "~/components/planner/Planner";
 import { countries, countryByCode, meta, ogYear } from "~/data";
-import { buildToday, readHolidayFile, serverPlan } from "~/data/server";
+import { plannerProps, readHolidayFile, serverPlan } from "~/data/server";
 import { locales, UKRAINE_MARTIAL_LAW_NOTICE } from "~/data/locales";
 import { SITE } from "~/data/site";
 import { englishCountryAlternates } from "~/lib/hreflang";
@@ -23,7 +23,7 @@ const code = Astro.params.cc.toUpperCase();
 const year = Number(Astro.params.year);
 const country = countryByCode.get(code)!;
 const settings = defaultSettings(code, year);
-const { plan, files } = serverPlan(settings);
+const { plan } = serverPlan(settings);
 const file = readHolidayFile(code, year)!;
 const { stats } = plan;
 const top = [...plan.breaks].filter((b) => b.leave > 0).sort((a, b) => b.length / b.leave - a.length / a.leave).slice(0, 3);
@@ -118,7 +118,7 @@ const jsonLd = pageJsonLd({
     )
   }
 
-  <Planner client:load initial={settings} files={files} today={buildToday} mode="page" years={meta.years} />
+  <Planner client:afterpaint {...plannerProps(settings)} mode="page" years={meta.years} />
 
   <div class="mt-10 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
     <HolidayList file={file} />

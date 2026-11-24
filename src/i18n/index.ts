@@ -1,4 +1,5 @@
 import { locales, replaceTokens } from "~/data/locales";
+import { intlLocale, LOCALE_CODES, normalizeLocale } from "./codes";
 import { en } from "./en";
 import { csCZ } from "./locales/cs-CZ";
 import { daDK } from "./locales/da-DK";
@@ -42,20 +43,8 @@ export const catalogs: Record<string, Copy> = {
   "uk-UA": ukUA,
 };
 
-export function normalizeLocale(code: string | undefined | null): string {
-  if (!code) return "en";
-  const hit = Object.keys(catalogs).find((key) => key.toLowerCase() === code.toLowerCase());
-  return hit ?? "en";
-}
-
 export function getCopy(code: string | undefined | null): Copy {
   return catalogs[normalizeLocale(code)] ?? en;
-}
-
-/** BCP 47 tag used for dates and country names. */
-export function intlLocale(code: string | undefined | null): string {
-  const id = normalizeLocale(code);
-  return id === "en" ? "en" : id;
 }
 
 /** date-holidays language for a UI locale. English stays on the English names. */
@@ -70,4 +59,4 @@ export function fill(text: string, tokens: Record<string, string | number> = {})
 }
 
 export type { Copy, Plural } from "./types";
-export { en };
+export { en, intlLocale, LOCALE_CODES, normalizeLocale };

@@ -14,11 +14,16 @@ function htmlFiles(dir: string): string[] {
   return out;
 }
 
-/** Drop bundled scripts and styles. Keep JSON-LD, which is page content. */
+/**
+ * Drop bundled scripts and styles, and island props: a localized planner gets its message
+ * templates (such as "{n} leave days") as props, to fill in the browser. Keep JSON-LD, which is
+ * page content.
+ */
 function visibleHtml(html: string): string {
   return html
     .replace(/<script\b(?![^>]*type=["']application\/ld\+json["'])[^>]*>[\s\S]*?<\/script>/gi, "")
-    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "");
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replace(/(<astro-island\b[^>]*?)\sprops="[^"]*"/gi, "$1");
 }
 
 test("built HTML has no leftover {placeholder} tokens", () => {

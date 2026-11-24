@@ -1,7 +1,17 @@
 import { SlidersHorizontal } from "lucide-react";
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  startTransition,
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 import { countries, countryByCode, placeName } from "~/data";
-import { I18nProvider, useI18n } from "~/i18n/context";
+import { I18nProvider, type PlannerMessages, useI18n } from "~/i18n/context";
 import { pageKind, track, type UsageContext, usageProps } from "~/lib/analytics";
 import {
   type DayNum,
@@ -28,23 +38,39 @@ import { correctPlanYear, offeredYears, pinnedYear, selectPlanYear, type YearPol
 import { BreaksList } from "./BreaksList";
 import { Calendar, CalendarPlaceholder, Legend } from "./Calendar";
 import { DayMenu } from "./DayMenu";
-import { ExportDialog, SaveDialog, ShareDialog } from "./Dialogs";
 import { HeroCard } from "./HeroCard";
 import { SettingsPanel } from "./SettingsPanel";
 import { type Action, carryPreferences, type DayAction, reducer } from "./state";
 import { Sheet, Toasts, useToasts } from "./ui";
+
+// The share, calendar and save sheets (with the card renderer and .ics builder) load on first use.
+const ShareDialog = lazy(() => import("./Dialogs").then((m) => ({ default: m.ShareDialog })));
+const ExportDialog = lazy(() => import("./Dialogs").then((m) => ({ default: m.ExportDialog })));
+const SaveDialog = lazy(() => import("./Dialogs").then((m) => ({ default: m.SaveDialog })));
 
 export interface PlannerProps {
   initial: Settings;
   files: HolidayFile[];
   /** The day the page was built, so the first client render matches the server. */
   today: DayNum;
+  /**
+   * The plan for `initial`, worked out at build time. Hydration shows it as is instead of
+   * planning again on the main thread. Use `plannerProps()` to get it with the other props.
+   */
+  plan?: Plan;
   mode: "home" | "page";
   years: number[];
   /** Show German region names on localized pages. English pages keep the source names. */
   localizeRegions?: boolean;
   /** UI locale, for example `de-DE`. English pages omit it. */
   locale?: string;
+  /** The locale's planner strings. Required with `locale`. */
+  messages?: PlannerMessages;
+  /**
+   * Localized pages to share instead of the English country page, keyed `SE/2027`: a plan shared
+   * from a German page opens (and previews) in German.
+   */
+  sharePaths?: Record<string, string>;
   /**
    * How to replace a past default. Locale homes already move to next year from
    * October (`late`). Everywhere else stays on the calendar year.
@@ -58,7 +84,7 @@ const fileKey = (country: string, year: number) => `${country}/${year}`;
 
 export default function Planner(props: PlannerProps) {
   return (
-    <I18nProvider code={props.locale}>
+    <I18nProvider code={props.locale} messages={props.messages}>
       <PlannerApp {...props} />
     </I18nProvider>
   );
@@ -83,6 +109,12 @@ function PlannerApp(props: PlannerProps) {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
   const [dialog, setDialog] = useState<Dialog>(null);
+  // Dialogs stay mounted after their first opening, so they can animate out.
+  const [opened, setOpened] = useState<Set<Dialog>>(() => new Set());
+  const openDialog = (d: Exclude<Dialog, null>) => {
+    if (d !== "settings") setOpened((prev) => (prev.has(d) ? prev : new Set(prev).add(d)));
+    setDialog(d);
+  };
   const [menu, setMenu] = useState<{ day: DayNum; rect: DOMRect } | null>(null);
   const { toasts, push } = useToasts();
   const pendingDelta = useRef<number | null>(null);
@@ -136,8 +168,12 @@ function PlannerApp(props: PlannerProps) {
     }
     const fixed = correctPlanYear(next.year, { offered, pinned, now, policy });
     if (fixed !== next.year) next = { ...next, year: fixed, locked: [], blocked: [], customOff: [] };
-    if (next !== base) rawDispatch({ type: "replace", settings: next });
-    setReady(true);
+    // A transition, so React renders the calendar (and any switch of country) in small slices
+    // instead of one long task right after hydration.
+    startTransition(() => {
+      if (next !== base) rawDispatch({ type: "replace", settings: next });
+      setReady(true);
+    });
   }, []);
 
   // Load holiday data for the years this plan touches.
@@ -156,28 +192,19 @@ function PlannerApp(props: PlannerProps) {
     )
       .then((entries) => {
         if (!live) return;
-        setFiles((prev) => {
-          const m = new Map(prev);
-          for (const [k, f] of entries) m.set(k, f);
-          return m;
-        });
+        startTransition(() =>
+          setFiles((prev) => {
+            const m = new Map(prev);
+            for (const [k, f] of entries) m.set(k, f);
+            return m;
+          }),
+        );
       })
       .catch(() => live && setLoadError(p.loadError));
     return () => {
       live = false;
     };
   }, [missingKey, retry]);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: derived from settings + files
-  const input = useMemo<PlanInput | null>(() => {
-    if (missing.length) return null;
-    return toPlanInput(
-      settings,
-      neededYears.map((y) => files.get(fileKey(settings.country, y))),
-      today,
-      props.locale,
-    );
-  }, [settings, files, today, missing.length, props.locale]);
 
   const [result, setResult] = useState<{ input: PlanInput; plan: Plan }>(() => {
     const i = toPlanInput(
@@ -188,14 +215,31 @@ function PlannerApp(props: PlannerProps) {
       props.today,
       props.locale,
     );
-    return { input: i, plan: planSync(i) };
+    return { input: i, plan: props.plan ?? planSync(i) };
   });
+  // What the first render was built from. While nothing has changed, the input stays the same
+  // object, so the page doesn't show "updating" or plan the same thing again.
+  const first = useRef({ settings, files, today, input: result.input });
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: derived from settings + files
+  const input = useMemo<PlanInput | null>(() => {
+    if (missing.length) return null;
+    const f = first.current;
+    if (settings === f.settings && files === f.files && today === f.today) return f.input;
+    return toPlanInput(
+      settings,
+      neededYears.map((y) => files.get(fileKey(settings.country, y))),
+      today,
+      props.locale,
+    );
+  }, [settings, files, today, missing.length, props.locale]);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: plans each new input once
   useEffect(() => {
-    if (!input) return;
+    if (!input || input === result.input) return;
     let live = true;
     runPlan(input).then((p) => {
-      if (live) setResult({ input, plan: p });
+      if (live) startTransition(() => setResult({ input, plan: p }));
     });
     return () => {
       live = false;
@@ -278,7 +322,7 @@ function PlannerApp(props: PlannerProps) {
   const yearLabel = leaveYearLabel(settings.year, settings.yearStart);
   const fileName = `leavemaxxing-${settings.country.toLowerCase()}-${settings.year}`;
   const origin = typeof window !== "undefined" ? window.location.origin : "https://leavemaxxing.com";
-  const url = shareUrl(settings, origin);
+  const url = shareUrl(settings, origin, props.sharePaths?.[`${settings.country}/${settings.year}`]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: range is derived from the plan input
   const card = useMemo(() => {
     const stats = result.plan.stats;
@@ -325,7 +369,11 @@ function PlannerApp(props: PlannerProps) {
   const styleLabel = styleName(settings.style);
 
   return (
-    <div className="grid items-start gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
+    <div
+      className="grid items-start gap-5 lg:grid-cols-[320px_minmax(0,1fr)]"
+      // Until the first client update, numbers are the server-rendered ones and appear at once.
+      data-booting={ready ? undefined : ""}
+    >
       <aside
         aria-label={p.settingsAria}
         className="card hidden p-5 lg:sticky lg:top-4 lg:block lg:max-h-[calc(100dvh-32px)] lg:overflow-y-auto"
@@ -376,13 +424,13 @@ function PlannerApp(props: PlannerProps) {
           loading={loading && !loadError}
           onShare={() => {
             track("share_open", usageProps(usage()));
-            setDialog("share");
+            openDialog("share");
           }}
           onExport={() => {
             track("calendar_export", usageProps(usage(), { format: "open" }));
-            setDialog("export");
+            openDialog("export");
           }}
-          onSave={() => setDialog("save")}
+          onSave={() => openDialog("save")}
         />
 
         {loadError && (
@@ -442,42 +490,54 @@ function PlannerApp(props: PlannerProps) {
           {p.showPlan}
         </button>
       </Sheet>
-      <ShareDialog
-        open={dialog === "share"}
-        onClose={() => setDialog(null)}
-        url={url}
-        card={card}
-        fileName={fileName}
-        usage={usage()}
-      />
-      <ExportDialog
-        open={dialog === "export"}
-        onClose={() => setDialog(null)}
-        plan={result.plan}
-        calendarName={`leavemaxxing ${yearLabel}`}
-        fileName={fileName}
-        usage={usage()}
-      />
-      <SaveDialog
-        open={dialog === "save"}
-        onClose={() => setDialog(null)}
-        defaultName={`${place} ${yearLabel}`}
-        onSave={(name) => {
-          track("plan_save", usageProps(usage()));
-          const saved = addPlan({
-            name,
-            settings,
-            summary: {
-              place,
-              yearLabel,
-              leaveUsed: result.plan.stats.leaveUsed,
-              daysOff: result.plan.stats.daysOff,
-              multiplier: result.plan.stats.multiplier,
-            },
-          });
-          push(saved ? p.savedOk : p.savedFail, saved ? "good" : "warn");
-        }}
-      />
+      {opened.has("share") && (
+        <Suspense fallback={null}>
+          <ShareDialog
+            open={dialog === "share"}
+            onClose={() => setDialog(null)}
+            url={url}
+            card={card}
+            fileName={fileName}
+            usage={usage()}
+          />
+        </Suspense>
+      )}
+      {opened.has("export") && (
+        <Suspense fallback={null}>
+          <ExportDialog
+            open={dialog === "export"}
+            onClose={() => setDialog(null)}
+            plan={result.plan}
+            calendarName={`leavemaxxing ${yearLabel}`}
+            fileName={fileName}
+            usage={usage()}
+          />
+        </Suspense>
+      )}
+      {opened.has("save") && (
+        <Suspense fallback={null}>
+          <SaveDialog
+            open={dialog === "save"}
+            onClose={() => setDialog(null)}
+            defaultName={`${place} ${yearLabel}`}
+            onSave={(name) => {
+              track("plan_save", usageProps(usage()));
+              const saved = addPlan({
+                name,
+                settings,
+                summary: {
+                  place,
+                  yearLabel,
+                  leaveUsed: result.plan.stats.leaveUsed,
+                  daysOff: result.plan.stats.daysOff,
+                  multiplier: result.plan.stats.multiplier,
+                },
+              });
+              push(saved ? p.savedOk : p.savedFail, saved ? "good" : "warn");
+            }}
+          />
+        </Suspense>
+      )}
       <DayMenu
         day={menu?.day ?? null}
         kind={menuKind}

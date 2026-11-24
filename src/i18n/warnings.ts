@@ -1,4 +1,4 @@
-import { fill } from "./index";
+import { replaceTokens as fill } from "~/data/locales";
 
 interface WarningCopy {
   locked: string;

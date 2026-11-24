@@ -1,5 +1,8 @@
 import { locales } from "~/data/locales";
 
+/** Years with localized bridge-day pages (`/de-de/brueckentage-2027/` and their regions). */
+export const BRIDGE_PAGE_YEARS = [2027, 2028];
+
 /** English /best/ pages exist for the current year and the next one. */
 export function englishBestYears(now = new Date()): number[] {
   const year = now.getFullYear();

@@ -5,7 +5,7 @@ import StateTable from "~/components/StateTable.astro";
 import SeasonalIntro from "~/components/SeasonalIntro.astro";
 import Planner from "~/components/planner/Planner";
 import { countryByCode } from "~/data";
-import { readHolidayFile, filesFor, buildToday, serverPlan } from "~/data/server";
+import { readHolidayFile, filesFor, buildToday, serverPlan, plannerProps } from "~/data/server";
 import { publishedRegionCodes } from "~/lib/regionSets";
 import { locales, replaceTokens, getLocale, isRegionalCountry, sidebarHeading } from "~/data/locales";
 import { SITE } from "~/data/site";
@@ -21,10 +21,11 @@ import { bridgeLinkLabel, localizedSeasonal, pageJsonLd, regionPlace, whereFor }
 import { toPlanInput, yearsNeeded } from "~/lib/planInput";
 import { plan } from "~/lib/planner/plan";
 import { bridgeRows, bridgeTableCopy, germanStateLanding, germanStateSummaries, inState } from "~/lib/landingPages";
+import { BRIDGE_PAGE_YEARS } from "~/i18n/routes";
 
 export function getStaticPaths() {
   const paths: Array<{ params: { locale: string; page: string; region: string } }> = [];
-  const years = [2027, 2028];
+  const years = BRIDGE_PAGE_YEARS;
   
   for (const [localeCode, locale] of Object.entries(locales)) {
     if (!isRegionalCountry(locale.country)) continue;
@@ -254,7 +255,7 @@ const regionalHolidays = file.holidays.filter(h =>
   </SeasonalIntro>
 
   <!-- Interactive Planner -->
-  <Planner client:load initial={settings} files={files} today={buildToday} mode="page" years={[year]} localizeRegions locale={locale.code} />
+  <Planner client:afterpaint {...plannerProps(settings, locale.code)} mode="page" years={[year]} localizeRegions />
 
   <div class="mt-10 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
     <!-- Main content -->

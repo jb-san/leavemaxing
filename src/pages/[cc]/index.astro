@@ -4,7 +4,7 @@ import { YearLinks } from "~/components/YearChoices";
 import Planner from "~/components/planner/Planner";
 import { countries, countryByCode, meta } from "~/data";
 import { locales, UKRAINE_MARTIAL_LAW_NOTICE } from "~/data/locales";
-import { buildToday, readHolidayFile, serverPlan } from "~/data/server";
+import { plannerProps, readHolidayFile, serverPlan } from "~/data/server";
 import { shouldIndexCountry } from "~/data/sitemap-config";
 import Base from "~/layouts/Base.astro";
 import { bridgeLinkLabel, bridgePath } from "~/lib/seasonalSeo";
@@ -18,7 +18,7 @@ const code = Astro.params.cc.toUpperCase();
 const country = countryByCode.get(code)!;
 const year = new Date().getFullYear();
 const settings = defaultSettings(code, year);
-const { plan, files } = serverPlan(settings);
+const { plan } = serverPlan(settings);
 const file = readHolidayFile(code, year)!;
 const seasonalLinks = [
   { href: `/${code.toLowerCase()}/2027/`, label: `Bridge days 2027 in ${country.name}` },
@@ -56,7 +56,7 @@ const noindex = !shouldIndexCountry(code);
     }
   </p>
 
-  <Planner client:load initial={settings} files={files} today={buildToday} mode="page" years={meta.years} />
+  <Planner client:afterpaint {...plannerProps(settings)} mode="page" years={meta.years} />
 
   <div class="mt-10 flex flex-col gap-5">
     <HolidayList file={file} />
