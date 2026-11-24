@@ -1,24 +1,19 @@
-import { type BrowserContext, test as base, expect } from "@playwright/test";
+import { test as base, expect } from "@playwright/test";
 
-/** AdSense, its ad hosts, and the consent message it loads. Stubbed so e2e stays offline from Google. */
-const AD_HOST =
-  /^https?:\/\/(?:[^/]+\.)?(?:googlesyndication\.com|doubleclick\.net|adtrafficquality\.google|fundingchoicesmessages\.google\.com)(?:\/|$)/;
-
-export async function blockAdHosts(context: BrowserContext): Promise<void> {
-  await context.route(AD_HOST, (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: "application/javascript",
-      headers: { "access-control-allow-origin": "*" },
-      body: "",
-    }),
-  );
-}
+/** Google ad, consent-message and ad-measurement hosts. The site no longer loads any of them. */
+export const AD_HOST =
+  /^https?:\/\/(?:[^/]+\.)?(?:googlesyndication\.com|doubleclick\.net|googleadservices\.com|adtrafficquality\.google|fundingchoicesmessages\.google\.com)(?:\/|$)/;
 
 export const test = base.extend({
   context: async ({ context }, use) => {
-    await blockAdHosts(context);
+    // Abort and record any ad request, then fail the test if one was made.
+    const adRequests: string[] = [];
+    await context.route(AD_HOST, (route) => {
+      adRequests.push(route.request().url());
+      return route.abort();
+    });
     await use(context);
+    expect(adRequests, "no requests to Google ad hosts").toEqual([]);
   },
 });
 

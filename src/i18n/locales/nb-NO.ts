@@ -22,7 +22,6 @@ export const nbNO: Copy = {
     footerAbout: "Om",
     footerContact: "Kontakt",
     footerPrivacy: "Personvern",
-    footerPrivacySettings: "Personverninnstillinger",
     footerNav: "Bunntekst",
     langLabel: "Språk",
     themeLabel: "Fargetema",
