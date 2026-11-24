@@ -127,7 +127,9 @@ function trackedProperties(node: Element): AnalyticsProps {
     if (!attr.startsWith("data-track-")) continue;
     const key = attr.slice("data-track-".length).replaceAll("-", "_");
     if (!key) continue;
-    properties[key] = node.getAttribute(attr) ?? "";
+    const value = node.getAttribute(attr) ?? "";
+    // Counts such as `data-track-days="9"` are sent as numbers, like the planner's own events.
+    properties[key] = /^(?:0|[1-9]\d{0,5})$/.test(value) ? Number(value) : value;
   }
   return properties;
 }

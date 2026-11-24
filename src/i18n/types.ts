@@ -163,6 +163,13 @@ export interface Copy {
     leaveDay: Plural;
     addGcal: string;
     addGcalTitle: string;
+    /** "Plan this break" row. `{n}` is the length, `{days}` the length with its noun, `{range}` the dates. */
+    tripTitle: string;
+    tripStays: string;
+    tripFlights: string;
+    tripThings: string;
+    tripCars: string;
+    tripDisclosure: string;
     keepLeave: string;
     keepLeaveHint: string;
     takeDay: string;
