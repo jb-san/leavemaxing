@@ -57,6 +57,41 @@ const ogImage = new URL(image, SITE.url).href;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    {/*
+      Travelpayouts Drive (affiliate links, partner 606096); see docs/affiliate.md. Added once, after the page has loaded
+      and gone idle, on the first interaction, or 3.5 s after load, whichever comes first, so it stays off the first paint.
+      The data-* attributes come from Travelpayouts' snippet and keep optimisers (e.g. Cloudflare Rocket Loader) away.
+    */}
+    <script
+      is:inline
+      data-noptimize="1"
+      data-cfasync="false"
+      data-wpfc-render="false"
+      data-no-defer="1"
+      data-cmp-ab="2"
+    >
+      (() => {
+        const events = ["scroll", "pointerdown", "keydown"];
+        const opts = { passive: true };
+        let added = false;
+        const add = () => {
+          if (added) return;
+          added = true;
+          for (const type of events) removeEventListener(type, add, opts);
+          const s = document.createElement("script");
+          s.async = true;
+          s.setAttribute("data-cmp-ab", "2");
+          s.src = "https://tpembars.com/NjA2MDk2.js?t=606096";
+          document.head.appendChild(s);
+        };
+        for (const type of events) addEventListener(type, add, opts);
+        addEventListener("load", () => {
+          if ("requestIdleCallback" in window) requestIdleCallback(add);
+          else setTimeout(add, 1);
+          setTimeout(add, 3500);
+        }, { once: true });
+      })();
+    </script>
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
