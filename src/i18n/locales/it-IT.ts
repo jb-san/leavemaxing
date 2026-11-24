@@ -162,6 +162,7 @@ export const itIT: Copy = {
     addGcal: "Aggiungi {range} a Google Calendar",
     addGcalTitle: "Aggiungi a Google Calendar",
     tripTitle: "Il tuo riposo di {days}, {range}",
+    tripPlan: "Organizza questo riposo",
     tripStays: "Alloggi",
     tripFlights: "Voli",
     tripThings: "Attività",

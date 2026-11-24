@@ -162,6 +162,7 @@ export const svSE: Copy = {
     addGcal: "Lägg till {range} i Google Kalender",
     addGcalTitle: "Lägg till i Google Kalender",
     tripTitle: "Din ledighet på {days}, {range}",
+    tripPlan: "Planera ledigheten",
     tripStays: "Boende",
     tripFlights: "Flyg",
     tripThings: "Upplevelser",

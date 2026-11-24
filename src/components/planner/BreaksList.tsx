@@ -1,7 +1,7 @@
 import { CalendarPlus } from "lucide-react";
 import { countryByCode } from "~/data";
 import { useI18n } from "~/i18n/context";
-import { type TripKind, tripLinks } from "~/lib/affiliate";
+import { FULL_TRIP_ROWS, type TripKind, type TripLink as TripLinkData, tripLinks } from "~/lib/affiliate";
 import { track, type UsageContext, usageProps } from "~/lib/analytics";
 import type { DayNum } from "~/lib/dates";
 import { googleCalendarUrl } from "~/lib/ics";
@@ -26,6 +26,10 @@ export function BreaksList({ plan, today, usage }: { plan: Plan; today: DayNum; 
     b.start >= today ? tripLinks(country, b.start, b.end, { fallbackCity, today }) : [],
   );
   const hasTrips = trips.some((links) => links.length > 0);
+  // The next few bookable breaks get the full row; later ones a single "Plan this break" link (to
+  // the row's first partner, Flights when it has one). That keeps the list light to lay out and hydrate.
+  let fullRows = 0;
+  const compact = trips.map((links) => links.length > 0 && fullRows++ >= FULL_TRIP_ROWS);
   const when = (days: number) => {
     if (days <= 0) return p.now;
     if (days === 1) return p.tomorrow;
@@ -66,7 +70,7 @@ export function BreaksList({ plan, today, usage }: { plan: Plan; today: DayNum; 
                   <span className="text-[11px] font-semibold">{i18n.plural(b.length, p.day)}</span>
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="font-bold">
+                  <p className="font-bold" id={compact[i] ? `trip-${b.start}` : undefined}>
                     {range}
                     {!past && b.start > today && (
                       <span className="ml-2 text-xs font-semibold text-muted">{when(b.start - today)}</span>
@@ -99,39 +103,75 @@ export function BreaksList({ plan, today, usage }: { plan: Plan; today: DayNum; 
                   </>
                 )}
               </div>
-              {links.length > 0 && (
-                <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs sm:pl-[68px]">
-                  <span id={`trip-${b.start}`} className="mr-1 basis-full text-muted sm:basis-auto">
-                    {i18n.text(p.tripTitle, { n: b.length, days: i18n.count(b.length, p.day), range })}
-                  </span>
-                  {links.map((t) => (
-                    <a
-                      key={t.kind}
-                      href={t.href}
-                      target="_blank"
-                      rel="sponsored nofollow noopener"
-                      aria-describedby={`trip-${b.start}`}
-                      data-track="affiliate_click"
-                      data-track-partner={t.partner}
-                      data-track-kind={t.kind}
-                      data-track-country={country}
-                      data-track-days={b.length}
-                      className={cx(
-                        "rounded-full border px-3 py-1.5 font-bold",
-                        t.kind === "flights"
-                          ? "border-lime bg-lime text-lime-ink hover:brightness-105"
-                          : "border-line bg-card-2 hover:border-lime-strong",
-                      )}
-                    >
-                      {tripLabel[t.kind]}
-                    </a>
-                  ))}
-                </div>
-              )}
+              {links.length > 0 &&
+                (compact[i] && links[0] ? (
+                  <div className="mt-2 text-xs sm:pl-[68px]">
+                    <TripLink
+                      link={links[0]}
+                      label={p.tripPlan}
+                      start={b.start}
+                      days={b.length}
+                      country={country}
+                    />
+                  </div>
+                ) : (
+                  <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs sm:pl-[68px]">
+                    <span id={`trip-${b.start}`} className="mr-1 basis-full text-muted sm:basis-auto">
+                      {i18n.text(p.tripTitle, { n: b.length, days: i18n.count(b.length, p.day), range })}
+                    </span>
+                    {links.map((t) => (
+                      <TripLink
+                        key={t.kind}
+                        link={t}
+                        label={tripLabel[t.kind]}
+                        start={b.start}
+                        days={b.length}
+                        country={country}
+                      />
+                    ))}
+                  </div>
+                ))}
             </li>
           );
         })}
       </ol>
     </section>
+  );
+}
+
+/** One partner link. `aria-describedby` points at the break's dates (the row heading, or the card's range). */
+function TripLink({
+  link,
+  label,
+  start,
+  days,
+  country,
+}: {
+  link: TripLinkData;
+  label: string;
+  start: DayNum;
+  days: number;
+  country: string;
+}) {
+  return (
+    <a
+      href={link.href}
+      target="_blank"
+      rel="sponsored nofollow noopener"
+      aria-describedby={`trip-${start}`}
+      data-track="affiliate_click"
+      data-track-partner={link.partner}
+      data-track-kind={link.kind}
+      data-track-country={country}
+      data-track-days={days}
+      className={cx(
+        "inline-block rounded-full border px-3 py-1.5 font-bold",
+        link.kind === "flights"
+          ? "border-lime bg-lime text-lime-ink hover:brightness-105"
+          : "border-line bg-card-2 hover:border-lime-strong",
+      )}
+    >
+      {label}
+    </a>
   );
 }

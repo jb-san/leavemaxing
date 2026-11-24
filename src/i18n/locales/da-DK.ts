@@ -163,6 +163,7 @@ export const daDK: Copy = {
     addGcal: "Tilføj {range} i Google Kalender",
     addGcalTitle: "Tilføj i Google Kalender",
     tripTitle: "Din pause på {days}, {range}",
+    tripPlan: "Planlæg denne pause",
     tripStays: "Overnatning",
     tripFlights: "Fly",
     tripThings: "Oplevelser",

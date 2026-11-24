@@ -163,6 +163,7 @@ export const esES: Copy = {
     addGcal: "Añadir {range} a Google Calendar",
     addGcalTitle: "Añadir a Google Calendar",
     tripTitle: "Tu descanso de {days}, {range}",
+    tripPlan: "Planifica este descanso",
     tripStays: "Alojamiento",
     tripFlights: "Vuelos",
     tripThings: "Actividades",

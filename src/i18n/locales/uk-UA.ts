@@ -163,6 +163,7 @@ export const ukUA: Copy = {
     addGcal: "Додати {range} у Google Календар",
     addGcalTitle: "Додати в Google Календар",
     tripTitle: "Твоя перерва: {days}, {range}",
+    tripPlan: "Сплануй цю перерву",
     tripStays: "Житло",
     tripFlights: "Авіаквитки",
     tripThings: "Враження",

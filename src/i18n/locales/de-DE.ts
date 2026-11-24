@@ -165,6 +165,7 @@ export const deDE: Copy = {
     addGcal: "{range} in Google Kalender eintragen",
     addGcalTitle: "In Google Kalender eintragen",
     tripTitle: "Deine Auszeit: {days}, {range}",
+    tripPlan: "Diese Auszeit planen",
     tripStays: "Unterkünfte",
     tripFlights: "Flüge",
     tripThings: "Aktivitäten",

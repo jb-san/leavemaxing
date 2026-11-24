@@ -60,6 +60,12 @@ export const KIWI_PROMO_ID = "3791";
 export const FLIGHTS_PARTNER: "kiwi" | "aviasales" = "kiwi";
 
 /**
+ * How many upcoming breaks get the full "Plan this break" row. Later breaks get one compact link (to
+ * their first partner), which keeps the list cheap to lay out and hydrate on phones.
+ */
+export const FULL_TRIP_ROWS = 5;
+
+/**
  * Airlines sell seats about 330 days ahead (and Aviasales' `DDMM` dates carry no year: it picks the
  * next matching date), so breaks further out than this get no Flights button.
  */

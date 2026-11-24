@@ -18,11 +18,12 @@ the script is what auto-affiliates links without us rewriting each one by hand.
 a small inline loader adds `<script async data-cmp-ab="2" src="https://tpembars.com/NjA2MDk2.js?t=606096">` to
 `document.head` **once**, on the first of:
 
-- `requestIdleCallback` after `window` `load` (a `setTimeout` where `requestIdleCallback` is missing);
-- the first `scroll`, `pointerdown` or `keydown` (passive listeners, removed after it fires);
-- 3.5 s after `window` `load`.
+- the first `scroll`, `pointerdown`, `keydown` or `touchstart` (passive listeners, removed after it fires);
+- 6 s after `window` `load`.
 
-The idle and timeout paths mean it loads with no interaction, which the Travelpayouts verifier needs. The inline tag
+The script pulls in a ~200 KB chunk whose parse and run is a long task on phones (about 300 ms of scripting in
+Lighthouse mobile), so it waits for the visitor or for the page to be well past start-up rather than for the first
+idle moment. The timeout path means it loads with no interaction, which the Travelpayouts verifier needs. The inline tag
 keeps the snippet's `data-cfasync="false"`, `data-no-defer="1"`, `data-noptimize="1"`, `data-wpfc-render="false"` and
 `data-cmp-ab="2"` attributes so optimisers such as Cloudflare Rocket Loader leave it alone. It was left without the
 snippet's non-standard `nowprocket` and `seraph-accel-crit` attributes (WordPress plugin hints, not valid HTML).
@@ -58,6 +59,11 @@ with a one-line disclosure under the "Your breaks" heading. Flights is first and
 the soft pill style. The row is part of `BreaksList.tsx`, so it is server-rendered in the static HTML
 wherever the planner is, and re-rendered by the same component on the client. Breaks that have already
 started get no row. Strings are `planner.trip*` in `src/i18n` (all 19 locales).
+
+Only the next `FULL_TRIP_ROWS` (5, in `src/lib/affiliate.ts`) bookable breaks get the full row. Later breaks get a
+single **Plan this break** pill (`planner.tripPlan`) to the row's first link, Flights when the break has one, with the
+same `affiliate_click` tracking. A year has 15 or more breaks, and full rows on all of them made the list a noticeable
+part of the page's first layout and hydration on phones.
 
 All configuration lives in [`src/lib/affiliate.ts`](../src/lib/affiliate.ts). Its functions are pure and
 covered by `src/lib/affiliate.test.ts`.

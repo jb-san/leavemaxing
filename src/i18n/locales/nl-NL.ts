@@ -165,6 +165,7 @@ export const nlNL: Copy = {
     addGcal: "Voeg {range} toe aan Google Agenda",
     addGcalTitle: "Toevoegen aan Google Agenda",
     tripTitle: "Jouw vrije periode van {days}, {range}",
+    tripPlan: "Plan deze vrije periode",
     tripStays: "Verblijf",
     tripFlights: "Vluchten",
     tripThings: "Activiteiten",

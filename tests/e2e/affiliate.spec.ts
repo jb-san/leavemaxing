@@ -200,3 +200,37 @@ test("a partner click without rybbit does not throw", async ({ page }) => {
   await link.click();
   expect(errors).toEqual([]);
 });
+
+test("later breaks get one compact Plan this break link with the same tracking", async ({ page }) => {
+  const hits = await guardPartners(page);
+  await installRybbit(page);
+  await page.goto("/se/2027/");
+  await expect(page.locator(".day").first()).toBeVisible();
+  const breaks = page.locator("section[aria-labelledby='breaks-title']");
+  // The next five bookable breaks keep the full row.
+  await expect(breaks.getByText(/^Your \d+-day break, /)).toHaveCount(5);
+  const compact = breaks.getByRole("link", { name: "Plan this break" });
+  expect(await compact.count()).toBeGreaterThan(0);
+  for (let i = 0; i < (await compact.count()); i++) {
+    const link = compact.nth(i);
+    // Each compact row is a single link: where the full row's Flights button goes, or its first link.
+    expect(await link.evaluate((a) => a.parentElement?.querySelectorAll("a").length)).toBe(1);
+    await expect(link).toHaveAttribute("rel", "sponsored nofollow noopener");
+    // Described by the card's dates, like the full row's buttons.
+    await expect(link).toHaveAccessibleDescription(/\d/);
+  }
+  await expectConsistentRow(compact);
+
+  const last = compact.last();
+  await last.evaluate((link) => link.addEventListener("click", (event) => event.preventDefault()));
+  await last.click();
+  await expect.poll(async () => (await events(page)).map((event) => event.name)).toContain("affiliate_click");
+  const props = (await events(page)).find((event) => event.name === "affiliate_click")?.properties;
+  expect(props).toMatchObject({
+    partner: await last.getAttribute("data-track-partner"),
+    kind: await last.getAttribute("data-track-kind"),
+    country: "SE",
+    days: Number(await last.getAttribute("data-track-days")),
+  });
+  expect(hits).toEqual([]);
+});

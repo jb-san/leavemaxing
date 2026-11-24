@@ -165,6 +165,7 @@ export const frFR: Copy = {
     addGcal: "Ajouter {range} à Google Agenda",
     addGcalTitle: "Ajouter à Google Agenda",
     tripTitle: "Votre repos de {days}, {range}",
+    tripPlan: "Organiser ce repos",
     tripStays: "Hébergement",
     tripFlights: "Vols",
     tripThings: "Activités",

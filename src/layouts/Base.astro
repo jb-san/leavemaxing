@@ -58,8 +58,9 @@ const ogImage = new URL(image, SITE.url).href;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     {/*
-      Travelpayouts Drive (affiliate links, partner 606096); see docs/affiliate.md. Added once, after the page has loaded
-      and gone idle, on the first interaction, or 3.5 s after load, whichever comes first, so it stays off the first paint.
+      Travelpayouts Drive (affiliate links, partner 606096); see docs/affiliate.md. Added once, on the first interaction
+      (scroll, pointer, key or touch) or 6 s after the load event, whichever comes first. Its ~200 KB chunk is a long
+      task on phones, so it stays out of the page's start-up; it still loads without any interaction.
       The data-* attributes come from Travelpayouts' snippet and keep optimisers (e.g. Cloudflare Rocket Loader) away.
     */}
     <script
@@ -71,7 +72,7 @@ const ogImage = new URL(image, SITE.url).href;
       data-cmp-ab="2"
     >
       (() => {
-        const events = ["scroll", "pointerdown", "keydown"];
+        const events = ["scroll", "pointerdown", "keydown", "touchstart"];
         const opts = { passive: true };
         let added = false;
         const add = () => {
@@ -85,11 +86,7 @@ const ogImage = new URL(image, SITE.url).href;
           document.head.appendChild(s);
         };
         for (const type of events) addEventListener(type, add, opts);
-        addEventListener("load", () => {
-          if ("requestIdleCallback" in window) requestIdleCallback(add);
-          else setTimeout(add, 1);
-          setTimeout(add, 3500);
-        }, { once: true });
+        addEventListener("load", () => setTimeout(add, 6000), { once: true });
       })();
     </script>
     <title>{title}</title>
