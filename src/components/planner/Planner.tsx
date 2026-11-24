@@ -10,7 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { countries, countryByCode, placeName } from "~/data";
+import { countries, countryByCode, meta, placeName } from "~/data";
 import { I18nProvider, type PlannerMessages, useI18n } from "~/i18n/context";
 import { pageKind, track, type UsageContext, usageProps } from "~/lib/analytics";
 import {
@@ -31,7 +31,7 @@ import { toPlanInput, yearsNeeded } from "~/lib/planInput";
 import { classifyDays, plan as planSync } from "~/lib/planner/plan";
 import type { Plan, PlanInput, Style } from "~/lib/planner/types";
 import { regionCopy } from "~/lib/regionLabels";
-import { defaultSettings, fromQuery, planPath, type Settings, shareUrl, toQuery } from "~/lib/settings";
+import { defaultSettings, fromLink, planPath, type Settings, shareUrl, toQuery } from "~/lib/settings";
 import { addPlan, loadLast, recordBest, saveLast } from "~/lib/storage";
 import { SUNDAY_FIRST } from "~/lib/weekends";
 import { correctPlanYear, offeredYears, pinnedYear, selectPlanYear, type YearPolicy } from "~/lib/years";
@@ -148,10 +148,23 @@ function PlannerApp(props: PlannerProps) {
     const q = new URLSearchParams(window.location.search);
     const base = props.initial;
     let next = base;
+    let linkYear: number | null = null;
     if ([...q.keys()].some((k) => k !== "utm_source")) {
-      const r = fromQuery(q, base, countryByCode.get(base.country)?.regions ?? {});
+      // Share links (`?d=25&r=BY`) and deep links (`?country=DE&region=BY&year=2027&days=25`).
+      const r = fromLink(q, base, {
+        regionsOf: (code) => countryByCode.get(code)?.regions,
+        years: meta.years,
+      });
       next = r.settings;
+      linkYear = r.year;
       if (r.invalid.length) push(p.invalidLink, "warn");
+      if (mode === "page" && (next.country !== base.country || next.year !== base.year)) {
+        // A deep link for another country or year: open that plan's own page with the same settings.
+        const q2 = toQuery(next).toString();
+        const path = props.sharePaths?.[`${next.country}/${next.year}`] ?? planPath(next.country, next.year);
+        window.location.replace(`${path}${q2 ? `?${q2}` : ""}`);
+        return;
+      }
     } else {
       const last = loadLast();
       const lastOk = last && countryByCode.has(last.country);
@@ -166,7 +179,7 @@ function PlannerApp(props: PlannerProps) {
         }
       } else if (lastOk) next = carryPreferences(base, last);
     }
-    const fixed = correctPlanYear(next.year, { offered, pinned, now, policy });
+    const fixed = correctPlanYear(next.year, { offered, pinned: pinned ?? linkYear, now, policy });
     if (fixed !== next.year) next = { ...next, year: fixed, locked: [], blocked: [], customOff: [] };
     // A transition, so React renders the calendar (and any switch of country) in small slices
     // instead of one long task right after hydration.
@@ -290,9 +303,11 @@ function PlannerApp(props: PlannerProps) {
     saveLast(settings);
     if (mode !== "page" || (!userChanged.current && !window.location.search)) return;
     const q = toQuery(settings).toString();
-    const url = `${planPath(settings.country, settings.year)}${q ? `?${q}` : ""}`;
+    // Localized pages keep their own path; the English pages use the country-year path.
+    const path = props.locale ? window.location.pathname : planPath(settings.country, settings.year);
+    const url = `${path}${q ? `?${q}` : ""}`;
     if (url !== window.location.pathname + window.location.search) window.history.replaceState(null, "", url);
-  }, [settings, ready, mode]);
+  }, [settings, ready, mode, props.locale]);
 
   const shown = result.input;
   const range = leaveYearRange(shown.year, shown.yearStart);

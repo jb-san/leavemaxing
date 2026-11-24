@@ -43,7 +43,23 @@ export function shareImagePath(key: string, year: number, days: number): string 
  * Query keys that change the plan. A link with any of them besides `d` gets the page's own preview,
  * since a prepared card would show the wrong numbers.
  */
-const PLAN_KEYS = new Set(["r", "s", "min", "max", "m", "ys", "ww", "lk", "bk", "co"]);
+const PLAN_KEYS = new Set([
+  "r",
+  "s",
+  "min",
+  "max",
+  "m",
+  "ys",
+  "ww",
+  "lk",
+  "bk",
+  "co",
+  // The readable deep-link names of the same settings (src/lib/settings.ts, LINK_ALIASES).
+  "region",
+  "style",
+  "months",
+  "yearStart",
+]);
 
 const COUNTRY_PAGE = /^\/([a-z]{2})\/(\d{4})\/$/;
 const LOCALIZED_PAGE = /^\/([a-z]{2}-[a-z]{2})\/[a-z0-9-]+-(\d{4})\/$/;
@@ -62,11 +78,19 @@ export function parseShareRequest(url: URL): ShareRequest | null {
   const match = COUNTRY_PAGE.exec(url.pathname) ?? LOCALIZED_PAGE.exec(url.pathname);
   if (!match) return null;
   const [, key = "", yearText = ""] = match;
-  const d = url.searchParams.get("d");
+  const params = url.searchParams;
+  // `days` is the deep-link name for `d`; `d` wins when a link has both, as in the planner.
+  const d = params.get("d") ?? params.get("days");
   if (d === null || !/^\d{1,3}$/.test(d)) return null;
-  for (const name of url.searchParams.keys()) if (PLAN_KEYS.has(name)) return null;
-  const days = Number(d);
+  for (const name of params.keys()) if (PLAN_KEYS.has(name)) return null;
   const year = Number(yearText);
+  // A deep link may repeat the page's country and year. Any other value opens another plan.
+  const country = params.get("country");
+  const linkYear = params.get("year");
+  if (country !== null && !(COUNTRY_PAGE.test(url.pathname) && country.trim().toLowerCase() === key))
+    return null;
+  if (linkYear !== null && linkYear.trim() !== yearText) return null;
+  const days = Number(d);
   return {
     manifest: shareManifestPath(key, year),
     days,

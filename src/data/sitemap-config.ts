@@ -112,3 +112,12 @@ export function shouldIndexPage(url: string): boolean {
 
   return true;
 }
+
+/**
+ * Whether a built page goes in the sitemap. llms.txt (integrations/llms.mjs) lists pages with the
+ * same rule, so the two never disagree.
+ */
+export function inSitemap(url: string): boolean {
+  if (url.includes("/plans/") || url.includes("/offline/")) return false;
+  return shouldIndexPage(url);
+}

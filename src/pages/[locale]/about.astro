@@ -7,6 +7,7 @@ import { fill, getCopy } from "~/i18n";
 import { aboutAlternates } from "~/i18n/routes";
 import Base from "~/layouts/Base.astro";
 import { shellAlternates } from "~/lib/hreflang";
+import { aboutJsonLd } from "~/lib/seasonalSeo";
 
 export function getStaticPaths() {
   return Object.keys(locales).map((code) => ({ params: { locale: code.toLowerCase() } }));
@@ -17,6 +18,14 @@ const locale = Object.values(locales).find((item) => item.code.toLowerCase() ===
 if (!locale) return Astro.redirect("/404");
 const copy = getCopy(locale.code).about;
 const canonical = `${SITE.url}/${param}/about/`;
+const jsonLd = aboutJsonLd({
+  title: copy.title,
+  description: copy.description,
+  url: canonical,
+  inLanguage: locale.lang,
+  siteUrl: SITE.url,
+  siteName: SITE.name,
+});
 ---
 
 <Base
@@ -25,6 +34,7 @@ const canonical = `${SITE.url}/${param}/about/`;
   locale={locale.code}
   lang={locale.code}
   canonical={canonical}
+  jsonLd={jsonLd}
   hreflangs={shellAlternates(aboutAlternates(SITE.url))}
   image={`/og/l/${param}.png`}
 >

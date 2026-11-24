@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { dayNum, fromIso } from "./dates";
-import { decodeDays, defaultSettings, encodeDays, fromQuery, shareUrl, toQuery } from "./settings";
+import {
+  decodeDays,
+  defaultSettings,
+  encodeDays,
+  fromLink,
+  fromQuery,
+  normalizeQuery,
+  shareUrl,
+  toQuery,
+} from "./settings";
 
 describe("day encoding", () => {
   it("round-trips days with ranges, including days outside the year", () => {
@@ -66,5 +75,98 @@ describe("settings in the URL", () => {
     const { settings, invalid } = fromQuery(q, defaultSettings("DE", 2027), { BY: "Bavaria" });
     expect(invalid.sort()).toEqual(["d", "lk", "max", "r", "s", "ww"]);
     expect(settings).toEqual(defaultSettings("DE", 2027));
+  });
+});
+
+describe("deep links", () => {
+  const REGIONS: Record<string, Record<string, string>> = {
+    DE: { BY: "Bavaria", BE: "Berlin" },
+    SE: {},
+  };
+  const options = { regionsOf: (code: string) => REGIONS[code], years: [2026, 2027, 2028] };
+
+  it("maps the readable keys to the share format", () => {
+    const q = normalizeQuery(
+      new URLSearchParams("country=DE&region=BY&year=2027&days=25&style=long&months=7.8"),
+    );
+    expect(q.toString()).toBe("r=BY&d=25&s=long&m=7.8");
+  });
+
+  it("lets the share key win when a link has both", () => {
+    expect(normalizeQuery(new URLSearchParams("days=25&d=30")).get("d")).toBe("30");
+    expect(normalizeQuery(new URLSearchParams("d=30&days=25")).get("d")).toBe("30");
+    const r = fromQuery(
+      new URLSearchParams("days=25&d=30&style=long&s=weekends"),
+      defaultSettings("DE", 2027),
+      {},
+    );
+    expect(r.settings.budget).toBe(30);
+    expect(r.settings.style).toBe("weekends");
+  });
+
+  it("reads country, region, year, days and style", () => {
+    const base = defaultSettings("SE", 2026);
+    const r = fromLink(
+      new URLSearchParams("country=DE&region=BY&year=2027&days=25&style=long"),
+      base,
+      options,
+    );
+    expect(r.invalid).toEqual([]);
+    expect(r.year).toBe(2027);
+    expect(r.settings).toMatchObject({ country: "DE", region: "BY", year: 2027, budget: 25, style: "long" });
+  });
+
+  it("is case-insensitive for codes and styles", () => {
+    const r = fromLink(
+      new URLSearchParams("country=de&region=by&style=Long"),
+      defaultSettings("DE", 2027),
+      options,
+    );
+    expect(r.settings).toMatchObject({ country: "DE", region: "BY", style: "long" });
+    expect(r.invalid).toEqual([]);
+  });
+
+  it("plans the same from a deep link as from the share link it stands for", () => {
+    const base = defaultSettings("DE", 2027);
+    const deep = fromLink(
+      new URLSearchParams("country=DE&year=2027&region=BY&days=14&style=weekends"),
+      base,
+      options,
+    );
+    const share = fromQuery(new URLSearchParams("r=BY&d=14&s=weekends"), base, REGIONS.DE ?? {});
+    expect(deep.settings).toEqual(share.settings);
+    expect(shareUrl(deep.settings)).toBe("https://leavemaxxing.com/de/2027/?d=14&r=BY&s=weekends");
+  });
+
+  it("starts another country from its defaults and keeps the leave days", () => {
+    const base = { ...defaultSettings("SE", 2027), budget: 25, region: null, locked: [1] };
+    const r = fromLink(new URLSearchParams("country=DE"), base, options);
+    expect(r.settings).toEqual({ ...defaultSettings("DE", 2027), budget: 25 });
+  });
+
+  it("drops picked days when the year changes, and reads new ones against the new year", () => {
+    const base = { ...defaultSettings("DE", 2027), locked: [fromIso("2027-07-14")] };
+    expect(fromLink(new URLSearchParams("year=2028"), base, options).settings.locked).toEqual([]);
+    const r = fromLink(new URLSearchParams("year=2028&lk=0"), base, options);
+    expect(r.settings.locked).toEqual([fromIso("2028-01-01")]);
+  });
+
+  it("reports what it can't use and keeps the rest", () => {
+    const base = defaultSettings("DE", 2027);
+    const r = fromLink(
+      new URLSearchParams("country=XX&year=1999&region=ZZ&days=500&style=fast"),
+      base,
+      options,
+    );
+    expect(r.invalid.sort()).toEqual(["country", "d", "r", "s", "year"]);
+    expect(r.settings).toEqual(base);
+    expect(r.year).toBeNull();
+    expect(r.touched).toBe(true);
+  });
+
+  it("leaves a plain page alone", () => {
+    const base = defaultSettings("DE", 2027);
+    const r = fromLink(new URLSearchParams(""), base, options);
+    expect(r).toEqual({ settings: base, invalid: [], touched: false, year: null });
   });
 });

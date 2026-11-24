@@ -367,10 +367,6 @@ export function germanStateTitle(name: string, year: number): string {
   return head;
 }
 
-export function germanStateH1(name: string, year: number): string {
-  return `Brückentage ${year} ${name}`;
-}
-
 export function germanStateDescription(
   state: StateSummary,
   year: number,
@@ -410,6 +406,7 @@ function extraHolidayEffect(
 
 export interface StateLanding {
   title: string;
+  /** Same as the title, so the page's H1 leads with the keyword its title does. */
   h1: string;
   description: string;
   /** Section heading over the state-specific paragraphs. */
@@ -466,9 +463,10 @@ export function germanStateLanding(input: {
       ? `${capitalize(stateSubject(state.name))} hat ${year} keine zusätzlichen Feiertage, es gelten die ${national} bundesweiten.`
       : `${capitalize(stateSubject(state.name))} hat ${year} ${state.total} gesetzliche Feiertage, ${state.extra.length} mehr als die ${national} bundesweiten: ${joinList(extras, "und")}. ${state.workdays} davon fallen auf einen Werktag von Montag bis Freitag.`;
 
+  const title = germanStateTitle(state.name, year);
   return {
-    title: germanStateTitle(state.name, year),
-    h1: germanStateH1(state.name, year),
+    title,
+    h1: title,
     description: germanStateDescription(state, year, input.budget, input.daysOff),
     heading: `Feiertage und Brückentage ${year} ${inState(state.name)}`,
     paragraphs,

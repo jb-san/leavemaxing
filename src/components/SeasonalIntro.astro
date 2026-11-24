@@ -1,16 +1,44 @@
 ---
+/**
+ * The top of a bridge-day page, between the H1 and the planner: when the numbers were last worked
+ * out, then one answer-first paragraph that answers the page's question with them. It is plain
+ * server HTML, so answer engines and crawlers read it without running the planner.
+ */
 interface Props {
+  /** Answer sentences, from the same values as the page's FAQ (`seasonalText`). */
   sentences: string[];
   links?: Array<{ href: string; label: string }>;
+  /** "Zuletzt aktualisiert am 24. November 2026" */
   updatedLabel?: string;
+  /** The date as written in `updatedLabel`, which goes inside <time>. */
+  updatedOn?: string;
+  /** ISO date, the same value as the page's dateModified. */
   updatedDate?: string;
 }
 
-const { sentences, links = [], updatedLabel, updatedDate } = Astro.props;
+const { sentences, links = [], updatedLabel, updatedOn, updatedDate } = Astro.props;
+const at = updatedLabel && updatedOn ? updatedLabel.indexOf(updatedOn) : -1;
+const before = updatedLabel && at >= 0 ? updatedLabel.slice(0, at) : "";
+const after = updatedLabel && at >= 0 && updatedOn ? updatedLabel.slice(at + updatedOn.length) : "";
 ---
 
 <div class="prose prose-slate max-w-none mb-8">
-  {sentences.map((sentence) => <p class="text-lg">{sentence}</p>)}
+  {
+    updatedLabel && updatedDate && (
+      <p class="text-sm text-muted" data-updated>
+        {at >= 0 ? (
+          <>
+            {before}
+            <time datetime={updatedDate}>{updatedOn}</time>
+            {after}
+          </>
+        ) : (
+          <time datetime={updatedDate}>{updatedLabel}</time>
+        )}
+      </p>
+    )
+  }
+  {sentences.length > 0 && <p class="mt-2 text-lg" data-answer>{sentences.join(" ")}</p>}
   {
     links.length > 0 && (
       <p class="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm font-semibold">
@@ -19,13 +47,6 @@ const { sentences, links = [], updatedLabel, updatedDate } = Astro.props;
             {link.label}
           </a>
         ))}
-      </p>
-    )
-  }
-  {
-    updatedLabel && updatedDate && (
-      <p class="mt-3 text-sm text-muted">
-        <time datetime={updatedDate}>{updatedLabel}</time>
       </p>
     )
   }

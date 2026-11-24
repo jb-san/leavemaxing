@@ -27,6 +27,50 @@ test("a shared link restores the plan", async ({ page }) => {
   await expect(page.getByText("Your 2027 in Bayern")).toBeVisible();
 });
 
+test("a deep link opens the plan it names", async ({ page, isMobile }) => {
+  await page.goto("/?country=DE&region=BY&year=2027&days=25&style=long");
+  await expect(hero(page)).toContainText("25 leave days");
+  await expect(page.getByText("Your 2027 in Bayern")).toBeVisible();
+  // Phones keep the settings in a sheet.
+  if (isMobile) await page.getByRole("button", { name: "Plan settings" }).click();
+  await expect(page.getByRole("radio", { name: /One big trip/ })).toBeChecked();
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", "https://leavemaxxing.com/");
+});
+
+test("a deep link on a plan page plans the same as the share link", async ({ page }) => {
+  await page.goto("/de/2027/?region=BY&days=14&style=weekends");
+  await expect(hero(page)).toContainText("14 leave days");
+  await expect(page.getByText("Your 2027 in Bayern")).toBeVisible();
+  // The address bar moves to the share format; canonical and og:url stay clean.
+  await expect(page).toHaveURL(/\/de\/2027\/\?.*d=14/);
+  const url = new URL(page.url());
+  expect(url.pathname).toBe("/de/2027/");
+  expect(Object.fromEntries(url.searchParams)).toEqual({ d: "14", r: "BY", s: "weekends" });
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    "href",
+    "https://leavemaxxing.com/de/2027/",
+  );
+  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
+    "content",
+    "https://leavemaxxing.com/de/2027/",
+  );
+});
+
+test("a deep link for another country or year opens that plan's page", async ({ page }) => {
+  await page.goto("/se/2027/?country=DE&year=2028&days=12");
+  await expect(page).toHaveURL(/\/de\/2028\/\?d=12$/);
+  await expect(hero(page)).toContainText("12 leave days");
+});
+
+test("a deep link on a localized page keeps that page", async ({ page }) => {
+  await page.goto("/de-de/brueckentage-2027/?region=BY&days=25");
+  await expect(page.locator("section[aria-label] p[aria-live]").first()).toContainText("25 Urlaubstage");
+  await expect(page).toHaveURL(/\/de-de\/brueckentage-2027\/\?.*d=25/);
+  const url = new URL(page.url());
+  expect(url.pathname).toBe("/de-de/brueckentage-2027/");
+  expect(Object.fromEntries(url.searchParams)).toEqual({ d: "25", r: "BY" });
+});
+
 test("locking a day updates the plan and the link", async ({ page, isMobile }) => {
   await page.goto("/de/2027/?d=10");
   await expect(hero(page)).toContainText("10 leave days");

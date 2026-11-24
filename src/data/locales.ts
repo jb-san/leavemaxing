@@ -35,10 +35,7 @@ export interface Translations {
   pageTitle: string; // e.g., "Brückentage {year} {region}: So machst du aus {leave} Urlaubstagen {total} freie Tage"
   pageDescription: string;
 
-  // Headings
-  h1: string; // e.g., "Brückentage {year}"
-  h1Region: string; // e.g., "Brückentage {year} in {region}"
-
+  // Headings. The H1 of a bridge-day page is its title (src/lib/seasonalSeo.ts), so the two always match.
   // Content sections
   holidaysHeading: string;
   bestPlansHeading: string;
@@ -95,8 +92,6 @@ export const locales: Record<string, LocaleConfig> = {
       pageTitle: "Brückentage {year}{region}: So machst du aus {leave} Urlaubstagen {total} freie Tage",
       pageDescription:
         "Die besten Brückentage {year}{region}. Mit nur {leave} Urlaubstagen kommst du auf {total} freie Tage. Optimale Planung für maximale Erholung.",
-      h1: "Brückentage {year} – Die besten Tage für Urlaub",
-      h1Region: "Brückentage {year} in {region}",
       holidaysHeading: "Feiertage {year}",
       bestPlansHeading: "Die besten Urlaubspläne {year}",
       howItWorksHeading: "So nutzt du Brückentage optimal",
@@ -158,8 +153,6 @@ export const locales: Record<string, LocaleConfig> = {
       pageTitle: "Fenstertage {year}{region}: Aus {leave} Urlaubstagen werden {total} freie Tage",
       pageDescription:
         "Die besten Fenstertage {year}{region} in Österreich. Mit nur {leave} Urlaubstagen erreichst du {total} freie Tage. Optimale Urlaubsplanung leicht gemacht.",
-      h1: "Fenstertage {year} Österreich",
-      h1Region: "Fenstertage {year} in {region}",
       holidaysHeading: "Feiertage {year} in Österreich",
       bestPlansHeading: "Die besten Urlaubspläne {year}",
       howItWorksHeading: "So nutzt du Fenstertage optimal",
@@ -221,8 +214,6 @@ export const locales: Record<string, LocaleConfig> = {
       pageTitle: "Klämdagar {year}: Så gör du {leave} semesterdagar till {total} lediga dagar",
       pageDescription:
         "De bästa klämdagarna {year} i Sverige. Med bara {leave} semesterdagar får du {total} lediga dagar. Optimal semesterplanering för maximal ledighet.",
-      h1: "Klämdagar {year} – Planera din semester smart",
-      h1Region: "Klämdagar {year}",
       holidaysHeading: "Helgdagar {year}",
       bestPlansHeading: "De bästa semesterplanerna {year}",
       howItWorksHeading: "Så utnyttjar du klämdagar optimalt",
@@ -284,8 +275,6 @@ export const locales: Record<string, LocaleConfig> = {
       pageTitle: "Inneklemte dager {year}: Gjør {leave} feriedager til {total} ledige dager",
       pageDescription:
         "De beste inneklemte dagene {year} i Norge. Med bare {leave} feriedager får du {total} ledige dager. Optimal ferieplanlegging.",
-      h1: "Inneklemte dager {year}",
-      h1Region: "Inneklemte dager {year}",
       holidaysHeading: "Helligdager {year}",
       bestPlansHeading: "De beste ferieplanene {year}",
       howItWorksHeading: "Slik utnytter du inneklemte dager",
@@ -337,8 +326,6 @@ export const locales: Record<string, LocaleConfig> = {
       pageTitle: "Klemmedage {year}: Få {total} fridage ud af {leave} feriedage",
       pageDescription:
         "De bedste klemmedage {year} i Danmark. Med kun {leave} feriedage får du {total} fridage. Optimal ferieplanlægning.",
-      h1: "Klemmedage {year}",
-      h1Region: "Klemmedage {year}",
       holidaysHeading: "Helligdage {year}",
       bestPlansHeading: "De bedste ferieplaner {year}",
       howItWorksHeading: "Sådan udnytter du klemmedage optimalt",
@@ -390,8 +377,6 @@ export const locales: Record<string, LocaleConfig> = {
       pageTitle: "Välipäivät {year}: Tee {leave} lomapäivästä {total} vapaapäivää",
       pageDescription:
         "Parhaat välipäivät {year} Suomessa. Vain {leave} lomapäivällä saat {total} vapaapäivää. Optimaalinen lomansuunnittelu.",
-      h1: "Välipäivät {year}",
-      h1Region: "Välipäivät {year}",
       holidaysHeading: "Juhlapäivät {year}",
       bestPlansHeading: "Parhaat lomasuunnitelmat {year}",
       howItWorksHeading: "Näin hyödynnät välipäivät optimaalisesti",
@@ -443,8 +428,6 @@ export const locales: Record<string, LocaleConfig> = {
       pageTitle: "Długie weekendy {year}: Zamień {leave} dni urlopu na {total} dni wolnych",
       pageDescription:
         "Najlepsze długie weekendy {year} w Polsce. Wykorzystaj tylko {leave} dni urlopu, aby mieć {total} dni wolnych. Optymalne planowanie urlopu.",
-      h1: "Długie weekendy {year}",
-      h1Region: "Długie weekendy {year}",
       holidaysHeading: "Święta {year}",
       bestPlansHeading: "Najlepsze plany urlopowe {year}",
       howItWorksHeading: "Jak optymalnie wykorzystać długie weekendy",
@@ -501,8 +484,6 @@ export const locales: Record<string, LocaleConfig> = {
       pageTitle: "Brugdagen {year}: Maak van {leave} vakantiedagen {total} vrije dagen",
       pageDescription:
         "De beste brugdagen {year} in Nederland. Met slechts {leave} vakantiedagen krijg je {total} vrije dagen. Optimale vakantieplanning.",
-      h1: "Brugdagen en vrije dagen {year} in Nederland",
-      h1Region: "Brugdagen {year}",
       holidaysHeading: "Feestdagen {year}",
       bestPlansHeading: "De beste vakantieplannen {year}",
       howItWorksHeading: "Zo benut je brugdagen optimaal",
@@ -559,8 +540,6 @@ export const locales: Record<string, LocaleConfig> = {
       pageTitle: "Brückentage {year} Schweiz{region}: Aus {leave} Ferientagen werden {total} freie Tage",
       pageDescription:
         "Die besten Brückentage {year}{region} in der Schweiz. Mit nur {leave} Ferientagen erreichst du {total} freie Tage. Optimale Ferienplanung.",
-      h1: "Brückentage {year} Schweiz",
-      h1Region: "Brückentage {year} im Kanton {region}",
       holidaysHeading: "Feiertage {year}",
       bestPlansHeading: "Die besten Ferienpläne {year}",
       howItWorksHeading: "So nutzt du Brückentage optimal",
@@ -612,8 +591,6 @@ export const locales: Record<string, LocaleConfig> = {
       pageTitle: "Ponts {year}{region} : {leave} jours de congés pour {total} jours de repos",
       pageDescription:
         "Les meilleurs ponts de {year} en France. Posez {leave} jours de congés aux bonnes dates et vous arrivez à {total} jours de repos.",
-      h1: "Ponts {year} : les jours à poser",
-      h1Region: "Ponts {year} en {region}",
       holidaysHeading: "Jours fériés {year}",
       bestPlansHeading: "Les meilleurs plans {year}",
       howItWorksHeading: "Comment faire le pont",
@@ -676,8 +653,6 @@ export const locales: Record<string, LocaleConfig> = {
       pageTitle: "Ponts {year} en Belgique : {leave} jours de congé pour {total} jours de repos",
       pageDescription:
         "Les meilleurs ponts de {year} en Belgique. Avec {leave} jours de congé posés aux bonnes dates, vous obtenez {total} jours de repos.",
-      h1: "Ponts {year} en Belgique",
-      h1Region: "Ponts {year} en {region}",
       holidaysHeading: "Jours fériés {year}",
       bestPlansHeading: "Les meilleurs plans {year}",
       howItWorksHeading: "Comment faire le pont",
@@ -740,8 +715,6 @@ export const locales: Record<string, LocaleConfig> = {
       pageTitle: "Brugdagen {year} in België: van {leave} verlofdagen naar {total} vrije dagen",
       pageDescription:
         "De beste brugdagen van {year} in België. Met {leave} verlofdagen op de juiste data kom je aan {total} vrije dagen.",
-      h1: "Brugdagen {year} in België",
-      h1Region: "Brugdagen {year} in {region}",
       holidaysHeading: "Feestdagen {year}",
       bestPlansHeading: "De beste plannen {year}",
       howItWorksHeading: "Zo pak je een brugdag aan",
@@ -804,8 +777,6 @@ export const locales: Record<string, LocaleConfig> = {
       pageTitle: "Ponts {year} au Luxembourg : {leave} jours de congé pour {total} jours de repos",
       pageDescription:
         "Les meilleurs ponts de {year} au Luxembourg. Les {leave} jours de congé légaux, posés aux bonnes dates, donnent {total} jours de repos.",
-      h1: "Ponts {year} au Luxembourg",
-      h1Region: "Ponts {year} en {region}",
       holidaysHeading: "Jours fériés {year}",
       bestPlansHeading: "Les meilleurs plans {year}",
       howItWorksHeading: "Comment faire le pont",
@@ -863,8 +834,6 @@ export const locales: Record<string, LocaleConfig> = {
       pageTitle: "Puentes {year}{region}: {leave} días de vacaciones y {total} días libres",
       pageDescription:
         "Los mejores puentes de {year}{region}. Con {leave} días de vacaciones bien puestos llegas a {total} días libres.",
-      h1: "Puentes {year}",
-      h1Region: "Puentes {year} en {region}",
       holidaysHeading: "Festivos {year}",
       bestPlansHeading: "Los mejores planes {year}",
       howItWorksHeading: "Cómo aprovechar los puentes",
@@ -927,8 +896,6 @@ export const locales: Record<string, LocaleConfig> = {
       pageTitle: "Ponti {year}: {leave} giorni di ferie diventano {total} giorni liberi",
       pageDescription:
         "I ponti migliori del {year} in Italia. Con {leave} giorni di ferie nei punti giusti arrivi a {total} giorni liberi.",
-      h1: "Ponti {year}",
-      h1Region: "Ponti {year} in {region}",
       holidaysHeading: "Festività {year}",
       bestPlansHeading: "I piani migliori {year}",
       howItWorksHeading: "Come si fa un ponte",
@@ -991,8 +958,6 @@ export const locales: Record<string, LocaleConfig> = {
       pageTitle: "Pontes {year}: {leave} dias de férias dão {total} dias de descanso",
       pageDescription:
         "As melhores pontes de {year} em Portugal. Com {leave} dias de férias nos sítios certos chegas a {total} dias de descanso.",
-      h1: "Pontes {year}",
-      h1Region: "Pontes {year} em {region}",
       holidaysHeading: "Feriados {year}",
       bestPlansHeading: "Os melhores planos {year}",
       howItWorksHeading: "Como fazer a ponte",
@@ -1055,8 +1020,6 @@ export const locales: Record<string, LocaleConfig> = {
       pageTitle: "Prodloužené víkendy {year}: z {leave} dnů dovolené je {total} volných dnů",
       pageDescription:
         "Nejlepší prodloužené víkendy {year} v Česku. Z {leave} dnů dovolené na správných datech uděláš {total} volných dnů.",
-      h1: "Prodloužené víkendy {year}",
-      h1Region: "Prodloužené víkendy {year} v {region}",
       holidaysHeading: "Státní svátky {year}",
       bestPlansHeading: "Nejlepší plány {year}",
       howItWorksHeading: "Jak si prodloužit víkend",
@@ -1119,8 +1082,6 @@ export const locales: Record<string, LocaleConfig> = {
       pageTitle: "Довгі вихідні {year}{region}: з {leave} днів відпустки виходить {total} вільних днів",
       pageDescription:
         "Найкращі довгі вихідні {year} в Україні. З {leave} днів відпустки на правильних датах виходить {total} вільних днів.",
-      h1: "Довгі вихідні {year}",
-      h1Region: "Довгі вихідні {year} у {region}",
       holidaysHeading: "Свята {year}",
       bestPlansHeading: "Найкращі плани відпустки {year}",
       howItWorksHeading: "Як зібрати довгі вихідні",

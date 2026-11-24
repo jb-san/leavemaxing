@@ -38,6 +38,20 @@ describe("shared plan links", () => {
     }
   });
 
+  it("reads deep links that name the same plan", () => {
+    expect(at("/se/2027/?days=25")?.shareUrl).toBe("https://leavemaxxing.com/se/2027/?d=25");
+    expect(at("/se/2027/?country=SE&year=2027&days=25")?.days).toBe(25);
+    expect(at("/se/2027/?days=25&d=30")?.days).toBe(30);
+    expect(at("/de-de/brueckentage-2027/?year=2027&days=30")?.days).toBe(30);
+  });
+
+  it("leaves deep links for other settings, countries or years alone", () => {
+    for (const extra of ["style=long", "region=BY", "months=7", "country=AT", "year=2028"]) {
+      expect(at(`/de/2027/?days=20&${extra}`), extra).toBeNull();
+    }
+    expect(at("/de-de/brueckentage-2027/?country=DE&days=20")).toBeNull();
+  });
+
   it("builds asset paths and escapes attribute values", () => {
     expect(shareManifestPath("uk-ua", 2028)).toBe("/og/s/uk-ua/2028.json");
     expect(shareImagePath("se", 2027, 5)).toBe("/og/s/se/2027/5.png");

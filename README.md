@@ -33,6 +33,11 @@ Live at [leavemaxxing.com](https://leavemaxxing.com). Everything runs in the bro
   localized bridge-day page, for 5–30 leave days and each locale's default). It only rewrites tags, so it fits the free
   plan's CPU limit. Links with other plan settings, or other leave-day counts, keep the page's own preview. See
   `src/lib/shareMeta.ts`.
+- **For answer engines**: bridge-day pages open with one answer-first paragraph in the server HTML, built from the
+  same values as the page's FAQ, under a visible "last updated" date that is also `dateModified`. Static JSON with
+  each country's best breaks (`/data/best/{cc}/{year}.json`), planner deep links
+  (`/?country=DE&region=BY&year=2027&days=25`), and `/llms.txt` are described in
+  [docs/data-api.md](docs/data-api.md).
 - **Loading**: planner islands use `client:afterpaint` (`src/directives/afterpaint.ts`): the server HTML, which
   already shows the plan, paints first and the island's JavaScript loads right after. Archivo is trimmed to the
   weights and widths in use by `scripts/instance-fonts.py`, with size-matched fallbacks so the swap doesn't shift text.

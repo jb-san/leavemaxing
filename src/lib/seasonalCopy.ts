@@ -73,9 +73,9 @@ export const seasonalCopy: Record<string, SeasonalCopy> = {
       one: "Bridge days {year} {where}: {count} bridge day, and {leave} leave days become {totalOff}.",
       many: "Bridge days {year} {where}: {count} bridge days, and {leave} leave days become {totalOff}.",
     },
-    bestTitle: "Bridge days {year} {where}: where leave goes furthest",
+    bestTitle: "Best countries for time off {year}: where leave goes furthest",
     bestDescription:
-      "Bridge days {year} {where}: {countries} countries ranked, and {days} leave days become {offPhrase}.",
+      "{countries} countries ranked by how many days off {days} leave days give in {year}. {place}: {offPhrase}.",
     updated: "Last updated {date}",
     introCount: {
       one: "There is {count} bridge day {where} in {year}.",
@@ -125,9 +125,9 @@ export const seasonalCopy: Record<string, SeasonalCopy> = {
       one: "Klämdagar {year} {where}: {count} klämdag, och {leave} semesterdagar ger {totalOff}.",
       many: "Klämdagar {year} {where}: {count} klämdagar, och {leave} semesterdagar ger {totalOff}.",
     },
-    bestTitle: "Klämdagar {year} {where}: var ledigheten räcker längst",
+    bestTitle: "Bästa länderna för ledighet {year}: {countries} länder rankade",
     bestDescription:
-      "Klämdagar {year} {where}: {countries} länder, och {days} semesterdagar ger {offPhrase}.",
+      "{countries} länder rankade efter hur många lediga dagar {days} semesterdagar ger {year}. {place}: {offPhrase}.",
     updated: "Senast uppdaterad {date}",
     introCount: {
       one: "Det finns {count} klämdag {where} {year}.",
@@ -175,9 +175,9 @@ export const seasonalCopy: Record<string, SeasonalCopy> = {
       one: "Brückentage {year} {where}: {count} Brückentag, und aus {leave} Urlaubstagen werden {totalOff}.",
       many: "Brückentage {year} {where}: {count} Brückentage, und aus {leave} Urlaubstagen werden {totalOff}.",
     },
-    bestTitle: "Brückentage {year} {where}: längste freie Zeit",
+    bestTitle: "Beste Länder für freie Tage {year}: Deutschland im Vergleich",
     bestDescription:
-      "Brückentage {year} {where}: {countries} Länder, und aus {days} Urlaubstagen werden {offPhrase}.",
+      "{countries} Länder im Vergleich, gemessen an den freien Tagen, die {days} Urlaubstage im Jahr {year} bringen. {place}: {offPhrase}.",
     updated: "Zuletzt aktualisiert am {date}",
     introCount: {
       one: "Es gibt {count} Brückentag {where} im Jahr {year}.",
@@ -228,9 +228,9 @@ export const seasonalCopy: Record<string, SeasonalCopy> = {
       one: "Fenstertage {year} {where}: {count} Fenstertag, und aus {leave} Urlaubstagen werden {totalOff}.",
       many: "Fenstertage {year} {where}: {count} Fenstertage, und aus {leave} Urlaubstagen werden {totalOff}.",
     },
-    bestTitle: "Fenstertage {year} {where}: längste freie Zeit",
+    bestTitle: "Beste Länder für freie Tage {year}: Österreich im Vergleich",
     bestDescription:
-      "Fenstertage {year} {where}: {countries} Länder, und aus {days} Urlaubstagen werden {offPhrase}.",
+      "{countries} Länder im Vergleich, gemessen an den freien Tagen, die {days} Urlaubstage im Jahr {year} bringen. {place}: {offPhrase}.",
     updated: "Zuletzt aktualisiert am {date}",
     introCount: {
       one: "Es gibt {count} Fenstertag {where} im Jahr {year}.",
@@ -281,9 +281,9 @@ export const seasonalCopy: Record<string, SeasonalCopy> = {
       one: "Brückentage {year} {where}: {count} Brückentag, und aus {leave} Ferientagen werden {totalOff}.",
       many: "Brückentage {year} {where}: {count} Brückentage, und aus {leave} Ferientagen werden {totalOff}.",
     },
-    bestTitle: "Brückentage {year} {where}: längste freie Zeit",
+    bestTitle: "Beste Länder für freie Tage {year}: die Schweiz im Vergleich",
     bestDescription:
-      "Brückentage {year} {where}: {countries} Länder, und aus {days} Ferientagen werden {offPhrase}.",
+      "{countries} Länder im Vergleich, gemessen an den freien Tagen, die {days} Ferientage im Jahr {year} bringen. {place}: {offPhrase}.",
     updated: "Zuletzt aktualisiert am {date}",
     introCount: {
       one: "Es gibt {count} Brückentag {where} im Jahr {year}.",
@@ -334,9 +334,9 @@ export const seasonalCopy: Record<string, SeasonalCopy> = {
       one: "Inneklemte dager {year} {where}: {count} inneklemt dag, og {leave} feriedager gir {totalOff}.",
       many: "Inneklemte dager {year} {where}: {count} inneklemte dager, og {leave} feriedager gir {totalOff}.",
     },
-    bestTitle: "Inneklemte dager {year} {where}: der ferien rekker lengst",
+    bestTitle: "Beste land for fridager {year}: {countries} land rangert",
     bestDescription:
-      "Inneklemte dager {year} {where}: {countries} land, og {days} feriedager gir {offPhrase}.",
+      "{countries} land rangert etter hvor mange fridager {days} feriedager gir i {year}. {place}: {offPhrase}.",
     updated: "Sist oppdatert {date}",
     introCount: {
       one: "Det er {count} inneklemt dag {where} i {year}.",
@@ -385,8 +385,9 @@ export const seasonalCopy: Record<string, SeasonalCopy> = {
       one: "Klemmedage {year} {where}: {count} klemmedag, og {leave} feriedage giver {totalOff}.",
       many: "Klemmedage {year} {where}: {count} klemmedage, og {leave} feriedage giver {totalOff}.",
     },
-    bestTitle: "Klemmedage {year} {where}: hvor ferien rækker længst",
-    bestDescription: "Klemmedage {year} {where}: {countries} lande, og {days} feriedage giver {offPhrase}.",
+    bestTitle: "Bedste lande for fridage {year}: {countries} lande rangeret",
+    bestDescription:
+      "{countries} lande rangeret efter hvor mange fridage {days} feriedage giver i {year}. {place}: {offPhrase}.",
     updated: "Sidst opdateret {date}",
     introCount: {
       one: "Der er {count} klemmedag {where} i {year}.",
@@ -435,9 +436,9 @@ export const seasonalCopy: Record<string, SeasonalCopy> = {
       one: "Välipäivät {year} {where}: {count} välipäivä, ja {leave} lomapäivää tuottaa {totalOff}.",
       many: "Välipäivät {year} {where}: {count} välipäivää, ja {leave} lomapäivää tuottaa {totalOff}.",
     },
-    bestTitle: "Välipäivät {year} {where}: missä loma riittää pisimmälle",
+    bestTitle: "Parhaat maat vapaapäiville {year}: {countries} maan vertailu",
     bestDescription:
-      "Välipäivät {year} {where}: {countries} maata, ja {days} lomapäivää tuottaa {offPhrase}.",
+      "{countries} maan vertailu: montako vapaapäivää {days} lomapäivää tuottaa vuonna {year}. {place}: {offPhrase}.",
     updated: "Päivitetty {date}",
     introCount: {
       one: "{where} on {count} välipäivä vuonna {year}.",
@@ -487,9 +488,9 @@ export const seasonalCopy: Record<string, SeasonalCopy> = {
       few: "Długie weekendy {year} {where}: {count} długie weekendy, a {leave} dni urlopu daje {totalOff}.",
       many: "Długie weekendy {year} {where}: {count} długich weekendów, a {leave} dni urlopu daje {totalOff}.",
     },
-    bestTitle: "Długie weekendy {year} {where}: najdłuższy urlop",
+    bestTitle: "Kraje z największą liczbą dni wolnych {year}: ranking",
     bestDescription:
-      "Długie weekendy {year} {where}: {countries} krajów, a {days} dni urlopu daje {offPhrase}.",
+      "Ranking {countries} krajów według liczby dni wolnych, które daje {days} dni urlopu w {year} roku. {place}: {offPhrase}.",
     updated: "Ostatnia aktualizacja: {date}",
     introCount: {
       one: "W {year} roku jest {count} długi weekend {where}.",
@@ -542,9 +543,9 @@ export const seasonalCopy: Record<string, SeasonalCopy> = {
       one: "Brugdagen {year} {where}: {count} brugdag, en {leave} vakantiedagen geven {totalOff}.",
       many: "Brugdagen {year} {where}: {count} brugdagen, en {leave} vakantiedagen geven {totalOff}.",
     },
-    bestTitle: "Brugdagen {year} {where}: de langste vakantie",
+    bestTitle: "Beste landen voor vrije dagen {year}: Nederland vergeleken",
     bestDescription:
-      "Brugdagen {year} {where}: {countries} landen, en {days} vakantiedagen geven {offPhrase}.",
+      "{countries} landen vergeleken op hoeveel vrije dagen {days} vakantiedagen opleveren in {year}. {place}: {offPhrase}.",
     updated: "Laatst bijgewerkt op {date}",
     introCount: {
       one: "Er is {count} brugdag {where} in {year}.",
@@ -593,8 +594,9 @@ export const seasonalCopy: Record<string, SeasonalCopy> = {
       one: "Brugdagen {year} {where}: {count} brugdag, en {leave} verlofdagen geven {totalOff}.",
       many: "Brugdagen {year} {where}: {count} brugdagen, en {leave} verlofdagen geven {totalOff}.",
     },
-    bestTitle: "Brugdagen {year} {where}: waar verlof het verst reikt",
-    bestDescription: "Brugdagen {year} {where}: {countries} landen, en {days} verlofdagen geven {offPhrase}.",
+    bestTitle: "Beste landen voor vrije dagen {year}: België vergeleken",
+    bestDescription:
+      "{countries} landen vergeleken op hoeveel vrije dagen {days} verlofdagen opleveren in {year}. {place}: {offPhrase}.",
     updated: "Laatst bijgewerkt op {date}",
     introCount: {
       one: "Er is {count} brugdag {where} in {year}.",
@@ -643,9 +645,9 @@ export const seasonalCopy: Record<string, SeasonalCopy> = {
       one: "Ponts {year} {where} : {count} pont, et {leave} jours de congés donnent {totalOff}.",
       many: "Ponts {year} {where} : {count} ponts, et {leave} jours de congés donnent {totalOff}.",
     },
-    bestTitle: "Ponts {year} {where} : où les congés vont le plus loin",
+    bestTitle: "Meilleurs pays pour les congés {year} : la France comparée",
     bestDescription:
-      "Ponts {year} {where} : {countries} pays, et {days} jours de congés donnent {offPhrase}.",
+      "{countries} pays classés selon les jours de repos que donnent {days} jours de congés en {year}. {place} : {offPhrase}.",
     updated: "Dernière mise à jour le {date}",
     introCount: {
       one: "Il y a {count} pont {where} en {year}.",
@@ -694,8 +696,9 @@ export const seasonalCopy: Record<string, SeasonalCopy> = {
       one: "Ponts {year} {where} : {count} pont, et {leave} jours de congé donnent {totalOff}.",
       many: "Ponts {year} {where} : {count} ponts, et {leave} jours de congé donnent {totalOff}.",
     },
-    bestTitle: "Ponts {year} {where} : où les congés vont le plus loin",
-    bestDescription: "Ponts {year} {where} : {countries} pays, et {days} jours de congé donnent {offPhrase}.",
+    bestTitle: "Meilleurs pays pour les congés {year} : la Belgique comparée",
+    bestDescription:
+      "{countries} pays classés selon les jours de repos que donnent {days} jours de congé en {year}. {place} : {offPhrase}.",
     updated: "Dernière mise à jour le {date}",
     introCount: {
       one: "Il y a {count} pont {where} en {year}.",
@@ -744,8 +747,9 @@ export const seasonalCopy: Record<string, SeasonalCopy> = {
       one: "Ponts {year} {where} : {count} pont, et {leave} jours de congé donnent {totalOff}.",
       many: "Ponts {year} {where} : {count} ponts, et {leave} jours de congé donnent {totalOff}.",
     },
-    bestTitle: "Ponts {year} {where} : où les congés vont le plus loin",
-    bestDescription: "Ponts {year} {where} : {countries} pays, et {days} jours de congé donnent {offPhrase}.",
+    bestTitle: "Meilleurs pays pour les congés {year} : le Luxembourg comparé",
+    bestDescription:
+      "{countries} pays classés selon les jours de repos que donnent {days} jours de congé en {year}. {place} : {offPhrase}.",
     updated: "Dernière mise à jour le {date}",
     introCount: {
       one: "Il y a {count} pont {where} en {year}.",
@@ -794,9 +798,9 @@ export const seasonalCopy: Record<string, SeasonalCopy> = {
       one: "Puentes {year} {where}: {count} puente, y {leave} días de vacaciones dan {totalOff}.",
       many: "Puentes {year} {where}: {count} puentes, y {leave} días de vacaciones dan {totalOff}.",
     },
-    bestTitle: "Puentes {year} {where}: el descanso más largo",
+    bestTitle: "Países con más días libres {year}: el ranking completo",
     bestDescription:
-      "Puentes {year} {where}: {countries} países, y {days} días de vacaciones dan {offPhrase}.",
+      "{countries} países ordenados por los días libres que dan {days} días de vacaciones en {year}. {place}: {offPhrase}.",
     updated: "Última actualización: {date}",
     introCount: {
       one: "Hay {count} puente {where} en {year}.",
@@ -843,8 +847,9 @@ export const seasonalCopy: Record<string, SeasonalCopy> = {
       one: "Ponti {year} {where}: {count} ponte, e {leave} giorni di ferie danno {totalOff}.",
       many: "Ponti {year} {where}: {count} ponti, e {leave} giorni di ferie danno {totalOff}.",
     },
-    bestTitle: "Ponti {year} {where}: dove le ferie arrivano più lontano",
-    bestDescription: "Ponti {year} {where}: {countries} paesi, e {days} giorni di ferie danno {offPhrase}.",
+    bestTitle: "Paesi con più giorni liberi {year}: la classifica completa",
+    bestDescription:
+      "{countries} paesi in classifica per i giorni liberi che danno {days} giorni di ferie nel {year}. {place}: {offPhrase}.",
     updated: "Ultimo aggiornamento: {date}",
     introCount: {
       one: "C'è {count} ponte {where} nel {year}.",
@@ -891,8 +896,9 @@ export const seasonalCopy: Record<string, SeasonalCopy> = {
       one: "Pontes {year} {where}: {count} ponte, e {leave} dias de férias dão {totalOff}.",
       many: "Pontes {year} {where}: {count} pontes, e {leave} dias de férias dão {totalOff}.",
     },
-    bestTitle: "Pontes {year} {where}: onde as férias vão mais longe",
-    bestDescription: "Pontes {year} {where}: {countries} países, e {days} dias de férias dão {offPhrase}.",
+    bestTitle: "Países com mais dias livres {year}: o ranking completo",
+    bestDescription:
+      "{countries} países ordenados pelos dias de descanso que {days} dias de férias dão em {year}. {place}: {offPhrase}.",
     updated: "Última atualização: {date}",
     introCount: {
       one: "Há {count} ponte {where} em {year}.",
@@ -940,9 +946,9 @@ export const seasonalCopy: Record<string, SeasonalCopy> = {
       few: "Prodloužené víkendy {year} {where}: {count} prodloužené víkendy a z {leave} dnů dovolené je {totalOff}.",
       many: "Prodloužené víkendy {year} {where}: {count} prodloužených víkendů a z {leave} dnů dovolené je {totalOff}.",
     },
-    bestTitle: "Prodloužené víkendy {year} {where}: kde dovolená dojde nejdál",
+    bestTitle: "Země s nejvíce dny volna {year}: celý žebříček",
     bestDescription:
-      "Prodloužené víkendy {year} {where}: {countries} zemí a z {days} dnů dovolené je {offPhrase}.",
+      "{countries} zemí seřazených podle toho, kolik volna dá {days} dnů dovolené v roce {year}. {place}: {offPhrase}.",
     updated: "Naposledy aktualizováno {date}",
     introCount: {
       one: "V roce {year} je {count} prodloužený víkend {where}.",
@@ -997,9 +1003,9 @@ export const seasonalCopy: Record<string, SeasonalCopy> = {
       few: "Довгі вихідні {year} {where}: {count} довгі вихідні, і з {leave} днів відпустки виходить {totalOff}.",
       many: "Довгі вихідні {year} {where}: {count} довгих вихідних, і з {leave} днів відпустки виходить {totalOff}.",
     },
-    bestTitle: "Довгі вихідні {year} {where}: де відпустка сягає найдалі",
+    bestTitle: "Країни з найбільшою кількістю вихідних {year}: рейтинг",
     bestDescription:
-      "Довгі вихідні {year} {where}: {countries} країн, і з {days} днів відпустки виходить {offPhrase}.",
+      "Рейтинг {countries} країн за кількістю вільних днів із {days} днів відпустки у {year} році. {place}: {offPhrase}.",
     updated: "Востаннє оновлено {date}",
     introCount: {
       one: "У {year} році {where} є {count} довгі вихідні.",
@@ -1043,7 +1049,7 @@ export const seasonalCopy: Record<string, SeasonalCopy> = {
     bestFollow: "{topName} очолює список із {withOff}.",
     bestMethod: "Порівняння охоплює {countries} країн, державні свята й однаковий план.",
     bestUnrankedDescription:
-      "Довгі вихідні {year} {where}: Україну не включено до рейтингу, бо під час воєнного стану державні свята наразі є робочими днями.",
+      "Рейтинг {countries} країн за кількістю вільних днів у {year} році. Україну не включено до рейтингу, бо під час воєнного стану державні свята наразі є робочими днями.",
   },
 };
 

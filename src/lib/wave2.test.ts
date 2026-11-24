@@ -8,6 +8,7 @@ import { appliesTo } from "./holidays";
 import { englishCountryAlternates, localizedPageAlternates, siblingLocaleAlternates } from "./hreflang";
 import { regionCopy, SPANISH_COMMUNITIES } from "./regionLabels";
 import { DISTINCT_HOLIDAY_REGIONS, publishedRegionCodes, regionDiffersFromNational } from "./regionSets";
+import { copyFor, whereFor } from "./seasonalSeo";
 
 const YEARS = [2027, 2028] as const;
 const WAVE2 = ["fr-FR", "fr-BE", "nl-BE", "fr-LU", "es-ES", "it-IT", "pt-PT", "cs-CZ"] as const;
@@ -60,7 +61,7 @@ describe("wave 2 locales", () => {
       few: "{n} verlofdagen",
       many: "{n} verlofdagen",
     });
-    expect(locales["cs-CZ"]?.translations.h1).toBe("Prodloužené víkendy {year}");
+    expect(copyFor("cs-CZ").title).toMatch(/^Prodloužené víkendy \{year\}/);
   });
 
   it("publishes a page per locale-year and a Spanish community page only when the calendar differs", () => {
@@ -104,9 +105,10 @@ describe("wave 2 locales", () => {
     expect(madrid).toMatchObject({ slug: "madrid", name: "Comunidad de Madrid", h1Region: "Madrid" });
     expect(es).toBeDefined();
     if (!es) return;
-    expect(replaceTokens(es.translations.h1Region, { year: 2027, region: madrid.h1Region })).toBe(
-      "Puentes 2027 en Madrid",
-    );
+    // The regional H1 is the regional title.
+    expect(
+      replaceTokens(copyFor("es-ES").regionTitle, { year: 2027, where: whereFor("es-ES", madrid.h1Region) }),
+    ).toMatch(/^Puentes 2027 en Madrid/);
     expect(
       replaceTokens(es.translations.pageTitle, {
         year: 2027,

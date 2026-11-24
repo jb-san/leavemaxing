@@ -5,7 +5,16 @@ import { countryByCode } from "~/data";
 import { locales, replaceTokens } from "~/data/locales";
 import { shouldIndexPage } from "~/data/sitemap-config";
 import { englishCountryAlternates, localizedPageAlternates, regionalPageAlternates } from "./hreflang";
+import { germanStateTitle } from "./landingPages";
 import { legacyRegionSlug, regionCopy, SWISS_CANTONS, swissCantonRedirects } from "./regionLabels";
+import { copyFor, regionPlace, whereFor } from "./seasonalSeo";
+
+/** Regional pages use their title as the H1. */
+const regionalH1 = (locale: string, country: string, code: string, year: number) =>
+  replaceTokens(copyFor(locale).regionTitle, {
+    year,
+    where: whereFor(locale, regionPlace(country, code, "")),
+  });
 
 describe("Swiss canton slugs and German region names", () => {
   it("maps every canton to the German slug and the old English slug", () => {
@@ -67,9 +76,7 @@ describe("Swiss canton slugs and German region names", () => {
     expect(bw.name).toBe("Baden-Württemberg");
     expect(bw.slug).toBe("baden-wuerttemberg");
     expect(th.name).toBe("Thüringen");
-    expect(replaceTokens(de.translations.h1Region, { year: 2027, region: bayern.h1Region })).toBe(
-      "Brückentage 2027 in Bayern",
-    );
+    expect(germanStateTitle(bayern.h1Region, 2027)).toMatch(/^Brückentage 2027 Bayern/);
     expect(
       replaceTokens(de.translations.pageTitle, { year: 2027, region: bw.titleRegion, leave: 20, total: 47 }),
     ).toContain("Baden-Württemberg");
@@ -84,9 +91,7 @@ describe("Swiss canton slugs and German region names", () => {
     expect(carinthia.name).toBe("Kärnten");
     expect(styria.name).toBe("Steiermark");
     expect(tyrol.name).toBe("Tirol");
-    expect(replaceTokens(at.translations.h1Region, { year: 2027, region: wien.h1Region })).toBe(
-      "Fenstertage 2027 in Wien",
-    );
+    expect(regionalH1("de-AT", "AT", "9", 2027)).toMatch(/^Fenstertage 2027 in Wien/);
     expect(
       replaceTokens(at.translations.pageTitle, {
         year: 2027,
@@ -97,9 +102,8 @@ describe("Swiss canton slugs and German region names", () => {
     ).toContain("Niederösterreich");
 
     const zurich = regionCopy("CH", "ZH", "Canton of Zürich");
-    expect(replaceTokens(ch.translations.h1Region, { year: 2027, region: zurich.h1Region })).toBe(
-      "Brückentage 2027 im Kanton Zürich",
-    );
+    expect(zurich.h1Region).toBe("Zürich");
+    expect(regionalH1("de-CH", "CH", "ZH", 2027)).toMatch(/^Brückentage 2027 im Kanton Zürich/);
     expect(
       replaceTokens(ch.translations.pageTitle, {
         year: 2027,
@@ -108,12 +112,8 @@ describe("Swiss canton slugs and German region names", () => {
         total: 40,
       }),
     ).toContain("Kanton Zürich");
-    expect(
-      replaceTokens(ch.translations.h1Region, { year: 2028, region: regionCopy("CH", "GR", "").h1Region }),
-    ).toBe("Brückentage 2028 im Kanton Graubünden");
-    expect(
-      replaceTokens(ch.translations.h1Region, { year: 2027, region: regionCopy("CH", "GE", "").h1Region }),
-    ).toContain("Genf");
+    expect(regionalH1("de-CH", "CH", "GR", 2028)).toMatch(/^Brückentage 2028 im Kanton Graubünden/);
+    expect(regionalH1("de-CH", "CH", "GE", 2027)).toContain("Genf");
   });
 });
 

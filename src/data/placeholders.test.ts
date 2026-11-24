@@ -8,8 +8,6 @@ const PLACEHOLDER = /\{[A-Za-z][A-Za-z0-9]*\}/;
 const FILLED: Record<string, Record<string, string | number>> = {
   pageTitle: { year: 2027, region: " Bayern", leave: 20, total: 47 },
   pageDescription: { year: 2027, region: " Bayern", leave: 20, total: 47 },
-  h1: { year: 2027 },
-  h1Region: { year: 2027, region: "Bayern" },
   intro: { year: 2027, budget: 20, total: 47, multiplier: "2.4" },
   holidaysHeading: { year: 2027 },
   bestPlansHeading: { year: 2027 },
