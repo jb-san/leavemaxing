@@ -4,8 +4,9 @@ import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 import afterPaintDirective from "./integrations/afterpaint.mjs";
+import llms from "./integrations/llms.mjs";
 import serviceWorker from "./integrations/service-worker.mjs";
-import { isSeasonalYearUrl, shouldIndexPage } from "./src/data/sitemap-config.ts";
+import { inSitemap, isSeasonalYearUrl } from "./src/data/sitemap-config.ts";
 import { BUILD_DATE } from "./src/lib/buildDate.ts";
 
 export default defineConfig({
@@ -16,16 +17,14 @@ export default defineConfig({
     react(),
     afterPaintDirective(),
     sitemap({
-      filter: (page) => {
-        if (page.includes("/plans/") || page.includes("/offline/")) return false;
-        return shouldIndexPage(page);
-      },
+      filter: inSitemap,
       serialize(item) {
         if (isSeasonalYearUrl(item.url)) item.lastmod = BUILD_DATE;
         return item;
       },
     }),
     serviceWorker(),
+    llms(),
   ],
   vite: {
     plugins: [tailwindcss()],

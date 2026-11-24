@@ -107,11 +107,14 @@ describe("seasonal titles", () => {
         isTop: false,
         uiLocale: code,
       });
-      expect(ranking.title.startsWith(`${searchPhrase(code)} 2027`), ranking.title).toBe(true);
+      // Rankings target "best countries for time off", so they don't compete with the bridge-day page.
+      expect(ranking.title.startsWith(searchPhrase(code)), ranking.title).toBe(false);
+      expect(ranking.title, ranking.title).toContain("2027");
       expect(ranking.title.length, ranking.title).toBeLessThanOrEqual(60);
       expect(seen.has(ranking.title), ranking.title).toBe(false);
       seen.add(ranking.title);
-      expect(ranking.description.startsWith(`${searchPhrase(code)} 2027`), ranking.description).toBe(true);
+      expect(ranking.description.startsWith(searchPhrase(code)), ranking.description).toBe(false);
+      expect(ranking.description, ranking.description).toContain("2027");
       expect(ranking.intro).toHaveLength(3);
     }
     const english = countries.map((country) => englishCountryTitle(country.name, 2027));
@@ -523,5 +526,48 @@ describe("Swedish midsummer in seasonal facts", () => {
     const blob = [text.description, ...text.intro, ...text.faq.map((item) => item.answer)].join(" ");
     expect(blob).not.toMatch(/18 juni|18 June|2027-06-18/);
     expect(blob).not.toMatch(PLACEHOLDER);
+  });
+});
+
+describe("answer-first paragraph", () => {
+  it("only states numbers the FAQ states too, on every localized 2027 and 2028 page", () => {
+    for (const [code, locale] of Object.entries(locales)) {
+      for (const year of [2027, 2028]) {
+        const file = readHolidayFile(locale.country, year);
+        if (!file) continue;
+        const settings = { ...defaultSettings(locale.country, year), budget: locale.defaultBudget };
+        const files = filesFor(settings);
+        const result = plan(
+          toPlanInput(
+            settings,
+            yearsNeeded(settings).map((y) => files.find((item) => item.year === y)),
+            fromIso("2026-11-24"),
+          ),
+        );
+        const text = localizedSeasonal({
+          localeCode: code,
+          year,
+          where: whereFor(code, null),
+          regional: false,
+          file,
+          country: locale.country,
+          region: null,
+          budget: locale.defaultBudget,
+          daysOff: result.stats.daysOff,
+          multiplier: result.stats.multiplier,
+          breaks: result.breaks,
+          uiLocale: code,
+        });
+        const answer = text.intro.join(" ");
+        const faq = text.faq.map((item) => item.answer).join(" ");
+        // Every number, including the dates, also appears in the FAQ, so the two can't disagree.
+        for (const n of answer.match(/\d+(?:[.,]\d+)?/g) ?? [])
+          expect(faq, `${code} ${year}: ${n}`).toContain(n);
+        expect(answer).toContain(String(result.stats.daysOff));
+        expect(answer).toContain(String(locale.defaultBudget));
+        expect(text.updatedLabel).toContain(text.updatedOn);
+        expect(text.updatedDate).toBe(BUILD_DATE);
+      }
+    }
   });
 });

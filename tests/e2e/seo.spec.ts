@@ -34,13 +34,23 @@ const pages = [
 ];
 
 const landings = [
-  { path: "/de-de/brueckentage-2027/bayern/", h1: "Brückentage 2027 Bayern", lang: "de-DE" },
+  {
+    path: "/de-de/brueckentage-2027/bayern/",
+    h1: "Brückentage 2027 Bayern: alle Termine und Feiertage",
+    lang: "de-DE",
+  },
   { path: "/de-de/brueckentage-2027/thueringen/", h1: "Brückentage 2027 Thüringen", lang: "de-DE" },
   { path: "/de-de/brueckentage-2027/hansestadt-bremen/", h1: "Brückentage 2027 Bremen", lang: "de-DE" },
-  { path: "/de-at/fenstertage-2027/", h1: "Fenstertage 2027 Österreich", lang: "de-AT" },
-  { path: "/nl-nl/brugdagen-2027/", h1: "Brugdagen en vrije dagen 2027 in Nederland", lang: "nl-NL" },
-  { path: "/sv-se/klamdagar-2027/", h1: "Klämdagar 2027", lang: "sv-SE" },
+  { path: "/de-at/fenstertage-2027/", h1: "Fenstertage 2027: alle Fenstertage in Österreich", lang: "de-AT" },
+  {
+    path: "/nl-nl/brugdagen-2027/",
+    h1: "Brugdagen 2027: vrije dagen en feestdagen in Nederland",
+    lang: "nl-NL",
+  },
+  { path: "/sv-se/klamdagar-2027/", h1: "Klämdagar 2027: alla klämdagar i Sverige", lang: "sv-SE" },
 ];
+
+const FLAG = /[\u{1F1E6}-\u{1F1FF}]{2}/u;
 
 test("2027 landing pages carry their H1, clean canonical and hreflang, computed tables, and a sitemap entry", async ({
   page,
@@ -52,6 +62,9 @@ test("2027 landing pages carry their H1, clean canonical and hreflang, computed 
     expect(sitemap, item.path).toContain(`<loc>${url}</loc>`);
     await page.goto(`${item.path}?d=7`);
     await expect(page.locator("h1")).toContainText(item.h1);
+    // The H1 is the title, with no flag.
+    await expect(page.locator("h1")).toHaveText(await page.title());
+    expect(await page.locator("h1").innerText()).not.toMatch(FLAG);
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", url);
     await expect(page.locator(`link[rel="alternate"][hreflang="${item.lang}"]`)).toHaveAttribute("href", url);
     await expect(page.locator("[data-bridge-table] tbody tr").first()).toBeVisible();
@@ -77,6 +90,80 @@ test("2027 landing pages carry their H1, clean canonical and hreflang, computed 
   await page.goto("/sv-se/klamdagar-2027/");
   await expect(page.locator("[data-month]")).toHaveCount(12);
   await expect(page.locator("#maj")).toHaveText("Klämdagar maj 2027");
+});
+
+const answers = [
+  "/de-de/brueckentage-2027/",
+  "/de-de/brueckentage-2027/bayern/",
+  "/de-at/fenstertage-2027/",
+  "/nl-nl/brugdagen-2027/",
+  "/sv-se/klamdagar-2027/",
+];
+
+test("bridge-day pages answer first, in the server HTML, with the FAQ's numbers and date", async () => {
+  test.skip(test.info().project.name !== "desktop", "the built files are the same for both browsers");
+  for (const path of answers) {
+    const html = readFileSync(join(process.cwd(), "dist", path, "index.html"), "utf8");
+    const h1 = html.indexOf("<h1");
+    const answerAt = html.indexOf("data-answer");
+    const planner = html.search(/<astro-island[^>]*component-url="[^"]*Planner/);
+    expect(h1, path).toBeGreaterThan(0);
+    expect(answerAt, path).toBeGreaterThan(h1);
+    expect(planner, path).toBeGreaterThan(answerAt);
+    expect(html.match(/data-answer/g), path).toHaveLength(1);
+    const answer = (/<p[^>]*data-answer[^>]*>([^<]*)<\/p>/.exec(html)?.[1] ?? "").replace(/&#39;/g, "'");
+    const json = JSON.parse(
+      /<script type="application\/ld\+json">(.*?)<\/script>/s.exec(html)?.[1] ?? "{}",
+    ) as {
+      "@graph": Array<Record<string, unknown>>;
+    };
+    const faq = json["@graph"].find((node) => node["@type"] === "FAQPage") as {
+      mainEntity: Array<{ acceptedAnswer: { text: string } }>;
+    };
+    const answers = faq.mainEntity.map((q) => q.acceptedAnswer.text).join(" ");
+    const numbers = answer.match(/\d+(?:[.,]\d+)?/g) ?? [];
+    expect(numbers.length, path).toBeGreaterThanOrEqual(4);
+    for (const n of numbers) expect(answers, `${path}: ${n}`).toContain(n);
+    const webPage = json["@graph"].find((node) => node["@type"] === "WebPage") as { dateModified: string };
+    expect(html, path).toContain(`<time datetime="${webPage.dateModified}">`);
+  }
+});
+
+test("pages point at their JSON data, which matches the page", async ({ page, request }) => {
+  await page.goto("/sv-se/klamdagar-2027/");
+  const link = page.locator('link[rel="alternate"][type="application/json"]');
+  await expect(link).toHaveAttribute("href", "/data/best/se/2027.json");
+  const data = (await (await request.get("/data/best/se/2027.json")).json()) as {
+    country: string;
+    year: number;
+    region: null;
+    generatedAt: string;
+    recommendedPlan: { leaveDays: number; daysOff: number };
+    bestBreaks: unknown[];
+  };
+  expect(data).toMatchObject({ country: "SE", year: 2027, region: null });
+  expect(data.bestBreaks.length).toBeGreaterThan(0);
+  await expect(page.locator("[data-answer]")).toContainText(
+    `${data.recommendedPlan.leaveDays} semesterdagar blir det ${data.recommendedPlan.daysOff} lediga dagar`,
+  );
+  await expect(page.locator("time")).toHaveAttribute("datetime", data.generatedAt);
+  await page.goto("/de/2027/");
+  await expect(page.locator('link[rel="alternate"][type="application/json"]')).toHaveAttribute(
+    "href",
+    "/data/best/de/2027.json",
+  );
+  const index = (await (await request.get("/data/best/index.json")).json()) as {
+    files: Array<{ country: string; year: number; url: string }>;
+  };
+  expect(index.files).toContainEqual({
+    country: "SE",
+    year: 2027,
+    url: "https://leavemaxxing.com/data/best/se/2027.json",
+  });
+  const llms = await (await request.get("/llms.txt")).text();
+  expect(llms).toMatch(/^# leavemaxxing/);
+  expect(llms).toContain("https://leavemaxxing.com/sv-se/klamdagar-2027/");
+  expect(llms).toContain("/data/best/index.json");
 });
 
 for (const item of pages) {
@@ -122,7 +209,9 @@ test("home and country pages link both bridge years", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Klämdagar 2028" })).toBeVisible();
 
   await page.goto("/sv-se/best/2027/");
-  await expect(page).toHaveTitle(/Klämdagar 2027/);
+  // The ranking targets "best countries", so it doesn't compete with /sv-se/klamdagar-2027/.
+  await expect(page).toHaveTitle(/^Bästa länderna för ledighet 2027/);
+  await expect(page.locator("h1")).toHaveText(await page.title());
   await expect(page.locator("time")).toHaveAttribute("datetime", /^\d{4}-\d{2}-\d{2}$/);
   await expect(page.getByRole("link", { name: "Klämdagar 2027" })).toBeVisible();
 });

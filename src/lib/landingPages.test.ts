@@ -47,7 +47,7 @@ describe("German state landing pages", () => {
       });
       expect(page.title.startsWith(`Brückentage ${YEAR} ${name}`), page.title).toBe(true);
       expect(page.title.length, page.title).toBeLessThanOrEqual(60);
-      expect(page.h1).toBe(`Brückentage ${YEAR} ${name}`);
+      expect(page.h1).toBe(page.title);
       expect(page.description.startsWith(`Brückentage ${YEAR} ${name}:`)).toBe(true);
       expect(page.paragraphs.length).toBeGreaterThanOrEqual(3);
       expect(page.faq.answer).toMatch(/\d+ gesetzliche Feiertage|keine zusätzlichen/);

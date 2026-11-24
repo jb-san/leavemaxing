@@ -117,14 +117,45 @@ const int = (v: string | null, min: number, max: number): number | null => {
 };
 
 /**
+ * Readable deep-link keys and the share keys they stand for, so `?region=BY&days=25&style=long`
+ * plans the same as `?r=BY&d=25&s=long`. When a link has both, the share key wins: it is what the
+ * planner writes, and what link previews read (functions/_middleware.ts). `min` and `max` are
+ * already readable and have no alias.
+ */
+export const LINK_ALIASES: Readonly<Record<string, string>> = {
+  region: "r",
+  days: "d",
+  style: "s",
+  months: "m",
+  yearStart: "ys",
+};
+
+/** Deep-link keys that pick the page rather than a setting on it. */
+export const LINK_PAGE_KEYS = ["country", "year"] as const;
+
+/** The query in share format: aliases become share keys (share keys win), and `country`/`year` are dropped. */
+export function normalizeQuery(q: URLSearchParams): URLSearchParams {
+  const out = new URLSearchParams();
+  for (const [key, value] of q) {
+    if ((LINK_PAGE_KEYS as readonly string[]).includes(key)) continue;
+    const short = LINK_ALIASES[key];
+    if (short === undefined) out.append(key, value);
+    else if (!q.has(short) && !out.has(short)) out.set(short, value);
+  }
+  return out;
+}
+
+/**
  * Apply query parameters on top of `base`. Unknown or invalid values are ignored
- * and reported in `invalid` so the UI can say so.
+ * and reported in `invalid` so the UI can say so. Accepts the share format and the
+ * readable aliases in `LINK_ALIASES`.
  */
 export function fromQuery(
-  q: URLSearchParams,
+  query: URLSearchParams,
   base: Settings,
   regions: Record<string, string>,
 ): { settings: Settings; invalid: string[]; touched: boolean } {
+  const q = normalizeQuery(query);
   const s: Settings = { ...base };
   const invalid: string[] = [];
   let touched = false;
@@ -136,8 +167,9 @@ export function fromQuery(
   };
 
   take("r", (v) => {
-    if (!(v in regions)) return false;
-    s.region = v;
+    const code = v in regions ? v : Object.keys(regions).find((k) => k.toLowerCase() === v.toLowerCase());
+    if (code === undefined) return false;
+    s.region = code;
     return true;
   });
   take("d", (v) => {
@@ -147,8 +179,9 @@ export function fromQuery(
     return true;
   });
   take("s", (v) => {
-    if (!STYLES.includes(v as Style)) return false;
-    s.style = v as Style;
+    const style = v.toLowerCase() as Style;
+    if (!STYLES.includes(style)) return false;
+    s.style = style;
     return true;
   });
   take("min", (v) => {
@@ -197,4 +230,53 @@ export function fromQuery(
     invalid.push("max");
   }
   return { settings: s, invalid, touched };
+}
+
+/**
+ * A deep link: `?country=DE&region=BY&year=2027&days=25&style=long`, or the share format
+ * (`?d=25&r=BY&s=long`) on a page whose path names the country and year. `country` and `year`
+ * are optional and default to `base`; a different country starts from that country's defaults
+ * (keeping the leave days of `base`), a different year drops the picked days, which belong to
+ * a year. Everything else goes through `fromQuery`.
+ *
+ * `year` is returned when the link asked for a valid one, so the planner can keep it even if the
+ * picker no longer offers it.
+ */
+export function fromLink(
+  q: URLSearchParams,
+  base: Settings,
+  options: {
+    /** Regions of a country, or undefined when the country doesn't exist. */
+    regionsOf: (country: string) => Record<string, string> | undefined;
+    /** Years with holiday data. */
+    years: readonly number[];
+  },
+): { settings: Settings; invalid: string[]; touched: boolean; year: number | null } {
+  const invalid: string[] = [];
+  let country = base.country;
+  let year: number | null = null;
+  const cc = q.get("country");
+  if (cc !== null) {
+    const code = cc.trim().toUpperCase();
+    if (/^[A-Z]{2}$/.test(code) && options.regionsOf(code)) country = code;
+    else invalid.push("country");
+  }
+  const y = q.get("year");
+  if (y !== null) {
+    const n = int(y.trim(), 1000, 9999);
+    if (n !== null && options.years.includes(n)) year = n;
+    else invalid.push("year");
+  }
+  const targetYear = year ?? base.year;
+  let start = base;
+  if (country !== base.country) start = { ...defaultSettings(country, targetYear), budget: base.budget };
+  else if (targetYear !== base.year)
+    start = { ...base, year: targetYear, locked: [], blocked: [], customOff: [] };
+  const r = fromQuery(q, start, options.regionsOf(country) ?? {});
+  return {
+    settings: r.settings,
+    invalid: [...invalid, ...r.invalid],
+    touched: r.touched || cc !== null || y !== null,
+    year,
+  };
 }

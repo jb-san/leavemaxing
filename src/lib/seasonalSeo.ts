@@ -44,8 +44,12 @@ export interface FaqItem {
 export interface SeasonalText {
   title: string;
   description: string;
+  /** Answer-first sentences, from the same numbers as `faq`. Pages print them as one paragraph. */
   intro: string[];
+  /** "Last updated 24 November 2026". `updatedOn` is the date part, `updatedDate` its ISO form. */
   updatedLabel: string;
+  updatedOn: string;
+  /** Also the page's dateModified, so the visible date and the structured data agree. */
   updatedDate: string;
   faq: FaqItem[];
 }
@@ -165,6 +169,15 @@ function whenLabel(cluster: BridgeCluster, uiLocale: string): string {
     : formatRangeLocale(uiLocale, start, end);
 }
 
+/** The visible "last updated" line and its ISO date, both from the build date. */
+function updated(
+  copy: SeasonalCopy,
+  uiLocale: string,
+): Pick<SeasonalText, "updatedLabel" | "updatedOn" | "updatedDate"> {
+  const updatedOn = formatBuildDate(uiLocale, BUILD_DATE);
+  return { updatedLabel: fill(copy.updated, { date: updatedOn }), updatedOn, updatedDate: BUILD_DATE };
+}
+
 export function seasonalText(input: {
   localeCode: string;
   year: number;
@@ -229,8 +242,7 @@ export function seasonalText(input: {
     title,
     description: formText(input.uiLocale, count, copy.description, base),
     intro,
-    updatedLabel: fill(copy.updated, { date: formatBuildDate(input.uiLocale) }),
-    updatedDate: BUILD_DATE,
+    ...updated(copy, input.uiLocale),
     faq: [
       {
         question: fill(copy.qCount, base),
@@ -302,7 +314,7 @@ export function bestPageText(input: {
   ranked?: boolean;
   /** Shown in place of a days-off claim when the country is unranked. */
   notice?: string;
-}): Pick<SeasonalText, "title" | "description" | "intro" | "updatedLabel" | "updatedDate"> {
+}): Pick<SeasonalText, "title" | "description" | "intro" | "updatedLabel" | "updatedOn" | "updatedDate"> {
   const copy = copyFor(input.localeCode);
   const phrases = phrasesFor(input.localeCode);
   const tokens = {
@@ -317,7 +329,7 @@ export function bestPageText(input: {
     offPhrase: countPhrase(input.uiLocale, input.off, phrases.offPhrase),
     withOff: countPhrase(input.uiLocale, input.topOff, phrases.withOffPhrase),
   };
-  const updatedLabel = fill(copy.updated, { date: formatBuildDate(input.uiLocale) });
+  const stamp = updated(copy, input.uiLocale);
   if (input.ranked === false) {
     return {
       title: fill(copy.bestTitle, tokens),
@@ -325,8 +337,7 @@ export function bestPageText(input: {
       intro: [input.notice, fill(copy.bestFollow, tokens), fill(copy.bestMethod, tokens)].filter(
         (item): item is string => Boolean(item),
       ),
-      updatedLabel,
-      updatedDate: BUILD_DATE,
+      ...stamp,
     };
   }
   const intro = input.isTop
@@ -336,8 +347,7 @@ export function bestPageText(input: {
     title: fill(copy.bestTitle, tokens),
     description: fill(copy.bestDescription, tokens),
     intro,
-    updatedLabel,
-    updatedDate: BUILD_DATE,
+    ...stamp,
   };
 }
 
@@ -394,4 +404,34 @@ export function pageJsonLd(input: {
     });
   }
   return { "@context": "https://schema.org", "@graph": graph };
+}
+
+/**
+ * AboutPage for the about pages. It names the site and its organization only: no people, and no
+ * sameAs profiles.
+ */
+export function aboutJsonLd(input: {
+  title: string;
+  description: string;
+  url: string;
+  inLanguage: string;
+  siteUrl: string;
+  siteName: string;
+}): Record<string, unknown> {
+  const site = input.siteUrl.replace(/\/$/, "");
+  return {
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    name: input.title,
+    description: input.description,
+    url: input.url,
+    inLanguage: input.inLanguage,
+    isPartOf: { "@type": "WebSite", name: input.siteName, url: `${site}/` },
+    about: {
+      "@type": "Organization",
+      name: input.siteName,
+      url: `${site}/`,
+      logo: `${site}/apple-touch-icon.png`,
+    },
+  };
 }

@@ -181,7 +181,8 @@ const otherHref = otherPublished.includes(regionCode)
   ? `/${localeParam}/${slug}-${otherYear}/${regionSlug}/`
   : `/${localeParam}/${slug}-${otherYear}/`;
 
-const h1 = germanState?.h1 ?? replaceTokens(locale.translations.h1Region, { year, region: region.h1Region });
+// The H1 is the title, so the keyword leads both and they never drift apart.
+const h1 = title;
 
 const canonicalPath = `/${localeParam}/${page}/${regionSlug}/`;
 const canonicalUrl = new URL(canonicalPath, SITE.url).href;
@@ -236,7 +237,7 @@ const regionalHolidays = file.holidays.filter(h =>
       <span aria-current="page">{regionFullName}</span>
     </nav>
     <h1 class="text-[clamp(28px,4vw,44px)] font-extrabold leading-tight">
-      {country.flag} {h1}
+      {h1}
     </h1>
   </div>
 
@@ -244,6 +245,7 @@ const regionalHolidays = file.holidays.filter(h =>
     sentences={seasonal.intro}
     links={[{ href: otherHref, label: bridgeLinkLabel(locale.code, otherYear) }]}
     updatedLabel={seasonal.updatedLabel}
+    updatedOn={seasonal.updatedOn}
     updatedDate={seasonal.updatedDate}
   >
     {locale.translations.notice && <p class="mt-3 text-sm text-muted">{locale.translations.notice}</p>}

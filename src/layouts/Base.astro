@@ -24,6 +24,8 @@ interface Props {
   canonical?: string;
   /** hreflang links for multilingual pages */
   hreflangs?: Array<{ lang: string; url: string }>;
+  /** Site path of this page's machine-readable data, e.g. /data/best/de/2027.json */
+  dataJson?: string;
 }
 
 const { 
@@ -36,7 +38,8 @@ const {
   lang,
   locale,
   canonical: canonicalProp,
-  hreflangs = []
+  hreflangs = [],
+  dataJson,
 } = Astro.props;
 const localeCode = locale ? normalizeLocale(locale) : "en";
 const copy = getCopy(localeCode);
@@ -66,6 +69,7 @@ const ogImage = new URL(image, SITE.url).href;
     {alternates.map(({ hreflang, url }) => (
       <link rel="alternate" hreflang={hreflang} href={url} />
     ))}
+    {dataJson && <link rel="alternate" type="application/json" href={dataJson} />}
     {noindex && <meta name="robots" content="noindex" />}
     <meta name="theme-color" content="#eef3ea" />
     <link rel="icon" href="/favicon.ico" sizes="32x32" />

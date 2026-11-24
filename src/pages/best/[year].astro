@@ -8,6 +8,8 @@ import { bestAlternates, englishBestYears } from "~/i18n/routes";
 import Base from "~/layouts/Base.astro";
 import { shellAlternates } from "~/lib/hreflang";
 import { planLink } from "~/lib/planLink";
+import { BUILD_DATE } from "~/lib/buildDate";
+import { pageJsonLd } from "~/lib/seasonalSeo";
 
 interface Row {
   code: string;
@@ -38,17 +40,36 @@ const top = tables.find((t) => t.budget === DEFAULT)?.rows[0];
 const ranked = englishBestYears();
 const buildYear = ranked[0] ?? year;
 const other = ranked.find((item) => item !== year);
+const title = `Best countries for time off ${year}: where leave goes furthest`;
+const description = `${data.rows.length} countries ranked by how many days off ${DEFAULT} leave days buy in ${year}, using each country's public holidays and the best possible plan.`;
+const canonical = `${SITE.url}/best/${year}/`;
+const crumbs = [
+  { name: "Planner", item: `${SITE.url}/` },
+  { name: `Best countries ${year}`, item: canonical },
+];
+const jsonLd = pageJsonLd({
+  title,
+  description,
+  url: canonical,
+  inLanguage: "en",
+  dateModified: BUILD_DATE,
+  breadcrumbs: crumbs,
+});
 ---
 
 <Base
-  title={`Where leave goes furthest in ${year}: every country ranked · leavemaxxing`}
-  description={`${data.rows.length} countries ranked by how many days off ${DEFAULT} leave days buy in ${year}, using each country's public holidays and the best possible plan.`}
+  title={title}
+  description={description}
+  jsonLd={jsonLd}
   wide
   hreflangs={shellAlternates(bestAlternates(SITE.url, year))}
 >
   <div class="flex flex-col gap-3 pb-6 pt-2 sm:flex-row sm:items-end sm:justify-between">
     <div>
-      <h1 class="text-[clamp(28px,4vw,44px)] font-extrabold leading-tight">Where leave goes furthest in {year}</h1>
+      <nav aria-label="Breadcrumb" class="mb-2 text-sm font-semibold text-muted">
+        <a href="/" class="hover:text-ink">{crumbs[0]?.name}</a> / <span aria-current="page">{crumbs[1]?.name}</span>
+      </nav>
+      <h1 class="text-[clamp(28px,4vw,44px)] font-extrabold leading-tight">{title}</h1>
       <p class="mt-1 max-w-2xl text-muted">
         Every country gets the same leave days and the balanced style, planned from 1 January. National holidays only, with
         the country's normal weekend.
@@ -74,7 +95,7 @@ const other = ranked.find((item) => item !== year);
       <section class="mb-5 flex items-center gap-4 rounded-[var(--radius-hero)] bg-hero p-6 text-hero-ink">
         <Mascot size={64} mood="starry" title="" />
         <p class="font-display text-[clamp(22px,3vw,32px)] font-extrabold leading-tight">
-          {top.flag} {top.name} turns {DEFAULT} leave days into{" "}
+          <span aria-hidden="true">{top.flag}</span> {top.name} turns {DEFAULT} leave days into{" "}
           <span class="text-lime">{top.results[DEFAULT]?.daysOff} days off</span> in {year}.
         </p>
       </section>
@@ -123,7 +144,7 @@ const other = ranked.find((item) => item !== year);
                     <td class="py-2.5 pr-3 font-bold text-muted">{i + 1}</td>
                     <td class="py-2.5 pr-3">
                       <a class="font-semibold hover:underline" href={href.href} data-plan-query={href.query}>
-                        <span class="mr-1.5">{r.flag}</span>
+                        <span class="mr-1.5" aria-hidden="true">{r.flag}</span>
                         {r.name}
                       </a>
                     </td>

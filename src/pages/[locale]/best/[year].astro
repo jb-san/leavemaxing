@@ -80,12 +80,17 @@ const seasonal = bestPageText({
 const title = seasonal.title;
 const description = seasonal.description;
 const canonical = `${SITE.url}/${param}/best/${year}/`;
+const crumbs = [
+  { name: copy.chrome.navPlanner, item: `${SITE.url}/${param}/` },
+  { name: `${copy.chrome.navBest} ${year}`, item: canonical },
+];
 const jsonLd = pageJsonLd({
   title,
   description,
   url: canonical,
   inLanguage: locale.lang,
   dateModified: seasonal.updatedDate,
+  breadcrumbs: crumbs,
 });
 const hreflangs = shellAlternates(bestAlternates(SITE.url, year));
 
@@ -109,10 +114,14 @@ const text = (template: string, tokens: Record<string, string | number>) => {
 >
   <div class="flex flex-col gap-3 pb-6 pt-2 sm:flex-row sm:items-end sm:justify-between">
     <div>
-      <h1 class="text-[clamp(28px,4vw,44px)] font-extrabold leading-tight">{text(b.h1, { year })}</h1>
+      <nav aria-label="Breadcrumb" class="mb-2 text-sm font-semibold text-muted">
+        <a href={`/${param}/`} class="hover:text-ink">{crumbs[0]?.name}</a> /
+        <span aria-current="page">{crumbs[1]?.name}</span>
+      </nav>
+      <h1 class="text-[clamp(28px,4vw,44px)] font-extrabold leading-tight">{title}</h1>
       {seasonal.intro.map((sentence) => <p class="mt-1 max-w-2xl text-muted">{sentence}</p>)}
       <p class="mt-2 text-sm text-muted">
-        <time datetime={seasonal.updatedDate}>{seasonal.updatedLabel}</time>
+        {seasonal.updatedLabel.split(seasonal.updatedOn)[0]}<time datetime={seasonal.updatedDate}>{seasonal.updatedOn}</time>{seasonal.updatedLabel.split(seasonal.updatedOn)[1]}
       </p>
       <a
         href={bridgePath(locale, year)}
@@ -141,13 +150,14 @@ const text = (template: string, tokens: Record<string, string | number>) => {
       <section class="mb-5 flex items-center gap-4 rounded-[var(--radius-hero)] bg-hero p-6 text-hero-ink">
         <Mascot size={64} mood="starry" title="" />
         <p class="font-display text-[clamp(22px,3vw,32px)] font-extrabold leading-tight">
+          <span aria-hidden="true">{top.flag}</span>{" "}
           {text(b.hero, {
-            flag: top.flag,
+            flag: "",
             name: countryName(top.code, ui, top.name),
             days: DEFAULT,
             off: top.results[DEFAULT]?.daysOff ?? 0,
             year,
-          })}
+          }).trim()}
         </p>
       </section>
     )
@@ -207,7 +217,7 @@ const text = (template: string, tokens: Record<string, string | number>) => {
                     <td class="py-2.5 pr-3 font-bold text-muted">{i + 1}</td>
                     <td class="py-2.5 pr-3">
                       <a class="font-semibold hover:underline" href={href.href} data-plan-query={href.query}>
-                        <span class="mr-1.5">{r.flag}</span>
+                        <span class="mr-1.5" aria-hidden="true">{r.flag}</span>
                         {countryName(r.code, ui, r.name)}
                       </a>
                     </td>
