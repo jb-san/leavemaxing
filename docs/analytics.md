@@ -28,7 +28,6 @@ names, exact dates, plan titles, or other personal data. Country and region valu
 | `plan_save` | Save a plan in this browser. The name is not sent | `country`, `year`, `locale`, `days`, `page` |
 | `language_change` | Language switcher | `locale` (page language), `page`, `to` (chosen language) |
 | `outbound_click` | A link to another site. Host only, not the full URL | `host`, `page`, `locale` |
-| `privacy_settings` | Privacy settings | `page`, `locale` |
 | `together_create` | A Together group is created | none |
 | `together_join` | Someone joins a Together group | none |
 

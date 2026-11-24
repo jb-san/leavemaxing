@@ -18,7 +18,6 @@ export const csCZ: Copy = {
     footerAbout: "O webu",
     footerContact: "Kontakt",
     footerPrivacy: "Soukromí",
-    footerPrivacySettings: "Nastavení soukromí",
     footerNav: "Patička",
     langLabel: "Jazyk",
     themeLabel: "Barevný motiv",

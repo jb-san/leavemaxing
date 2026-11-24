@@ -105,7 +105,6 @@ test("planner actions reach rybbit", async ({ page, isMobile }) => {
   await page.getByRole("button", { name: "Copy", exact: true }).click();
   await page.getByRole("button", { name: "Close" }).click();
 
-  await page.getByRole("button", { name: "Privacy settings" }).click();
   const github = page.locator('a[href="https://github.com/jb-san"]');
   await github.evaluate((link) => link.addEventListener("click", (event) => event.preventDefault()));
   await github.click();
@@ -115,14 +114,7 @@ test("planner actions reach rybbit", async ({ page, isMobile }) => {
   await expect(page).toHaveURL(/\/de-de\//);
 
   const names = (await events(page)).map((event) => event.name);
-  for (const name of [
-    "share_open",
-    "share_copy",
-    "calendar_export",
-    "privacy_settings",
-    "outbound_click",
-    "language_change",
-  ]) {
+  for (const name of ["share_open", "share_copy", "calendar_export", "outbound_click", "language_change"]) {
     expect(names).toContain(name);
   }
   const all = await events(page);
@@ -139,10 +131,6 @@ test("planner actions reach rybbit", async ({ page, isMobile }) => {
     locale: "en",
     to: "de-DE",
     page: "planner",
-  });
-  expect(all.find((event) => event.name === "privacy_settings")?.properties).toMatchObject({
-    page: "planner",
-    locale: "en",
   });
 });
 
