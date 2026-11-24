@@ -95,6 +95,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: pnpm exec wrangler deploy --config worker/wrangler.toml
       - name: Deploy to Cloudflare Pages
+        id: pages
         if: steps.secrets.outputs.ok == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -105,3 +106,12 @@ jobs:
             --project-name=leavemaxing \
             --branch="$BRANCH" \
             --commit-hash="${{ github.sha }}"
+      # Tell IndexNow (Bing, Yandex, and others) about every URL in the sitemap. See docs/indexnow.md.
+      # Production deploys only, and a failed ping never fails the job.
+      - name: Submit URLs to IndexNow
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.secrets.outputs.ok == 'true' && steps.pages.outcome == 'success'
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
+          INDEXNOW_DELAY_MS: "30000"
+        run: node scripts/indexnow.mjs dist
