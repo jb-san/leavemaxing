@@ -164,6 +164,7 @@ export const en: Copy = {
     addGcal: "Add {range} to Google Calendar",
     addGcalTitle: "Add to Google Calendar",
     tripTitle: "Your {n}-day break, {range}",
+    tripPlan: "Plan this break",
     tripStays: "Stays",
     tripFlights: "Flights",
     tripThings: "Things to do",

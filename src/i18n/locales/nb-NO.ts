@@ -168,6 +168,7 @@ export const nbNO: Copy = {
     addGcal: "Legg til {range} i Google Kalender",
     addGcalTitle: "Legg til i Google Kalender",
     tripTitle: "Friperioden din på {days}, {range}",
+    tripPlan: "Planlegg denne friperioden",
     tripStays: "Overnatting",
     tripFlights: "Fly",
     tripThings: "Opplevelser",

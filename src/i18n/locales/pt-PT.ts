@@ -163,6 +163,7 @@ export const ptPT: Copy = {
     addGcal: "Adicionar {range} ao Google Calendar",
     addGcalTitle: "Adicionar ao Google Calendar",
     tripTitle: "O teu descanso de {days}, {range}",
+    tripPlan: "Planeia este descanso",
     tripStays: "Alojamento",
     tripFlights: "Voos",
     tripThings: "Atividades",

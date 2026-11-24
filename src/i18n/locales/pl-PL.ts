@@ -164,6 +164,7 @@ export const plPL: Copy = {
     addGcal: "Dodaj {range} do Kalendarza Google",
     addGcalTitle: "Dodaj do Kalendarza Google",
     tripTitle: "Twoje wolne: {days}, {range}",
+    tripPlan: "Zaplanuj to wolne",
     tripStays: "Noclegi",
     tripFlights: "Loty",
     tripThings: "Atrakcje",

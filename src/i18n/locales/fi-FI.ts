@@ -164,6 +164,7 @@ export const fiFI: Copy = {
     addGcal: "Lisää {range} Google-kalenteriin",
     addGcalTitle: "Lisää Google-kalenteriin",
     tripTitle: "{n} päivän vapaasi, {range}",
+    tripPlan: "Suunnittele tämä vapaa",
     tripStays: "Majoitus",
     tripFlights: "Lennot",
     tripThings: "Tekemistä",

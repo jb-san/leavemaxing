@@ -162,6 +162,7 @@ export const csCZ: Copy = {
     addGcal: "Přidat {range} do Kalendáře Google",
     addGcalTitle: "Přidat do Kalendáře Google",
     tripTitle: "Tvoje volno: {days}, {range}",
+    tripPlan: "Naplánovat toto volno",
     tripStays: "Ubytování",
     tripFlights: "Letenky",
     tripThings: "Zážitky",

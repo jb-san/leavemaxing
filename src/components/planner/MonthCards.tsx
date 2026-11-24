@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useLayoutEffect, useRef, useState } from "react";
 import { useI18n } from "~/i18n/context";
 import { type DayNum, dayNum, daysInMonth, weekdayMon0 } from "~/lib/dates";
 import { ARROW_STEPS, arrowStep } from "./arrowStep";
@@ -43,21 +43,19 @@ export function MonthCarousel({
     return from >= first && from < first + daysInMonth(m.year, m.month);
   });
 
-  // On phones, start the carousel at the current month.
+  // On phones, start the carousel at the current month. The scroll waits for the next frame: reading
+  // the width right after mounting would force a layout of every month inside the (already long)
+  // hydration task, while in the frame it shares the layout the browser does anyway. A layout effect
+  // queues the frame before anything is painted, so the first month never flashes. Inside a sheet
+  // that isn't showing yet, the width is 0 and the scroll is a no-op until the sheet opens.
   // biome-ignore lint/correctness/useExhaustiveDependencies: only when the visible months change
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = scroller.current;
     if (!el || window.innerWidth >= 640) return;
     const i = Math.max(0, todayIndex);
     setIndex(i);
     target.current = i;
-    const scroll = () => el.scrollTo({ left: i * el.clientWidth });
-    if (el.clientWidth > 0) {
-      scroll();
-      return;
-    }
-    // Mounted inside a sheet that isn't showing yet: scroll once it has a width.
-    const frame = requestAnimationFrame(scroll);
+    const frame = requestAnimationFrame(() => el.scrollTo({ left: i * el.clientWidth }));
     return () => cancelAnimationFrame(frame);
   }, [months[0]?.year, months[0]?.month]);
 

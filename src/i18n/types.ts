@@ -165,6 +165,8 @@ export interface Copy {
     addGcalTitle: string;
     /** "Plan this break" row. `{n}` is the length, `{days}` the length with its noun, `{range}` the dates. */
     tripTitle: string;
+    /** Compact link on later breaks, which goes to the first partner (Flights when there is one). */
+    tripPlan: string;
     tripStays: string;
     tripFlights: string;
     tripThings: string;
