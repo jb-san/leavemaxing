@@ -164,6 +164,12 @@ export const frFR: Copy = {
     leaveDay: p("jour de congé", "jours de congés"),
     addGcal: "Ajouter {range} à Google Agenda",
     addGcalTitle: "Ajouter à Google Agenda",
+    tripTitle: "Votre repos de {days}, {range}",
+    tripStays: "Hébergement",
+    tripFlights: "Vols",
+    tripThings: "Activités",
+    tripDisclosure:
+      "Liens partenaires : nous pouvons toucher une commission, sans frais supplémentaires pour vous.",
     keepLeave: "Garder en congé",
     keepLeaveHint: "Toujours inclure ce jour",
     takeDay: "Prendre ce jour",

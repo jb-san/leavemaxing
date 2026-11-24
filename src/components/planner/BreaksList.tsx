@@ -1,5 +1,7 @@
 import { CalendarPlus } from "lucide-react";
+import { countryByCode } from "~/data";
 import { useI18n } from "~/i18n/context";
+import { type TripKind, tripLinks } from "~/lib/affiliate";
 import { track, type UsageContext, usageProps } from "~/lib/analytics";
 import type { DayNum } from "~/lib/dates";
 import { googleCalendarUrl } from "~/lib/ics";
@@ -11,6 +13,18 @@ export function BreaksList({ plan, today, usage }: { plan: Plan; today: DayNum; 
   const p = i18n.m.planner;
   const leaveDays = [...plan.suggested, ...plan.locked];
   if (plan.breaks.length === 0) return null;
+  const country = usage.country;
+  const fallbackCity = countryByCode.get(country)?.name;
+  const tripLabel: Record<TripKind, string> = {
+    stays: p.tripStays,
+    flights: p.tripFlights,
+    things: p.tripThings,
+  };
+  // Only breaks that haven't started can still be booked.
+  const trips = plan.breaks.map((b) =>
+    b.start >= today ? tripLinks(country, b.start, b.end, { fallbackCity }) : [],
+  );
+  const hasTrips = trips.some((links) => links.length > 0);
   const when = (days: number) => {
     if (days <= 0) return p.now;
     if (days === 1) return p.tomorrow;
@@ -31,54 +45,82 @@ export function BreaksList({ plan, today, usage }: { plan: Plan; today: DayNum; 
           })}
         </span>
       </div>
+      {hasTrips && <p className="-mt-2 mb-1 text-xs text-muted">{p.tripDisclosure}</p>}
       <ol className="flex flex-col divide-y divide-line">
-        {plan.breaks.map((b) => {
+        {plan.breaks.map((b, i) => {
           const past = b.end < today;
           const holidays = [...new Set(b.holidays.map((h) => h.name))];
           const range = i18n.formatRange(b.start, b.end);
+          const links = trips[i] ?? [];
           return (
-            <li key={b.start} className={cx("flex items-center gap-3 py-3", past && "opacity-50")}>
-              <span
-                className={cx(
-                  "flex h-12 w-14 shrink-0 flex-col items-center justify-center rounded-xl leading-none",
-                  b.leave > 0 ? "bg-lime text-lime-ink" : "bg-sun-soft text-ink",
-                )}
-              >
-                <span className="font-display text-2xl font-extrabold">{b.length}</span>
-                <span className="text-[11px] font-semibold">{i18n.plural(b.length, p.day)}</span>
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="font-bold">
-                  {range}
-                  {!past && b.start > today && (
-                    <span className="ml-2 text-xs font-semibold text-muted">{when(b.start - today)}</span>
+            <li key={b.start} className={cx("py-3", past && "opacity-50")}>
+              <div className="flex items-center gap-3">
+                <span
+                  className={cx(
+                    "flex h-12 w-14 shrink-0 flex-col items-center justify-center rounded-xl leading-none",
+                    b.leave > 0 ? "bg-lime text-lime-ink" : "bg-sun-soft text-ink",
                   )}
-                </p>
-                <p className="truncate text-sm text-muted">
-                  {b.leave > 0 ? i18n.count(b.leave, p.leaveDay) : p.noLeave}
-                  {holidays.length > 0 && `, ${i18n.text(p.around, { names: holidays.join(", ") })}`}
-                </p>
+                >
+                  <span className="font-display text-2xl font-extrabold">{b.length}</span>
+                  <span className="text-[11px] font-semibold">{i18n.plural(b.length, p.day)}</span>
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold">
+                    {range}
+                    {!past && b.start > today && (
+                      <span className="ml-2 text-xs font-semibold text-muted">{when(b.start - today)}</span>
+                    )}
+                  </p>
+                  <p className="truncate text-sm text-muted">
+                    {b.leave > 0 ? i18n.count(b.leave, p.leaveDay) : p.noLeave}
+                    {holidays.length > 0 && `, ${i18n.text(p.around, { names: holidays.join(", ") })}`}
+                  </p>
+                </div>
+                {b.leave > 0 && (
+                  <>
+                    <span className="hidden rounded-full bg-card-2 px-2.5 py-1 text-xs font-bold tabular-nums sm:inline">
+                      {(b.length / b.leave).toFixed(1)}×
+                    </span>
+                    <a
+                      href={googleCalendarUrl(b, leaveDays)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      data-no-outbound=""
+                      onClick={() =>
+                        track("calendar_export", usageProps(usage, { format: "google", length: b.length }))
+                      }
+                      aria-label={i18n.text(p.addGcal, { range })}
+                      title={p.addGcalTitle}
+                      className="grid size-9 shrink-0 place-items-center rounded-full text-muted hover:bg-card-2 hover:text-ink"
+                    >
+                      <CalendarPlus size={17} />
+                    </a>
+                  </>
+                )}
               </div>
-              {b.leave > 0 && (
-                <>
-                  <span className="hidden rounded-full bg-card-2 px-2.5 py-1 text-xs font-bold tabular-nums sm:inline">
-                    {(b.length / b.leave).toFixed(1)}×
+              {links.length > 0 && (
+                <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs sm:pl-[68px]">
+                  <span id={`trip-${b.start}`} className="mr-1 basis-full text-muted sm:basis-auto">
+                    {i18n.text(p.tripTitle, { n: b.length, days: i18n.count(b.length, p.day), range })}
                   </span>
-                  <a
-                    href={googleCalendarUrl(b, leaveDays)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    data-no-outbound=""
-                    onClick={() =>
-                      track("calendar_export", usageProps(usage, { format: "google", length: b.length }))
-                    }
-                    aria-label={i18n.text(p.addGcal, { range })}
-                    title={p.addGcalTitle}
-                    className="grid size-9 shrink-0 place-items-center rounded-full text-muted hover:bg-card-2 hover:text-ink"
-                  >
-                    <CalendarPlus size={17} />
-                  </a>
-                </>
+                  {links.map((t) => (
+                    <a
+                      key={t.kind}
+                      href={t.href}
+                      target="_blank"
+                      rel="sponsored nofollow noopener"
+                      aria-describedby={`trip-${b.start}`}
+                      data-track="affiliate_click"
+                      data-track-partner={t.partner}
+                      data-track-kind={t.kind}
+                      data-track-country={country}
+                      data-track-days={b.length}
+                      className="rounded-full border border-line bg-card-2 px-3 py-1.5 font-bold hover:border-lime-strong"
+                    >
+                      {tripLabel[t.kind]}
+                    </a>
+                  ))}
+                </div>
               )}
             </li>
           );

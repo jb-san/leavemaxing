@@ -28,9 +28,14 @@ names, exact dates, plan titles, or other personal data. Country and region valu
 | `plan_save` | Save a plan in this browser. The name is not sent | `country`, `year`, `locale`, `days`, `page` |
 | `language_change` | Language switcher | `locale` (page language), `page`, `to` (chosen language) |
 | `outbound_click` | A link to another site. Host only, not the full URL | `host`, `page`, `locale` |
+| `affiliate_click` | A Stays, Flights or Things to do link under a suggested break (see [affiliate.md](affiliate.md)). Sent instead of `outbound_click`, never both. `days` here is the break's length, not the leave budget | `partner` (`booking`, `kiwi`, `getyourguide`), `kind` (`stays`, `flights`, `things`), `country`, `days`, `page`, `locale` |
 | `together_create` | A Together group is created | none |
 | `together_join` | Someone joins a Together group | none |
 
 Compare uses the same country, year, leave-day, and style events with `page: "compare"`. Shared controls
 there omit `country`, because the comparison is not a single country. Country and region changes on a
 card include that card's `country`.
+
+Declarative events come from `data-track="name"` plus `data-track-*` attributes on any element, picked up by
+one delegated click listener (`bindAnalytics`). A link with `data-track` sends only that event, not
+`outbound_click`. Whole-number attribute values (`data-track-days="9"`) are sent as numbers.
