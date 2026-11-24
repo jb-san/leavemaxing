@@ -171,6 +171,7 @@ export const nbNO: Copy = {
     tripStays: "Overnatting",
     tripFlights: "Fly",
     tripThings: "Opplevelser",
+    tripCars: "Leiebil",
     tripDisclosure: "Partnerlenker: vi kan få provisjon, uten ekstra kostnad for deg.",
     keepLeave: "Behold som ferie",
     keepLeaveHint: "Ta alltid med denne dagen",

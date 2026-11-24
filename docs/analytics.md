@@ -28,7 +28,7 @@ names, exact dates, plan titles, or other personal data. Country and region valu
 | `plan_save` | Save a plan in this browser. The name is not sent | `country`, `year`, `locale`, `days`, `page` |
 | `language_change` | Language switcher | `locale` (page language), `page`, `to` (chosen language) |
 | `outbound_click` | A link to another site. Host only, not the full URL | `host`, `page`, `locale` |
-| `affiliate_click` | A Stays, Flights or Things to do link under a suggested break (see [affiliate.md](affiliate.md)). Sent instead of `outbound_click`, never both. `days` here is the break's length, not the leave budget | `partner` (`booking`, `kiwi`, `getyourguide`), `kind` (`stays`, `flights`, `things`), `country`, `days`, `page`, `locale` |
+| `affiliate_click` | A Flights, Stays, Things to do or Car rental link under a suggested break (see [affiliate.md](affiliate.md)). Sent instead of `outbound_click`, never both. `days` here is the break's length, not the leave budget | `partner` (`kiwi`, `aviasales`, `booking`, `getyourguide`, `economybookings`), `kind` (`flights`, `stays`, `things`, `cars`), `country`, `days`, `page`, `locale` |
 | `together_create` | A Together group is created | none |
 | `together_join` | Someone joins a Together group | none |
 

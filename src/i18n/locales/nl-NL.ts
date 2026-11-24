@@ -168,6 +168,7 @@ export const nlNL: Copy = {
     tripStays: "Verblijf",
     tripFlights: "Vluchten",
     tripThings: "Activiteiten",
+    tripCars: "Huurauto",
     tripDisclosure: "Partnerlinks: we kunnen een commissie krijgen, zonder extra kosten voor jou.",
     keepLeave: "Houden als vakantie",
     keepLeaveHint: "Deze dag altijd meenemen",

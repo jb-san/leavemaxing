@@ -167,6 +167,7 @@ export const plPL: Copy = {
     tripStays: "Noclegi",
     tripFlights: "Loty",
     tripThings: "Atrakcje",
+    tripCars: "Wynajem auta",
     tripDisclosure: "Linki partnerskie: możemy otrzymać prowizję, bez dodatkowych kosztów dla Ciebie.",
     keepLeave: "Zostaw jako urlop",
     keepLeaveHint: "Zawsze uwzględniaj ten dzień",

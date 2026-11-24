@@ -2,7 +2,9 @@ import type { Locator, Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 
 const EVENT_KEY = "lm-events";
-const PARTNER_HOST = /^https?:\/\/(?:[^/]+\.)?(?:booking\.com|kiwi\.com|getyourguide\.com|tp\.media)(?:\/|$)/;
+const PARTNER_HOST =
+  /^https?:\/\/(?:[^/]+\.)?(?:booking\.com|kiwi\.com|aviasales\.com|getyourguide\.com|economybookings\.com|travelpayouts\.com|tp\.media)(?:\/|$)/;
+const KIWI_SE = "https://www.kiwi.com/deep?from=STO&to=anywhere&departure=2026-12-31&return=2027-01-10";
 const TRIP_LINK = 'a[data-track="affiliate_click"]';
 
 interface RecordedEvent {
@@ -44,7 +46,10 @@ async function events(page: Page): Promise<RecordedEvent[]> {
 const DAY = 86_400_000;
 const days = (from: string, to: string) => Math.round((Date.parse(to) - Date.parse(from)) / DAY) + 1;
 
-/** Every link in a row carries the same break: check-in to check-out, inclusive, is the break's length. */
+/**
+ * Every dated link carries its break: check-in to check-out, inclusive, is the break's length.
+ * Flights come first in each row. Car rental has no dates.
+ */
 async function expectConsistentRow(links: Locator): Promise<void> {
   const count = await links.count();
   expect(count).toBeGreaterThan(0);
@@ -54,7 +59,14 @@ async function expectConsistentRow(links: Locator): Promise<void> {
     await expect(link).toHaveAttribute("rel", "sponsored nofollow noopener");
     const href = (await link.getAttribute("href")) ?? "";
     const length = Number(await link.getAttribute("data-track-days"));
-    const url = new URL(href);
+    if ((await link.getAttribute("data-track-kind")) === "flights") {
+      expect(await link.evaluate((a) => a.parentElement?.querySelector("a[data-track]") === a)).toBe(true);
+    }
+    let url = new URL(href);
+    if (url.host === "c111.travelpayouts.com") {
+      expect(url.searchParams.get("shmarker"), href).toBe("811075");
+      url = new URL(url.searchParams.get("custom_url") ?? "");
+    }
     let from: string | null = null;
     let to: string | null = null;
     if (url.host === "www.booking.com") {
@@ -64,10 +76,13 @@ async function expectConsistentRow(links: Locator): Promise<void> {
       from = url.searchParams.get("date_from");
       to = url.searchParams.get("date_to");
     } else if (url.host === "www.kiwi.com") {
-      const segments = url.pathname.split("/");
-      expect(segments.at(-3), href).toBe("anywhere");
-      from = segments.at(-2) ?? null;
-      to = segments.at(-1) ?? null;
+      expect(url.pathname, href).toBe("/deep");
+      expect(url.searchParams.get("to"), href).toBe("anywhere");
+      from = url.searchParams.get("departure");
+      to = url.searchParams.get("return");
+    } else if (url.host === "www.economybookings.com") {
+      expect(url.searchParams.get("idpick"), href).toBeTruthy();
+      continue;
     } else {
       throw new Error(`unexpected partner link ${href}`);
     }
@@ -97,6 +112,7 @@ test.describe("home", () => {
     await expect(breaks.getByRole("link", { name: "Stays" }).first()).toBeVisible();
     await expect(breaks.getByRole("link", { name: "Flights" }).first()).toBeVisible();
     await expect(breaks.getByRole("link", { name: "Things to do" }).first()).toBeVisible();
+    await expect(breaks.getByRole("link", { name: "Car rental" }).first()).toBeVisible();
     await expectConsistentRow(breaks.locator(TRIP_LINK));
     expect(hits).toEqual([]);
   });
@@ -108,6 +124,7 @@ test("the /se/2027/ plan links each break with its dates, server-rendered", asyn
   expect(html).toContain('rel="sponsored nofollow noopener"');
   expect(html).toContain("Partner links: we may earn a commission at no extra cost to you.");
   expect(html).toContain("checkin=2026-12-31&amp;checkout=2027-01-10");
+  expect(html).toContain(encodeURIComponent(KIWI_SE));
 
   await page.goto("/se/2027/");
   await expect(page.locator(".day").first()).toBeVisible();
@@ -117,9 +134,16 @@ test("the /se/2027/ plan links each break with its dates, server-rendered", asyn
     "href",
     "https://www.booking.com/searchresults.html?ss=Stockholm&checkin=2026-12-31&checkout=2027-01-10&group_adults=2&no_rooms=1&group_children=0",
   );
+  // Flights first and emphasized, then Stays, Things to do, Car rental.
+  await expect(row.locator(TRIP_LINK)).toHaveText(["Flights", "Stays", "Things to do", "Car rental"]);
+  await expect(row.locator(TRIP_LINK).first()).toHaveClass(/bg-lime/);
   await expect(row.getByRole("link", { name: "Flights" })).toHaveAttribute(
     "href",
-    "https://www.kiwi.com/en/search/results/stockholm-sweden/anywhere/2026-12-31/2027-01-10",
+    `https://c111.travelpayouts.com/click?shmarker=811075&promo_id=3791&source_type=customlink&type=click&custom_url=${encodeURIComponent(KIWI_SE)}`,
+  );
+  await expect(row.getByRole("link", { name: "Car rental" })).toHaveAttribute(
+    "href",
+    "https://www.economybookings.com/en?idpick=Stockholm",
   );
   await expect(row.getByRole("link", { name: "Things to do" })).toHaveAttribute(
     "href",
@@ -144,18 +168,18 @@ test("a partner click sends affiliate_click and not outbound_click", async ({ pa
   await installRybbit(page);
   await page.goto("/se/2027/");
   await expect(page.locator(".day").first()).toBeVisible();
-  const stays = page
+  const flights = page
     .locator("li", { hasText: "Your 11-day break, 31 Dec – 10 Jan" })
-    .getByRole("link", { name: "Stays" });
+    .getByRole("link", { name: "Flights" });
   // Keep the test on the site: the link must not open a partner page.
-  await stays.evaluate((link) => link.addEventListener("click", (event) => event.preventDefault()));
-  await stays.click();
+  await flights.evaluate((link) => link.addEventListener("click", (event) => event.preventDefault()));
+  await flights.click();
 
   await expect.poll(async () => (await events(page)).map((event) => event.name)).toContain("affiliate_click");
   const recorded = await events(page);
   expect(recorded.find((event) => event.name === "affiliate_click")?.properties).toEqual({
-    partner: "booking",
-    kind: "stays",
+    partner: "kiwi",
+    kind: "flights",
     country: "SE",
     days: 11,
     page: "planner",

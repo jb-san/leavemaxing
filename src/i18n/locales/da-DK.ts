@@ -166,6 +166,7 @@ export const daDK: Copy = {
     tripStays: "Overnatning",
     tripFlights: "Fly",
     tripThings: "Oplevelser",
+    tripCars: "Lejebil",
     tripDisclosure: "Partnerlinks: vi kan få provision, uden ekstra omkostninger for dig.",
     keepLeave: "Behold som ferie",
     keepLeaveHint: "Tag altid den her dag med",

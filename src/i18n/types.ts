@@ -168,6 +168,7 @@ export interface Copy {
     tripStays: string;
     tripFlights: string;
     tripThings: string;
+    tripCars: string;
     tripDisclosure: string;
     keepLeave: string;
     keepLeaveHint: string;

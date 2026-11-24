@@ -16,13 +16,14 @@ export function BreaksList({ plan, today, usage }: { plan: Plan; today: DayNum; 
   const country = usage.country;
   const fallbackCity = countryByCode.get(country)?.name;
   const tripLabel: Record<TripKind, string> = {
-    stays: p.tripStays,
     flights: p.tripFlights,
+    stays: p.tripStays,
     things: p.tripThings,
+    cars: p.tripCars,
   };
   // Only breaks that haven't started can still be booked.
   const trips = plan.breaks.map((b) =>
-    b.start >= today ? tripLinks(country, b.start, b.end, { fallbackCity }) : [],
+    b.start >= today ? tripLinks(country, b.start, b.end, { fallbackCity, today }) : [],
   );
   const hasTrips = trips.some((links) => links.length > 0);
   const when = (days: number) => {
@@ -115,7 +116,12 @@ export function BreaksList({ plan, today, usage }: { plan: Plan; today: DayNum; 
                       data-track-kind={t.kind}
                       data-track-country={country}
                       data-track-days={b.length}
-                      className="rounded-full border border-line bg-card-2 px-3 py-1.5 font-bold hover:border-lime-strong"
+                      className={cx(
+                        "rounded-full border px-3 py-1.5 font-bold",
+                        t.kind === "flights"
+                          ? "border-lime bg-lime text-lime-ink hover:brightness-105"
+                          : "border-line bg-card-2 hover:border-lime-strong",
+                      )}
                     >
                       {tripLabel[t.kind]}
                     </a>

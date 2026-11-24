@@ -166,6 +166,7 @@ export const ukUA: Copy = {
     tripStays: "Житло",
     tripFlights: "Авіаквитки",
     tripThings: "Враження",
+    tripCars: "Оренда авто",
     tripDisclosure: "Партнерські посилання: ми можемо отримати комісію, а для тебе ціна не зміниться.",
     keepLeave: "Лишити як відпустку",
     keepLeaveHint: "Завжди включати цей день",

@@ -166,6 +166,7 @@ export const ptPT: Copy = {
     tripStays: "Alojamento",
     tripFlights: "Voos",
     tripThings: "Atividades",
+    tripCars: "Aluguer de carro",
     tripDisclosure: "Links de parceiros: podemos receber uma comissão, sem custo adicional para ti.",
     keepLeave: "Manter como férias",
     keepLeaveHint: "Incluir sempre este dia",

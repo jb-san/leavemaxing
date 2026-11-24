@@ -167,6 +167,7 @@ export const fiFI: Copy = {
     tripStays: "Majoitus",
     tripFlights: "Lennot",
     tripThings: "Tekemistä",
+    tripCars: "Vuokra-auto",
     tripDisclosure: "Kumppanilinkit: voimme saada palkkion, eikä se maksa sinulle mitään ylimääräistä.",
     keepLeave: "Pidä lomana",
     keepLeaveHint: "Ota tämä päivä aina mukaan",

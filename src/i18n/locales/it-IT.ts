@@ -165,6 +165,7 @@ export const itIT: Copy = {
     tripStays: "Alloggi",
     tripFlights: "Voli",
     tripThings: "Attività",
+    tripCars: "Noleggio auto",
     tripDisclosure: "Link partner: potremmo ricevere una commissione, senza costi aggiuntivi per te.",
     keepLeave: "Tieni come ferie",
     keepLeaveHint: "Includi sempre questo giorno",

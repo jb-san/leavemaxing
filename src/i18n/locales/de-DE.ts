@@ -168,6 +168,7 @@ export const deDE: Copy = {
     tripStays: "Unterkünfte",
     tripFlights: "Flüge",
     tripThings: "Aktivitäten",
+    tripCars: "Mietwagen",
     tripDisclosure: "Partnerlinks: Wir erhalten eventuell eine Provision, für dich ohne Mehrkosten.",
     keepLeave: "Als Urlaub behalten",
     keepLeaveHint: "Diesen Tag immer einplanen",

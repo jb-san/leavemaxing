@@ -165,6 +165,7 @@ export const csCZ: Copy = {
     tripStays: "Ubytování",
     tripFlights: "Letenky",
     tripThings: "Zážitky",
+    tripCars: "Půjčení auta",
     tripDisclosure: "Partnerské odkazy: můžeme získat provizi, a tebe to nic navíc nestojí.",
     keepLeave: "Nechat jako dovolenou",
     keepLeaveHint: "Ten den vždycky zahrnout",

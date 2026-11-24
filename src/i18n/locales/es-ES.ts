@@ -166,6 +166,7 @@ export const esES: Copy = {
     tripStays: "Alojamiento",
     tripFlights: "Vuelos",
     tripThings: "Actividades",
+    tripCars: "Alquiler de coche",
     tripDisclosure: "Enlaces de socios: podemos recibir una comisión, sin coste adicional para ti.",
     keepLeave: "Dejarlo como vacaciones",
     keepLeaveHint: "Incluir siempre este día",

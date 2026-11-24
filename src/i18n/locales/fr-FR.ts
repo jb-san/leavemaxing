@@ -168,6 +168,7 @@ export const frFR: Copy = {
     tripStays: "Hébergement",
     tripFlights: "Vols",
     tripThings: "Activités",
+    tripCars: "Location de voiture",
     tripDisclosure:
       "Liens partenaires : nous pouvons toucher une commission, sans frais supplémentaires pour vous.",
     keepLeave: "Garder en congé",

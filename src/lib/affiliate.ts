@@ -1,95 +1,137 @@
 /**
- * "Plan this break" travel links: every affiliate setting lives in this module.
+ * "Plan this break" travel links: every affiliate setting lives in this module. See docs/affiliate.md.
  *
- * Without a Travelpayouts marker (or without a program ID for a partner) the links are plain
- * partner search URLs. With both, they are wrapped in a Travelpayouts deep link so the partner can
- * credit the booking. See docs/affiliate.md.
+ * A link only carries affiliate tracking when its partner is `enabled` and we have a link format for
+ * that partner that we could confirm. Anything else is the plain partner search URL, which still works.
  *
  * Everything here is pure: no DOM, no fetches, no Date objects in local time.
  */
 import { type DayNum, parts } from "./dates";
 
-/** Travelpayouts marker (partner ID). Set PUBLIC_TP_MARKER at build time to turn affiliate links on. */
-export const TP_MARKER: string =
-  ((import.meta.env.PUBLIC_TP_MARKER as string | undefined) ?? "").trim() || "";
+/** Travelpayouts marker (partner ID). PUBLIC_TP_MARKER at build time overrides it; empty turns tracking off. */
+export const TP_MARKER: string = (
+  (import.meta.env.PUBLIC_TP_MARKER as string | undefined) ?? "811075"
+).trim();
 
-export type Partner = "booking" | "kiwi" | "getyourguide";
-export type TripKind = "stays" | "flights" | "things";
+/** Travelpayouts project ID (`trs`), used on tp.media links. */
+export const TP_TRS = "606096";
 
-/**
- * Travelpayouts program IDs, the `p` parameter of a tp.media link. A partner with an empty ID is
- * never wrapped, so a missing ID gives a plain partner link instead of a broken redirect.
- *
- * TODO: confirm each ID in the Travelpayouts dashboard (Tools > Links, after joining the program).
- * TODO: Kiwi.com links are built from a "custom_url" template in Travelpayouts rather than the
- * generic link form; check that tp.media wrapping is accepted for Kiwi before filling its ID.
- */
-export const TP_PROGRAMS: Record<Partner, string> = {
-  booking: "",
-  kiwi: "",
-  getyourguide: "",
-};
+export type Partner = "aviasales" | "kiwi" | "booking" | "getyourguide" | "economybookings";
+export type TripKind = "flights" | "stays" | "things" | "cars";
 
-/**
- * Where a break's links point for one country.
- * `city`: where Stays and Things to do search (English name, free text on both partners).
- * `from`: Kiwi.com city slug the flight search starts from. Leave it out to hide Flights.
- * Flights go to "anywhere", which Kiwi.com supports.
- */
-export interface Destination {
-  city: string;
-  from?: string;
+export interface PartnerConfig {
+  /** Program connected in Travelpayouts. Flip to false to send plain links. */
+  enabled: boolean;
+  /**
+   * Travelpayouts program ID (`p` of a tp.media link). When set, enabled links are wrapped as
+   * `https://tp.media/r?marker=…&trs=…&p=…&u=…`. Leave empty until confirmed: a wrong ID breaks
+   * attribution, so an empty one falls back to the partner's own marker format or a plain link.
+   */
+  program: string;
 }
 
 /**
- * Per-country defaults. Countries missing here use the country name for Stays and Things to do
- * (both partners search countries too) and get no Flights button.
+ * Program status (24 Nov 2026). Link formats were checked against Travelpayouts' help centre; see
+ * docs/affiliate.md. TODO for every `program: ""`: the tp.media program ID (`p`) isn't published, so
+ * confirm it in the dashboard (Links > Create link, the long link shows `p=`) before filling it in.
+ */
+export const PARTNERS: Record<Partner, PartnerConfig> = {
+  // Connected. Travelpayouts' documented Kiwi.com deep-link wrapper (c111.travelpayouts.com).
+  kiwi: { enabled: true, program: "" },
+  // Connected. Aviasales' own `?marker=` parameter.
+  aviasales: { enabled: true, program: "" },
+  // Connected (car rental). Travelpayouts only turns Economybookings links into affiliate links in
+  // the dashboard generator, with no documented programmatic format, so links stay plain.
+  // TODO: fill in the program ID to wrap them via tp.media.
+  economybookings: { enabled: true, program: "" },
+  // Pending approval.
+  booking: { enabled: false, program: "" },
+  // Locked.
+  getyourguide: { enabled: false, program: "" },
+};
+
+/** Travelpayouts' Kiwi.com custom-link promo, from the "Kiwi.com affiliate links" help article. */
+export const KIWI_PROMO_ID = "3791";
+
+/**
+ * Which partner the Flights button uses. Kiwi.com searches from the country's origin to "anywhere"
+ * with full dates; Aviasales searches the country's popular destination. Both are tracked.
+ */
+export const FLIGHTS_PARTNER: "kiwi" | "aviasales" = "kiwi";
+
+/**
+ * Airlines sell seats about 330 days ahead (and Aviasales' `DDMM` dates carry no year: it picks the
+ * next matching date), so breaks further out than this get no Flights button.
+ */
+export const FLIGHT_WINDOW_DAYS = 330;
+
+/**
+ * Where a break's links point for one country.
+ * `city`: where Stays, Things to do and Car rental search (English name, free text).
+ * `air`: IATA city codes `[origin, destination]`, e.g. `["STO", "BCN"]`. Kiwi.com flies from the
+ * origin to anywhere; Aviasales from the origin to the destination. Without `air`, no Flights.
+ */
+export interface Destination {
+  city: string;
+  air?: readonly [string, string];
+}
+
+/**
+ * Per-country defaults. Origin is the capital or main hub; the flight destination is a popular
+ * trip from there. Countries missing here use the country name for Stays and Things to do (both
+ * partners search countries too) and get no Flights or Car rental button.
  */
 export const DESTINATIONS: Record<string, Destination> = {
-  AT: { city: "Vienna", from: "vienna-austria" },
-  AU: { city: "Sydney", from: "sydney-new-south-wales-australia" },
-  BE: { city: "Brussels", from: "brussels-belgium" },
-  BG: { city: "Sofia", from: "sofia-bulgaria" },
-  CA: { city: "Toronto", from: "toronto-ontario-canada" },
-  CH: { city: "Zurich", from: "zurich-switzerland" },
-  CY: { city: "Paphos" },
-  CZ: { city: "Prague", from: "prague-czechia" },
-  DE: { city: "Berlin", from: "berlin-germany" },
-  DK: { city: "Copenhagen", from: "copenhagen-denmark" },
-  EE: { city: "Tallinn", from: "tallinn-estonia" },
-  ES: { city: "Barcelona", from: "madrid-spain" },
-  FI: { city: "Helsinki", from: "helsinki-finland" },
-  FR: { city: "Paris", from: "paris-france" },
-  GB: { city: "London", from: "london-united-kingdom" },
-  GR: { city: "Athens", from: "athens-greece" },
-  HR: { city: "Split", from: "zagreb-croatia" },
-  HU: { city: "Budapest", from: "budapest-hungary" },
-  IE: { city: "Dublin", from: "dublin-ireland" },
-  IS: { city: "Reykjavik", from: "reykjavik-iceland" },
-  IT: { city: "Rome", from: "rome-italy" },
-  JP: { city: "Tokyo", from: "tokyo-japan" },
-  LT: { city: "Vilnius", from: "vilnius-lithuania" },
-  LU: { city: "Luxembourg", from: "luxembourg-luxembourg" },
-  LV: { city: "Riga", from: "riga-latvia" },
-  MT: { city: "Valletta" },
-  NL: { city: "Amsterdam", from: "amsterdam-netherlands" },
-  NO: { city: "Oslo", from: "oslo-norway" },
-  NZ: { city: "Auckland", from: "auckland-new-zealand" },
-  PL: { city: "Kraków", from: "warsaw-poland" },
-  PT: { city: "Lisbon", from: "lisbon-portugal" },
-  RO: { city: "Bucharest", from: "bucharest-romania" },
-  SE: { city: "Stockholm", from: "stockholm-sweden" },
-  SI: { city: "Ljubljana", from: "ljubljana-slovenia" },
-  SK: { city: "Bratislava", from: "bratislava-slovakia" },
+  AT: { city: "Vienna", air: ["VIE", "BCN"] },
+  AU: { city: "Sydney", air: ["SYD", "DPS"] },
+  BE: { city: "Brussels", air: ["BRU", "BCN"] },
+  BG: { city: "Sofia", air: ["SOF", "LON"] },
+  CA: { city: "Toronto", air: ["YTO", "LON"] },
+  CH: { city: "Zurich", air: ["ZRH", "LIS"] },
+  CY: { city: "Paphos", air: ["LCA", "ATH"] },
+  CZ: { city: "Prague", air: ["PRG", "BCN"] },
+  DE: { city: "Berlin", air: ["BER", "PMI"] },
+  DK: { city: "Copenhagen", air: ["CPH", "BCN"] },
+  EE: { city: "Tallinn", air: ["TLL", "BCN"] },
+  ES: { city: "Barcelona", air: ["MAD", "LON"] },
+  FI: { city: "Helsinki", air: ["HEL", "AGP"] },
+  FR: { city: "Paris", air: ["PAR", "LIS"] },
+  GB: { city: "London", air: ["LON", "BCN"] },
+  GR: { city: "Athens", air: ["ATH", "LON"] },
+  HR: { city: "Split", air: ["ZAG", "LON"] },
+  HU: { city: "Budapest", air: ["BUD", "LON"] },
+  IE: { city: "Dublin", air: ["DUB", "BCN"] },
+  IS: { city: "Reykjavik", air: ["REK", "LON"] },
+  IT: { city: "Rome", air: ["ROM", "LON"] },
+  JP: { city: "Tokyo", air: ["TYO", "SEL"] },
+  LT: { city: "Vilnius", air: ["VNO", "LON"] },
+  LU: { city: "Luxembourg", air: ["LUX", "LIS"] },
+  LV: { city: "Riga", air: ["RIX", "LON"] },
+  MT: { city: "Valletta", air: ["MLA", "LON"] },
+  NL: { city: "Amsterdam", air: ["AMS", "BCN"] },
+  NO: { city: "Oslo", air: ["OSL", "ALC"] },
+  NZ: { city: "Auckland", air: ["AKL", "SYD"] },
+  PL: { city: "Kraków", air: ["WAW", "LON"] },
+  PT: { city: "Lisbon", air: ["LIS", "PAR"] },
+  RO: { city: "Bucharest", air: ["BUH", "LON"] },
+  SE: { city: "Stockholm", air: ["STO", "BCN"] },
+  SI: { city: "Ljubljana", air: ["LJU", "LON"] },
+  SK: { city: "Bratislava", air: ["BTS", "LON"] },
   // No civil flights from Ukraine while its airspace is closed, so no Flights button.
   UA: { city: "Lviv" },
-  US: { city: "New York", from: "new-york-city-new-york-united-states" },
+  US: { city: "New York", air: ["NYC", "LON"] },
 };
 
 /** `YYYY-MM-DD` from the UTC calendar parts, so the time zone never shifts the date. */
 export function isoDay(day: DayNum): string {
   const { year, month, day: d } = parts(day);
   return `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
+/** `DDMM` for Aviasales search paths. */
+export function ddmm(day: DayNum): string {
+  const { month, day: d } = parts(day);
+  return `${String(d).padStart(2, "0")}${String(month).padStart(2, "0")}`;
 }
 
 /**
@@ -99,6 +141,25 @@ export function isoDay(day: DayNum): string {
  */
 export function tripDates(start: DayNum, end: DayNum): { from: string; to: string; checkout: string } {
   return { from: isoDay(start), to: isoDay(end), checkout: isoDay(end > start ? end : start + 1) };
+}
+
+/**
+ * Aviasales results page: `ORIGIN DDMM DEST DDMM` then the passenger count, e.g. `STO0112BCN08121`
+ * is Stockholm to Barcelona, 1 Dec back 8 Dec, one adult. Aviasales infers the year (the next
+ * matching date), which is right for a break that hasn't started.
+ */
+export function aviasalesUrl(origin: string, dest: string, depart: DayNum, back: DayNum, adults = 1): string {
+  const code = (iata: string) => encodeURIComponent(iata.toUpperCase());
+  return `https://www.aviasales.com/search/${code(origin)}${ddmm(depart)}${code(dest)}${ddmm(back)}${adults}`;
+}
+
+/**
+ * Kiwi.com deep link (the only Kiwi links Travelpayouts credits). `to` is an IATA code or `anywhere`.
+ * Dates are `YYYY-MM-DD`.
+ */
+export function kiwiUrl(from: string, to: string, departure: string, back: string): string {
+  const q = new URLSearchParams({ from, to, departure, return: back });
+  return `https://www.kiwi.com/deep?${q}`;
 }
 
 export function bookingUrl(city: string, checkin: string, checkout: string): string {
@@ -113,30 +174,49 @@ export function bookingUrl(city: string, checkin: string, checkout: string): str
   return `https://www.booking.com/searchresults.html?${q}`;
 }
 
-/** Kiwi.com results page. `to` is a city slug or `anywhere`. Dates are `YYYY-MM-DD`. */
-export function kiwiUrl(from: string, to: string, depart: string, back: string): string {
-  const path = [from, to, depart, back].map(encodeURIComponent).join("/");
-  return `https://www.kiwi.com/en/search/results/${path}`;
-}
-
 export function getYourGuideUrl(query: string, dateFrom: string, dateTo: string): string {
   const q = new URLSearchParams({ q: query, date_from: dateFrom, date_to: dateTo });
   return `https://www.getyourguide.com/s/?${q}`;
 }
 
 /**
- * Wrap a partner URL in a Travelpayouts deep link. Returns the URL unchanged without a marker or
- * a program ID. TODO: add `trs` (project ID) and `campaign_id` once confirmed in the dashboard.
+ * Economybookings car search for a pickup city (Travelpayouts' documented `idpick` link). Its
+ * search has no documented date parameters, so the visitor picks dates there.
  */
-export function affiliateUrl(
-  url: string,
-  partner: Partner,
-  marker: string = TP_MARKER,
-  programs: Record<Partner, string> = TP_PROGRAMS,
-): string {
-  const program = programs[partner];
-  if (!marker || !program) return url;
-  return `https://tp.media/r?marker=${encodeURIComponent(marker)}&p=${encodeURIComponent(program)}&u=${encodeURIComponent(url)}`;
+export function economyBookingsUrl(city: string): string {
+  return `https://www.economybookings.com/en?${new URLSearchParams({ idpick: city })}`;
+}
+
+export interface AffiliateOptions {
+  marker?: string;
+  trs?: string;
+  partners?: Record<Partner, PartnerConfig>;
+}
+
+/**
+ * Add affiliate tracking to a partner URL, in order of preference:
+ * 1. a Travelpayouts tp.media redirect, when the partner has a program ID;
+ * 2. the partner's documented format: Kiwi.com's c111 custom link, Aviasales' `marker` parameter;
+ * 3. otherwise the URL unchanged.
+ * Disabled partners and an empty marker always get the URL unchanged.
+ */
+export function affiliateUrl(url: string, partner: Partner, options: AffiliateOptions = {}): string {
+  const { marker = TP_MARKER, trs = TP_TRS, partners = PARTNERS } = options;
+  const config = partners[partner];
+  if (!marker || !config.enabled) return url;
+  if (config.program) {
+    const project = trs ? `&trs=${encodeURIComponent(trs)}` : "";
+    return `https://tp.media/r?marker=${encodeURIComponent(marker)}${project}&p=${encodeURIComponent(config.program)}&u=${encodeURIComponent(url)}`;
+  }
+  if (partner === "kiwi") {
+    return `https://c111.travelpayouts.com/click?shmarker=${encodeURIComponent(marker)}&promo_id=${KIWI_PROMO_ID}&source_type=customlink&type=click&custom_url=${encodeURIComponent(url)}`;
+  }
+  if (partner === "aviasales") {
+    const link = new URL(url);
+    link.searchParams.set("marker", marker);
+    return link.href;
+  }
+  return url;
 }
 
 export interface TripLink {
@@ -145,16 +225,17 @@ export interface TripLink {
   href: string;
 }
 
-export interface TripOptions {
+export interface TripOptions extends AffiliateOptions {
   /** Used for Stays and Things to do when the country has no entry, usually the country's name. */
   fallbackCity?: string;
-  marker?: string;
-  programs?: Record<Partner, string>;
+  flights?: "kiwi" | "aviasales";
+  /** Today, to leave out Flights for breaks beyond FLIGHT_WINDOW_DAYS. Omit to always offer Flights. */
+  today?: DayNum;
 }
 
 /**
- * Links for one break, in display order: Stays, Flights, Things to do. A button whose destination
- * is unknown is left out rather than pointing at a broken search.
+ * Links for one break, in display order: Flights, Stays, Things to do, Car rental. A button whose
+ * destination is unknown is left out rather than pointing at a broken search.
  */
 export function tripLinks(
   country: string,
@@ -162,15 +243,27 @@ export function tripLinks(
   end: DayNum,
   options: TripOptions = {},
 ): TripLink[] {
-  const { marker = TP_MARKER, programs = TP_PROGRAMS } = options;
   const dest = DESTINATIONS[country.toUpperCase()];
   const city = dest?.city ?? options.fallbackCity?.trim();
   const dates = tripDates(start, end);
   const links: TripLink[] = [];
   const add = (kind: TripKind, partner: Partner, url: string) =>
-    links.push({ kind, partner, href: affiliateUrl(url, partner, marker, programs) });
-  if (city) add("stays", "booking", bookingUrl(city, dates.from, dates.checkout));
-  if (dest?.from) add("flights", "kiwi", kiwiUrl(dest.from, "anywhere", dates.from, dates.to));
-  if (city) add("things", "getyourguide", getYourGuideUrl(city, dates.from, dates.to));
+    links.push({ kind, partner, href: affiliateUrl(url, partner, options) });
+
+  const air =
+    options.today === undefined || start - options.today <= FLIGHT_WINDOW_DAYS ? dest?.air : undefined;
+  if (air) {
+    if ((options.flights ?? FLIGHTS_PARTNER) === "kiwi") {
+      add("flights", "kiwi", kiwiUrl(air[0], "anywhere", dates.from, dates.to));
+    } else {
+      add("flights", "aviasales", aviasalesUrl(air[0], air[1], start, end));
+    }
+  }
+  if (city) {
+    add("stays", "booking", bookingUrl(city, dates.from, dates.checkout));
+    add("things", "getyourguide", getYourGuideUrl(city, dates.from, dates.to));
+  }
+  // Only real cities: a country name isn't a pickup location.
+  if (dest) add("cars", "economybookings", economyBookingsUrl(dest.city));
   return links;
 }

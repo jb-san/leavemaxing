@@ -165,6 +165,7 @@ export const svSE: Copy = {
     tripStays: "Boende",
     tripFlights: "Flyg",
     tripThings: "Upplevelser",
+    tripCars: "Hyrbil",
     tripDisclosure: "Partnerlänkar: vi kan få provision, utan extra kostnad för dig.",
     keepLeave: "Behåll som semester",
     keepLeaveHint: "Ta alltid med den här dagen",
