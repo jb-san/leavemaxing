@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 
 const pages = [
@@ -216,25 +217,91 @@ test("home and country pages link both bridge years", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Klämdagar 2027" })).toBeVisible();
 });
 
-const ADSENSE =
-  '<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1457689618305369" crossorigin="anonymous"></script>';
+const ADSENSE_SRC =
+  "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1457689618305369";
+const ADSENSE_SCRIPT = 'script[src*="pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"]';
 
-test("every page carries the AdSense tag, and ads.txt is published", async ({ page }) => {
+/** Stops requestIdleCallback from ever firing, so only an interaction or the 3.5 s fallback can add AdSense. */
+async function holdIdle(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    window.requestIdleCallback = () => 0;
+  });
+}
+
+test("every page carries the AdSense loader, and ads.txt is published", async ({ page }) => {
   test.skip(test.info().project.name !== "desktop", "the built files are the same for both browsers");
   const root = join(process.cwd(), "dist");
-  expect(readFileSync(join(root, "index.html"), "utf8")).toContain(ADSENSE);
-  expect(readFileSync(join(root, "de-de/index.html"), "utf8")).toContain(ADSENSE);
-  expect(readFileSync(join(root, "privacy-policy/index.html"), "utf8")).toContain(ADSENSE);
-  await page.goto("/de-de/");
-  const script = page.locator(
-    'script[src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1457689618305369"]',
-  );
-  await expect(script).toHaveCount(1);
-  await expect(script).toHaveJSProperty("async", true);
-  await expect(script).toHaveAttribute("crossorigin", "anonymous");
+  for (const file of ["index.html", "de-de/index.html", "privacy-policy/index.html"]) {
+    const html = readFileSync(join(root, file), "utf8");
+    expect(html).toContain(`s.src = "${ADSENSE_SRC}"`);
+    // No static tag: it's added by the inline loader after the page has loaded.
+    expect(html).not.toMatch(/<script[^>]*\ssrc="https:\/\/pagead2\.googlesyndication\.com/);
+  }
   const ads = await page.request.get("/ads.txt");
   expect(ads.ok()).toBe(true);
   expect((await ads.text()).trim()).toBe("google.com, pub-1457689618305369, DIRECT, f08c47fec0942fa0");
+});
+
+test("AdSense is added once, after load, with the same tag", async ({ page }) => {
+  await page.addInitScript((selector) => {
+    const w = window as unknown as { adsAt: Record<string, number> };
+    w.adsAt = {};
+    const count = () => document.querySelectorAll(selector).length;
+    document.addEventListener("DOMContentLoaded", () => {
+      w.adsAt.domcontentloaded = count();
+    });
+    addEventListener("load", () => {
+      w.adsAt.load = count();
+    });
+  }, ADSENSE_SCRIPT);
+  await page.goto("/de-de/");
+  const script = page.locator(ADSENSE_SCRIPT);
+  await expect(script).toHaveCount(1);
+  expect(await page.evaluate(() => (window as unknown as { adsAt: Record<string, number> }).adsAt)).toEqual({
+    domcontentloaded: 0,
+    load: 0,
+  });
+  await expect(script).toHaveAttribute("src", ADSENSE_SRC);
+  await expect(script).toHaveJSProperty("async", true);
+  await expect(script).toHaveAttribute("crossorigin", "anonymous");
+  // Interactions and the 3.5 s fallback after it must not add a second copy.
+  await page.evaluate(() => window.scrollBy(0, 400));
+  await page.keyboard.press("Shift");
+  await page.waitForTimeout(4_000);
+  await expect(script).toHaveCount(1);
+});
+
+test("the first scroll adds AdSense before the page goes idle", async ({ page }) => {
+  await holdIdle(page);
+  await page.goto("/de-de/", { waitUntil: "domcontentloaded" });
+  const script = page.locator(ADSENSE_SCRIPT);
+  await expect(script).toHaveCount(0);
+  // A box scrolling on its own (the phone month cards snap to this month on load) is not the reader scrolling.
+  const afterBoxScroll = await page.evaluate(
+    (selector) =>
+      new Promise<number>((resolve) => {
+        const box = document.createElement("div");
+        box.style.cssText = "overflow:auto;width:100px;height:20px";
+        box.innerHTML = '<div style="width:400px;height:20px"></div>';
+        document.body.append(box);
+        box.addEventListener("scroll", () => resolve(document.querySelectorAll(selector).length), {
+          once: true,
+        });
+        box.scrollLeft = 200;
+      }),
+    ADSENSE_SCRIPT,
+  );
+  expect(afterBoxScroll).toBe(0);
+  const afterScroll = await page.evaluate(
+    (selector) =>
+      new Promise<number>((resolve) => {
+        addEventListener("scroll", () => resolve(document.querySelectorAll(selector).length), { once: true });
+        window.scrollBy(0, 400);
+      }),
+    ADSENSE_SCRIPT,
+  );
+  expect(afterScroll).toBe(1);
+  await expect(script).toHaveAttribute("src", ADSENSE_SRC);
 });
 
 test("canonical, hreflang, and og:url drop plan query strings", async ({ page }) => {
@@ -301,9 +368,13 @@ test("ranking and compare links do not publish indexable plan queries", async ({
 });
 
 test("privacy settings queues Google's consent message without leaving the page", async ({ page }) => {
-  await page.goto("/de-de/");
+  // Click before AdSense has been added: the click itself adds it, and the loader runs the queue once it's in.
+  await holdIdle(page);
+  await page.goto("/de-de/", { waitUntil: "domcontentloaded" });
+  await expect(page.locator(ADSENSE_SCRIPT)).toHaveCount(0);
   await page.getByRole("button", { name: "Datenschutzeinstellungen" }).click();
   await expect(page).toHaveURL(/\/de-de\/$/);
+  await expect(page.locator(ADSENSE_SCRIPT)).toHaveCount(1);
   const queued = await page.evaluate(() => {
     const g = (
       window as unknown as {

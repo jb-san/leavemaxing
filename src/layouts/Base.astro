@@ -57,12 +57,33 @@ const ogImage = new URL(image, SITE.url).href;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <script
-      is:inline
-      async
-      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1457689618305369"
-      crossorigin="anonymous"
-    ></script>
+    {/*
+      AdSense (Auto ads), which also brings in Google's consent message. Added once, after the page has loaded and
+      gone idle, on the first interaction, or 3.5 s after load, whichever comes first, so it stays off the first paint.
+    */}
+    <script is:inline>
+      (() => {
+        const events = ["scroll", "pointerdown", "keydown", "touchstart"];
+        const opts = { passive: true };
+        let added = false;
+        const add = () => {
+          if (added) return;
+          added = true;
+          for (const type of events) removeEventListener(type, add, opts);
+          const s = document.createElement("script");
+          s.async = true;
+          s.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1457689618305369";
+          s.crossOrigin = "anonymous";
+          document.head.appendChild(s);
+        };
+        for (const type of events) addEventListener(type, add, opts);
+        addEventListener("load", () => {
+          if ("requestIdleCallback" in window) requestIdleCallback(add);
+          else setTimeout(add, 1);
+          setTimeout(add, 3500);
+        }, { once: true });
+      })();
+    </script>
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
