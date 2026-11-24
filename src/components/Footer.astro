@@ -19,7 +19,7 @@ const year = new Date().getFullYear();
   <div class="card flex flex-col gap-4 p-6 text-sm text-muted md:flex-row md:items-center md:justify-between">
     <div class="flex flex-col gap-1">
       <p>
-        © {year}{" "}<a class="font-semibold text-ink hover:underline" href={SITE.author.url}>{SITE.author.name}</a>. {c.footerCare}
+        © {year} <span class="font-semibold text-ink">{SITE.name}</span>. {c.footerCare}
       </p>
       <p>
         {c.footerDataFrom}{" "}
@@ -32,7 +32,6 @@ const year = new Date().getFullYear();
       <a href={localeContactPath(locale)} class="hover:text-ink">{c.footerContact}</a>
       <a href="/privacy-policy/" class="hover:text-ink">{c.footerPrivacy}</a>
       <a href={SITE.links.github} class="hover:text-ink">GitHub</a>
-      <a href={SITE.links.linkedin} class="hover:text-ink">LinkedIn</a>
     </nav>
   </div>
 </footer>

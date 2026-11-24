@@ -1,5 +1,6 @@
 ---
 import Base from "~/layouts/Base.astro";
+import { SITE } from "~/data/site";
 ---
 
 <Base title="Privacy policy · leavemaxxing" description="What leavemaxxing stores, what it measures, and what it never collects.">
@@ -51,7 +52,7 @@ import Base from "~/layouts/Base.astro";
       </p>
 
       <h2>Contact</h2>
-      <p>Questions? Reach Jonathan Borg through <a href="https://jonathanborg.net">jonathanborg.net</a>.</p>
+      <p>Questions? Open an issue on the project's <a href={SITE.links.github}>GitHub page</a>.</p>
     </div>
   </article>
 </Base>
