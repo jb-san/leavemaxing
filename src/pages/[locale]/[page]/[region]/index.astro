@@ -21,10 +21,11 @@ import { bridgeLinkLabel, localizedSeasonal, pageJsonLd, regionPlace, whereFor }
 import { toPlanInput, yearsNeeded } from "~/lib/planInput";
 import { plan } from "~/lib/planner/plan";
 import { bridgeRows, bridgeTableCopy, germanStateLanding, germanStateSummaries, inState } from "~/lib/landingPages";
+import { BRIDGE_PAGE_YEARS } from "~/i18n/routes";
 
 export function getStaticPaths() {
   const paths: Array<{ params: { locale: string; page: string; region: string } }> = [];
-  const years = [2027, 2028];
+  const years = BRIDGE_PAGE_YEARS;
   
   for (const [localeCode, locale] of Object.entries(locales)) {
     if (!isRegionalCountry(locale.country)) continue;

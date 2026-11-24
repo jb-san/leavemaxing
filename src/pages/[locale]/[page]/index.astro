@@ -32,10 +32,11 @@ import {
   swedishMonths,
   weekendHolidayFaq,
 } from "~/lib/landingPages";
+import { BRIDGE_PAGE_YEARS } from "~/i18n/routes";
 
 export function getStaticPaths() {
   const paths: Array<{ params: { locale: string; page: string } }> = [];
-  const years = [2027, 2028];
+  const years = BRIDGE_PAGE_YEARS;
   
   for (const [localeCode, locale] of Object.entries(locales)) {
     for (const year of years) {

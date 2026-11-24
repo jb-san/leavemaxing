@@ -67,6 +67,11 @@ export interface PlannerProps {
   /** The locale's planner strings. Required with `locale`. */
   messages?: PlannerMessages;
   /**
+   * Localized pages to share instead of the English country page, keyed `SE/2027`: a plan shared
+   * from a German page opens (and previews) in German.
+   */
+  sharePaths?: Record<string, string>;
+  /**
    * How to replace a past default. Locale homes already move to next year from
    * October (`late`). Everywhere else stays on the calendar year.
    */
@@ -317,7 +322,7 @@ function PlannerApp(props: PlannerProps) {
   const yearLabel = leaveYearLabel(settings.year, settings.yearStart);
   const fileName = `leavemaxxing-${settings.country.toLowerCase()}-${settings.year}`;
   const origin = typeof window !== "undefined" ? window.location.origin : "https://leavemaxxing.com";
-  const url = shareUrl(settings, origin);
+  const url = shareUrl(settings, origin, props.sharePaths?.[`${settings.country}/${settings.year}`]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: range is derived from the plan input
   const card = useMemo(() => {
     const stats = result.plan.stats;

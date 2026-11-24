@@ -22,7 +22,21 @@ describe("day encoding", () => {
 describe("settings in the URL", () => {
   it("omits defaults", () => {
     expect(toQuery(defaultSettings("DE", 2027)).toString()).toBe("");
-    expect(shareUrl(defaultSettings("DE", 2027))).toBe("https://leavemaxxing.com/de/2027/");
+  });
+
+  it("always shares the leave days, first", () => {
+    expect(shareUrl(defaultSettings("DE", 2027))).toBe("https://leavemaxxing.com/de/2027/?d=20");
+    const s = { ...defaultSettings("DE", 2027), budget: 30, style: "long" as const };
+    expect(shareUrl(s, "https://example.com")).toBe("https://example.com/de/2027/?d=30&s=long");
+  });
+
+  it("shares a localized page when given one, and the link restores the plan there", () => {
+    const s = { ...defaultSettings("DE", 2027), budget: 20 };
+    const url = new URL(shareUrl(s, "https://leavemaxxing.com", "/de-de/brueckentage-2027/"));
+    expect(url.pathname).toBe("/de-de/brueckentage-2027/");
+    // The German page starts from 30 days, so the link has to say 20.
+    const germanDefault = { ...defaultSettings("DE", 2027), budget: 30 };
+    expect(fromQuery(url.searchParams, germanDefault, {}).settings.budget).toBe(20);
   });
 
   it("round-trips everything", () => {

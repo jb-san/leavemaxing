@@ -1,7 +1,9 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { locales } from "~/data/locales";
 import { getCopy, normalizeLocale } from "~/i18n";
 import type { PlannerMessages } from "~/i18n/context";
+import { BRIDGE_PAGE_YEARS } from "~/i18n/routes";
 import { localToday } from "~/lib/dates";
 import type { HolidayFile } from "~/lib/holidays";
 import { toPlanInput, yearsNeeded } from "~/lib/planInput";
@@ -83,6 +85,18 @@ export function plannerProps(
     files,
     today: buildToday,
     plan: shown,
-    ...(code === "en" ? {} : { locale: code, messages: getCopy(code).planner }),
+    ...(code === "en" ? {} : { locale: code, messages: getCopy(code).planner, sharePaths: sharePaths(code) }),
   };
+}
+
+/** A locale's bridge-day pages, which shared plans for its country and those years open. */
+function sharePaths(code: string): Record<string, string> {
+  const locale = locales[code];
+  if (!locale) return {};
+  return Object.fromEntries(
+    BRIDGE_PAGE_YEARS.filter((year) => readHolidayFile(locale.country, year)).map((year) => [
+      `${locale.country}/${year}`,
+      `/${code.toLowerCase()}/${locale.slug}-${year}/`,
+    ]),
+  );
 }
