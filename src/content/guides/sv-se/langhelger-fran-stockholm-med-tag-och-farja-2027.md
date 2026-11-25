@@ -69,7 +69,7 @@ Färjan från Nynäshamn till Visby tar runt tre timmar. Gotland i början av ma
 
 ### Stockholms skärgård
 
-Waxholmsbolagets båtar från Strömkajen i centrala Stockholm når Vaxholm på ungefär en timme och öar som Grinda, Möja och Utö på några timmar. Vårtidtabellen är glesare än sommarens, som normalt börjar i juni, och många restauranger och vandrarhem på öarna öppnar bara för sommarsäsongen. Under påsk och Kristi himmelfärd, välj en ö med boende som är öppet året runt eller gör en dagstur; till midsommar är skärgården dit halva Stockholm åker.
+Waxholmsbolagets båtar från Strömkajen i centrala Stockholm når Vaxholm på ungefär en timme och öar som Grinda, Möja och Utö på några timmar. Vårtidtabellen är glesare än sommarens, som normalt börjar i juni, och många restauranger och vandrarhem på öarna öppnar bara för sommarsäsongen. Under påsk och Kristi himmelfärd, välj en ö med boende som är öppet året runt eller gör en dagstur; till midsommar är skärgården dit många stockholmare åker.
 
 ## Om du hellre flyger
 

@@ -61,6 +61,16 @@ Die Mosel, das Mittelrheintal und die Sächsische Schweiz sind im Frühling am s
 
 Und dann ist da noch die deutsche Tradition: Himmelfahrt ist auch Vatertag oder Herrentag, an dem Männergruppen mit einem Bollerwagen voller Getränke loswandern. Feldwege und Regionalzüge können am Donnerstag voll und laut sein. Wenn du ruhig wandern willst, ist der Freitag entspannter.
 
+## Drei Beispiele für vier Tage mit dem Zug
+
+So kann ein Himmelfahrtswochenende ohne Flugzeug aussehen, jeweils mit Anreise am Donnerstagmorgen und Rückfahrt am Sonntagmittag:
+
+- **Ab München nach Wien.** Etwa vier Stunden mit dem Railjet, am Donnerstagnachmittag bist du in der Stadt. Freitag für die großen Museen, Samstag für den Prater oder einen Ausflug in die Weinberge am Stadtrand, Sonntagvormittag im Kaffeehaus, dann zurück.
+- **Ab Köln nach Paris.** Etwa dreieinhalb Stunden, Ankunft mitten in der Stadt. Da Himmelfahrt in Frankreich auch Feiertag ist, haben am Donnerstag manche Geschäfte zu; heb dir die Einkaufsstraßen für Freitag und Samstag auf und reservier für die großen Museen Zeitfenster-Tickets.
+- **Ab Berlin nach Prag.** Etwa viereinhalb Stunden durchs Elbtal. In Tschechien ist Himmelfahrt kein Feiertag, die Stadt läuft also ganz normal. Plan einen Tag für die Burg und die Kleinseite ein und einen für die Viertel jenseits der Altstadt.
+
+Für alle drei gilt: Die Züge am Donnerstagmorgen und Sonntagabend sind die vollsten. Reservier einen Sitzplatz, wenn du einen sicher haben willst.
+
 ## Die lange Variante: fast zwei Wochen für sechs Urlaubstage
 
 Wenn du sechs Tage übrig hast, gehört die Zeit von Himmelfahrt bis Pfingsten zu den besten des Jahres: zwölf Tage vom 6. bis 17. Mai. Das reicht für Reisen, die nicht in ein langes Wochenende passen:

@@ -81,7 +81,7 @@ En varning som överraskar folk varje år: i stora delar av Centraleuropa är ju
 
 Har du inte bokat något ännu är du sent ute för julveckan, men inte för ledigheten. Det här brukar hjälpa:
 
-1. **Flytta avresan, inte resmålet.** Julafton, nyårsafton och nyårsdagen hör ofta till periodens billigaste dagar att flyga, eftersom nästan ingen vill. Kan du äta julbord på julaftons lunch och flyga på kvällen, eller flyga på nyårsdagens morgon, sparar du ofta mycket.
+1. **Flytta avresan, inte resmålet.** Julafton, nyårsafton och nyårsdagen hör ofta till periodens billigaste dagar att flyga, eftersom nästan ingen vill. Kan du fira julafton till lunch och flyga på kvällen, eller flyga på nyårsdagens morgon, sparar du ofta mycket.
 2. **Sök på "vart som helst" först.** När dagarna är låsta kommer du mycket längre med att vara flexibel med vart du åker än med när. Kiwi.com, Google Flights och Skyscanner har alla en sökning utan resmål.
 3. **Titta på Kastrup.** Från Skåne har Köpenhamns flygplats ofta fler direktlinjer än Malmö och till och med Arlanda.
 4. **Ta det andra alternativet om det första är slut.** Ledigheten från 31 december till 10 januari kostar en semesterdag mer, och januari är oftast lugnare än julveckan.
