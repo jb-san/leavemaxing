@@ -10,6 +10,7 @@ export const ukUA: Copy = {
     navBest: "Найкращі країни",
     navTogether: "Разом",
     navPlans: "Мої плани",
+    navGuides: "Путівники",
     navMenu: "Меню",
     navMain: "Навігація",
     footerCare: "Плануй обережно: дати завжди звіряй із роботодавцем.",

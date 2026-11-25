@@ -1,0 +1,8 @@
+---
+import GuideList from "~/components/guides/GuideList.astro";
+import { guideSummaries } from "~/lib/guideEntries";
+
+const guides = await guideSummaries("en");
+---
+
+<GuideList locale="en" guides={guides} />

@@ -10,6 +10,7 @@ export const svSE: Copy = {
     navBest: "Bästa länderna",
     navTogether: "Tillsammans",
     navPlans: "Mina planer",
+    navGuides: "Guider",
     navMenu: "Meny",
     navMain: "Huvudmeny",
     footerCare: "Planera med förbehåll: stäm alltid av datumen med arbetsgivaren.",

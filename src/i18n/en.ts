@@ -11,6 +11,7 @@ export const en: Copy = {
     navBest: "Best countries",
     navTogether: "Together",
     navPlans: "My plans",
+    navGuides: "Guides",
     navMenu: "Menu",
     navMain: "Main",
     footerCare: "Plan with care: always check dates with your employer.",

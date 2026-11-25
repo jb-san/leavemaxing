@@ -557,6 +557,45 @@
   .prose-lm li {
     margin-block: 0.35em;
   }
+  .prose-lm h3 {
+    font-size: 1.15rem;
+    font-weight: 750;
+    margin-top: 1.4em;
+  }
+  .prose-lm strong {
+    font-weight: 750;
+  }
+  .prose-lm blockquote {
+    border-left: 4px solid var(--lime);
+    padding-left: 1em;
+    color: var(--muted);
+  }
+  .prose-lm table {
+    display: block;
+    overflow-x: auto;
+    border-collapse: collapse;
+    margin-block: 1.2em;
+    font-size: 0.95rem;
+  }
+  .prose-lm th,
+  .prose-lm td {
+    border-bottom: 1px solid var(--line);
+    padding: 0.45em 0.8em 0.45em 0;
+    text-align: left;
+    vertical-align: top;
+  }
+  .prose-lm th {
+    font-weight: 750;
+  }
+  /* Partner searches in guides (src/lib/guideLinks.ts): the planner row's lime, as a link. */
+  .prose-lm a.guide-partner {
+    font-weight: 700;
+    text-decoration-thickness: 4px;
+  }
+  .prose-lm a.guide-partner::after {
+    content: " ↗";
+    font-weight: 600;
+  }
 }
 
 /* Calendar cells: date on top, status circle below, break capsule behind the circles. */

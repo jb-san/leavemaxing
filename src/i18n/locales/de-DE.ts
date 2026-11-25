@@ -10,6 +10,7 @@ export const deDE: Copy = {
     navBest: "Beste Länder",
     navTogether: "Gemeinsam",
     navPlans: "Meine Pläne",
+    navGuides: "Ratgeber",
     navMenu: "Menü",
     navMain: "Hauptnavigation",
     footerCare: "Plane mit Augenmaß: Die Termine immer mit dem Arbeitgeber abgleichen.",

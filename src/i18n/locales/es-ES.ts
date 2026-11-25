@@ -10,6 +10,7 @@ export const esES: Copy = {
     navBest: "Mejores países",
     navTogether: "Juntos",
     navPlans: "Mis planes",
+    navGuides: "Guías",
     navMenu: "Menú",
     navMain: "Navegación",
     footerCare: "Planifica con cuidado: contrasta siempre las fechas con tu empresa.",

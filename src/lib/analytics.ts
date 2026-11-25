@@ -12,6 +12,7 @@ export type PageKind =
   | "about"
   | "contact"
   | "privacy"
+  | "guides"
   | "other";
 
 /** Public fields shared by planner events. */
@@ -51,6 +52,7 @@ export function pageKind(pathname: string): PageKind {
   if (path === "/about/" || /^\/[a-z]{2}-[a-z]{2}\/about\/$/.test(path)) return "about";
   if (path === "/contact/" || /^\/[a-z]{2}-[a-z]{2}\/contact\/$/.test(path)) return "contact";
   if (path.startsWith("/privacy")) return "privacy";
+  if (/^\/(?:[a-z]{2}-[a-z]{2}\/)?guides\//.test(path)) return "guides";
   if (
     /^\/[a-z]{2}\/$/.test(path) ||
     /^\/[a-z]{2}\/\d{4}\//.test(path) ||

@@ -10,6 +10,7 @@ export const nlNL: Copy = {
     navBest: "Beste landen",
     navTogether: "Samen",
     navPlans: "Mijn plannen",
+    navGuides: "Reisgidsen",
     navMenu: "Menu",
     navMain: "Hoofdmenu",
     footerCare: "Plan met een slag om de arm: check de datums altijd bij je werkgever.",

@@ -1,0 +1,147 @@
+---
+import GuideCard from "~/components/guides/GuideCard.astro";
+import { countryByCode } from "~/data";
+import { locales } from "~/data/locales";
+import { SITE } from "~/data/site";
+import { fill, getCopy } from "~/i18n";
+import { countryName } from "~/i18n/format";
+import { BRIDGE_PAGE_YEARS } from "~/i18n/routes";
+import Base from "~/layouts/Base.astro";
+import type { GuideEntry } from "~/lib/guideEntries";
+import { hasPartnerLinks, renderGuideLinks } from "~/lib/guideLinks";
+import {
+  GUIDE_COPY,
+  type GuideSummary,
+  formatGuideDate,
+  guideAlternates,
+  guideCategoryPath,
+  guideHubPath,
+  guideJsonLd,
+  guideOgPath,
+  guidePath,
+  guideRssPath,
+  readingMinutes,
+} from "~/lib/guides";
+
+interface Props {
+  entry: GuideEntry;
+  guide: GuideSummary;
+  /** Every published guide in every language, for hreflang and "more guides". */
+  all: GuideSummary[];
+}
+
+const { entry, guide, all } = Astro.props;
+const copy = GUIDE_COPY[guide.locale];
+const ui = getCopy(guide.locale);
+const url = `${SITE.url}${guidePath(guide.locale, guide.slug)}`;
+const image = guideOgPath(guide.locale, guide.slug);
+const hreflangs = guideAlternates(guide, all, SITE.url);
+const versions = all.filter((item) => item.translationKey === guide.translationKey && item.locale !== guide.locale);
+const switcher = Object.fromEntries(versions.map((item) => [item.locale, guidePath(item.locale, item.slug)]));
+const home = guide.locale === "en" ? "/" : `/${guide.locale.toLowerCase()}/`;
+const partnerLinks = hasPartnerLinks(entry.body ?? "");
+const html = renderGuideLinks(entry.rendered?.html ?? "", { country: guide.countries[0] });
+
+// Planner pages for the guide's countries and years, in the guide's language where one exists.
+const plannerLinks = guide.countries.flatMap((cc) => {
+  const country = countryByCode.get(cc);
+  if (!country) return [];
+  const local = Object.values(locales).find((item) => item.code === guide.locale && item.country === cc);
+  const name = countryName(cc, guide.locale, country.name);
+  const years = guide.years.length > 0 ? guide.years : [2027];
+  return years.map((year) => ({
+    href: local && BRIDGE_PAGE_YEARS.includes(year) ? `/${local.code.toLowerCase()}/${local.slug}-${year}/` : `/${cc.toLowerCase()}/${year}/`,
+    label: `${name} ${year}`,
+  }));
+});
+
+const sameLocale = all.filter((item) => item.locale === guide.locale && item.slug !== guide.slug);
+const more = [
+  ...sameLocale.filter((item) => item.category === guide.category),
+  ...sameLocale.filter((item) => item.category !== guide.category),
+].slice(0, 3);
+---
+
+<Base
+  title={`${guide.title} · leavemaxxing`}
+  description={guide.description}
+  locale={guide.locale === "en" ? undefined : guide.locale}
+  lang={copy.lang}
+  canonical={url}
+  hreflangs={hreflangs}
+  image={image}
+  jsonLd={guideJsonLd({ guide, siteUrl: SITE.url, image })}
+  feed={{ href: guideRssPath(guide.locale), title: copy.rssTitle }}
+  article={{ published: guide.published, modified: guide.updated, section: copy.categories[guide.category].label }}
+  switcher={switcher}
+>
+  <article class="mx-auto max-w-3xl" data-guide>
+    <nav aria-label="Breadcrumb" class="pb-3 pt-2 text-sm font-semibold text-muted">
+      <a href={home} class="hover:text-ink">{copy.homeBreadcrumb}</a>{" / "}
+      <a href={guideHubPath(guide.locale)} class="hover:text-ink">{copy.hubBreadcrumb}</a>{" / "}
+      <a href={guideCategoryPath(guide.locale, guide.category)} class="hover:text-ink">{copy.categories[guide.category].label}</a>
+    </nav>
+    <header class="flex flex-col gap-3">
+      <h1 class="text-[clamp(28px,4vw,42px)] font-extrabold leading-tight">{guide.title}</h1>
+      <p class="text-lg text-muted">{guide.description}</p>
+      <p class="flex flex-wrap gap-x-4 gap-y-1 text-sm font-semibold text-muted">
+        <span>{copy.byline}</span>
+        <span>{copy.published} <time datetime={guide.published}>{formatGuideDate(guide.locale, guide.published)}</time></span>
+        {
+          guide.updated !== guide.published && (
+            <span>{copy.updated} <time datetime={guide.updated}>{formatGuideDate(guide.locale, guide.updated)}</time></span>
+          )
+        }
+        <span>{fill(copy.minRead, { n: readingMinutes(guide.words) })}</span>
+      </p>
+      {
+        versions.length > 0 && (
+          <p class="text-sm text-muted">
+            {copy.otherLanguages}{" "}
+            {versions.map((item, index) => (
+              <>
+                {index > 0 && ", "}
+                <a href={guidePath(item.locale, item.slug)} hreflang={item.locale} lang={GUIDE_COPY[item.locale].lang} class="font-semibold underline decoration-lime decoration-[3px] underline-offset-4">
+                  {item.title}
+                </a>
+              </>
+            ))}
+          </p>
+        )
+      }
+      {partnerLinks && <p class="text-xs text-muted" data-guide-disclosure>{ui.planner.tripDisclosure}</p>}
+    </header>
+
+    <div class="card mt-6 p-6 sm:p-10">
+      <div class="prose-lm max-w-none">
+        <Fragment set:html={html} />
+      </div>
+      <p class="mt-8 border-t border-line pt-4 text-sm text-muted">{copy.checkNote}</p>
+    </div>
+
+    {
+      plannerLinks.length > 0 && (
+        <section class="card mt-5 p-5 sm:p-6">
+          <h2 class="text-xl font-bold">{copy.plannerCta}</h2>
+          <p class="mt-1 text-sm text-muted">{copy.plannerCtaBody}</p>
+          <p class="mt-4 flex flex-wrap gap-2">
+            {plannerLinks.map((link) => (
+              <a href={link.href} class="btn-soft rounded-full px-4 py-2 text-sm font-bold">{link.label}</a>
+            ))}
+          </p>
+        </section>
+      )
+    }
+  </article>
+
+  {
+    more.length > 0 && (
+      <section class="mx-auto mt-10 max-w-5xl">
+        <h2 class="mb-4 text-2xl font-bold">{copy.moreGuides}</h2>
+        <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
+          {more.map((item) => <GuideCard guide={item} level={3} />)}
+        </div>
+      </section>
+    )
+  }
+</Base>

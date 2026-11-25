@@ -1,4 +1,5 @@
 ---
+import PlannerGuides from "~/components/guides/PlannerGuides.astro";
 import HolidayList from "~/components/HolidayList.astro";
 import SeasonalIntro from "~/components/SeasonalIntro.astro";
 import { YearLinks } from "~/components/YearChoices";
@@ -178,4 +179,5 @@ const jsonLd = pageJsonLd({
       </section>
     )
   }
+  <PlannerGuides locale="en" country={code} year={year} />
 </Base>

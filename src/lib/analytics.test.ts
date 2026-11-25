@@ -85,6 +85,10 @@ describe("pageKind", () => {
     expect(pageKind("/about/")).toBe("about");
     expect(pageKind("/de-de/contact/")).toBe("contact");
     expect(pageKind("/privacy-policy/")).toBe("privacy");
+    expect(pageKind("/guides/")).toBe("guides");
+    expect(pageKind("/guides/midsummer-2027-sweden/")).toBe("guides");
+    expect(pageKind("/sv-se/guides/midsommar-2027/")).toBe("guides");
+    expect(pageKind("/de-de/guides/category/planning-tips/")).toBe("guides");
     expect(pageKind("/offline")).toBe("other");
   });
 });

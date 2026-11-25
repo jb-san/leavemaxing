@@ -1,0 +1,16 @@
+---
+import GuideArticle from "~/components/guides/GuideArticle.astro";
+import { guideEntries, guideSummaries } from "~/lib/guideEntries";
+
+export async function getStaticPaths() {
+  const all = await guideSummaries();
+  return (await guideEntries("en")).map(({ entry, summary }) => ({
+    params: { slug: summary.slug },
+    props: { entry, guide: summary, all },
+  }));
+}
+
+const { entry, guide, all } = Astro.props;
+---
+
+<GuideArticle entry={entry} guide={guide} all={all} />

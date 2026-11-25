@@ -10,6 +10,7 @@ export const frFR: Copy = {
     navBest: "Meilleurs pays",
     navTogether: "Ensemble",
     navPlans: "Mes plans",
+    navGuides: "Guides",
     navMenu: "Menu",
     navMain: "Navigation",
     footerCare: "Planifiez avec prudence : vérifiez toujours les dates avec votre employeur.",
