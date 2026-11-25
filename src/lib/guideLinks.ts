@@ -82,7 +82,13 @@ export function parseGuideHref(href: string): ParsedGuideLink | null {
     const end = fromIso(back as string);
     if (end < start) fail("return is before departure");
     return {
-      spec: { kind: "flights", from: from as string, to: to as string, departure: departure as string, back: back as string },
+      spec: {
+        kind: "flights",
+        from: from as string,
+        to: to as string,
+        departure: departure as string,
+        back: back as string,
+      },
       start,
       end,
     };

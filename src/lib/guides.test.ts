@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  formatGuideDate,
   GUIDE_CATEGORIES,
   GUIDE_COPY,
   GUIDE_LOCALE_CODES,
   type GuideSummary,
-  formatGuideDate,
   guideAlternates,
   guideCategoryPath,
   guideHubPath,
@@ -58,7 +58,8 @@ describe("guide routes", () => {
 
   it("has copy for every guide language and category", () => {
     for (const locale of GUIDE_LOCALE_CODES) {
-      for (const category of GUIDE_CATEGORIES) expect(GUIDE_COPY[locale].categories[category].label).not.toBe("");
+      for (const category of GUIDE_CATEGORIES)
+        expect(GUIDE_COPY[locale].categories[category].label).not.toBe("");
       expect(GUIDE_COPY[locale].minRead).toContain("{n}");
     }
   });
@@ -66,7 +67,8 @@ describe("guide routes", () => {
 
 describe("word count and reading time", () => {
   it("counts running text, not markup or link targets", () => {
-    const md = "## Heading here\n\nOne two [three four](flights:STO/anywhere/2027-05-06/2027-05-09) five.\n\n| a | b |\n| --- | --- |\n| six | 7 |";
+    const md =
+      "## Heading here\n\nOne two [three four](flights:STO/anywhere/2027-05-06/2027-05-09) five.\n\n| a | b |\n| --- | --- |\n| six | 7 |";
     expect(wordCount(md)).toBe(11);
     expect(readingMinutes(0)).toBe(1);
     expect(readingMinutes(1100)).toBe(5);
@@ -102,7 +104,11 @@ describe("hreflang", () => {
 
 describe("structured data", () => {
   it("is a BlogPosting by the organisation, with breadcrumbs", () => {
-    const data = guideJsonLd({ guide: guide(), siteUrl: SITE, image: "/og/guides/en/midsummer-2027-sweden.png" });
+    const data = guideJsonLd({
+      guide: guide(),
+      siteUrl: SITE,
+      image: "/og/guides/en/midsummer-2027-sweden.png",
+    });
     const [post, crumbs] = data["@graph"] as Array<Record<string, unknown>>;
     expect(post).toMatchObject({
       "@type": "BlogPosting",
@@ -122,7 +128,11 @@ describe("structured data", () => {
 
 describe("RSS", () => {
   it("lists guides newest first with escaped text", () => {
-    const xml = guideRss("en", [guide({ slug: "old", published: "2026-11-18", title: "Old" }), guide()], SITE);
+    const xml = guideRss(
+      "en",
+      [guide({ slug: "old", published: "2026-11-18", title: "Old" }), guide()],
+      SITE,
+    );
     expect(xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>')).toBe(true);
     expect(xml.indexOf("midsummer-2027-sweden")).toBeLessThan(xml.indexOf("/guides/old/"));
     expect(xml).toContain("<description>Dates &amp; tips &lt;for&gt; Midsummer</description>");
@@ -134,15 +144,19 @@ describe("RSS", () => {
 describe("planner links", () => {
   it("picks guides for the page's language, country and year", () => {
     const list = [guide(), guide({ slug: "de", countries: ["DE"] }), guide({ slug: "any", years: [] })];
-    expect(guidesForPlanner(list, "en", "se", 2027).map((item) => item.slug)).toEqual(["midsummer-2027-sweden", "any"]);
+    expect(guidesForPlanner(list, "en", "se", 2027).map((item) => item.slug)).toEqual([
+      "midsummer-2027-sweden",
+      "any",
+    ]);
     expect(guidesForPlanner(list, "en", "SE", 2028).map((item) => item.slug)).toEqual(["any"]);
     expect(guidesForPlanner(list, "sv-SE", "SE", 2027)).toEqual([]);
   });
 
   it("sorts newest first", () => {
-    expect(sortGuides([guide({ published: "2026-11-18" }), guide({ published: "2026-11-20" })]).map((g) => g.published)).toEqual([
-      "2026-11-20",
-      "2026-11-18",
-    ]);
+    expect(
+      sortGuides([guide({ published: "2026-11-18" }), guide({ published: "2026-11-20" })]).map(
+        (g) => g.published,
+      ),
+    ).toEqual(["2026-11-20", "2026-11-18"]);
   });
 });

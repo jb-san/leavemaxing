@@ -23,17 +23,28 @@ describe("guideLink", () => {
       { kind: "flights", from: "STO", to: "lpa", departure: "2026-12-26", back: "2027-01-03" },
       { marker: "" },
     );
-    expect(link.href).toBe("https://www.kiwi.com/deep?from=STO&to=LPA&departure=2026-12-26&return=2027-01-03");
+    expect(link.href).toBe(
+      "https://www.kiwi.com/deep?from=STO&to=LPA&departure=2026-12-26&return=2027-01-03",
+    );
   });
 
   it("keeps disabled partners plain", () => {
     expect(PARTNERS.booking.enabled).toBe(false);
     expect(PARTNERS.getyourguide.enabled).toBe(false);
-    const stays = guideLink({ kind: "stays", city: "Leksand", checkin: "2027-06-24", checkout: "2027-06-27" });
+    const stays = guideLink({
+      kind: "stays",
+      city: "Leksand",
+      checkin: "2027-06-24",
+      checkout: "2027-06-27",
+    });
     expect(stays.partner).toBe("booking");
-    expect(stays.href).toMatch(/^https:\/\/www\.booking\.com\/searchresults\.html\?ss=Leksand&checkin=2027-06-24&checkout=2027-06-27/);
+    expect(stays.href).toMatch(
+      /^https:\/\/www\.booking\.com\/searchresults\.html\?ss=Leksand&checkin=2027-06-24&checkout=2027-06-27/,
+    );
     const things = guideLink({ kind: "things", query: "Nuremberg", from: "2026-12-10", to: "2026-12-13" });
-    expect(things.href).toBe("https://www.getyourguide.com/s/?q=Nuremberg&date_from=2026-12-10&date_to=2026-12-13");
+    expect(things.href).toBe(
+      "https://www.getyourguide.com/s/?q=Nuremberg&date_from=2026-12-10&date_to=2026-12-13",
+    );
   });
 
   it("sends every link plain with an empty marker", () => {
@@ -60,7 +71,9 @@ describe("parseGuideHref", () => {
       checkin: "2027-02-20",
       checkout: "2027-02-27",
     });
-    expect(parseGuideHref("things:N%C3%BCrnberg/2026-12-10/2026-12-13")?.spec).toMatchObject({ query: "Nürnberg" });
+    expect(parseGuideHref("things:N%C3%BCrnberg/2026-12-10/2026-12-13")?.spec).toMatchObject({
+      query: "Nürnberg",
+    });
   });
 
   it("ignores ordinary links", () => {
@@ -78,12 +91,17 @@ describe("parseGuideHref", () => {
 });
 
 describe("bookable", () => {
-  const ascension = parseGuideHref("flights:STO/anywhere/2027-05-06/2027-05-09")!;
+  const parse = (href: string) => {
+    const parsed = parseGuideHref(href);
+    if (!parsed) throw new Error(href);
+    return parsed;
+  };
+  const ascension = parse("flights:STO/anywhere/2027-05-06/2027-05-09");
   it("drops past dates and flights beyond the sales window", () => {
     expect(bookable(ascension, fromIso("2026-11-25"))).toBe(true);
     expect(bookable(ascension, fromIso("2027-05-07"))).toBe(false);
     expect(bookable(ascension, fromIso("2026-05-01"))).toBe(false);
-    const stays = parseGuideHref("stays:Leksand/2027-06-24/2027-06-27")!;
+    const stays = parse("stays:Leksand/2027-06-24/2027-06-27");
     expect(bookable(stays, fromIso("2026-05-01"))).toBe(true);
   });
 });
@@ -100,8 +118,12 @@ describe("renderGuideLinks", () => {
       'data-track="affiliate_click" data-track-partner="kiwi" data-track-kind="flights" data-track-country="SE" data-track-days="4"',
     );
     expect(out).toContain("shmarker=811075");
-    expect(out).toContain('data-track-partner="booking" data-track-kind="stays" data-track-country="SE" data-track-days="4"');
-    expect(out).toContain('href="https://www.booking.com/searchresults.html?ss=Leksand&amp;checkin=2027-06-24');
+    expect(out).toContain(
+      'data-track-partner="booking" data-track-kind="stays" data-track-country="SE" data-track-days="4"',
+    );
+    expect(out).toContain(
+      'href="https://www.booking.com/searchresults.html?ss=Leksand&amp;checkin=2027-06-24',
+    );
     expect(out).toContain('<a href="/se/2027/">the planner</a>');
     expect(out).not.toMatch(/href="(?:flights|stays|things):/);
   });

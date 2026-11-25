@@ -7,7 +7,11 @@ import { renderOg } from "~/lib/og";
 export const getStaticPaths = (async () =>
   (await guideEntries()).map(({ entry, summary }) => ({
     params: { locale: summary.locale.toLowerCase(), slug: summary.slug },
-    props: { title: entry.data.ogTitle, subtitle: GUIDE_COPY[summary.locale].rssTitle, tagline: GUIDE_COPY[summary.locale].ogTagline },
+    props: {
+      title: entry.data.ogTitle,
+      subtitle: GUIDE_COPY[summary.locale].rssTitle,
+      tagline: GUIDE_COPY[summary.locale].ogTagline,
+    },
   }))) satisfies GetStaticPaths;
 
 export const GET: APIRoute = async ({ props }) => {

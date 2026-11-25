@@ -22,11 +22,18 @@ export function summarize(entry: GuideEntry): GuideSummary {
 }
 
 /** Published guides, newest first, optionally for one language. */
-export async function guideEntries(locale?: GuideLocale): Promise<Array<{ entry: GuideEntry; summary: GuideSummary }>> {
-  const entries = await getCollection("guides", ({ data }) => !data.draft && (!locale || data.locale === locale));
-  const items = entries.map((entry) => ({ entry, summary: summarize(entry) }));
-  const order = sortGuides(items.map((item) => item.summary));
-  return order.map((summary) => items.find((item) => item.summary === summary)!);
+export async function guideEntries(
+  locale?: GuideLocale,
+): Promise<Array<{ entry: GuideEntry; summary: GuideSummary }>> {
+  const entries = await getCollection(
+    "guides",
+    ({ data }) => !data.draft && (!locale || data.locale === locale),
+  );
+  const items = entries.map((entry) => {
+    const summary = summarize(entry);
+    return { ...summary, item: { entry, summary } };
+  });
+  return sortGuides(items).map(({ item }) => item);
 }
 
 export async function guideSummaries(locale?: GuideLocale): Promise<GuideSummary[]> {

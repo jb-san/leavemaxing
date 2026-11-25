@@ -4,6 +4,7 @@ import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 import afterPaintDirective from "./integrations/afterpaint.mjs";
+import { guideLastmod } from "./integrations/guide-dates.mjs";
 import llms from "./integrations/llms.mjs";
 import serviceWorker from "./integrations/service-worker.mjs";
 import { inSitemap, isSeasonalYearUrl } from "./src/data/sitemap-config.ts";
@@ -20,6 +21,8 @@ export default defineConfig({
       filter: inSitemap,
       serialize(item) {
         if (isSeasonalYearUrl(item.url)) item.lastmod = BUILD_DATE;
+        const guideDate = guideLastmod(item.url);
+        if (guideDate) item.lastmod = guideDate;
         return item;
       },
     }),

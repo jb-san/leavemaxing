@@ -65,17 +65,20 @@ export const GUIDE_COPY: Record<GuideLocale, GuideCopy> = {
       destinations: {
         label: "Destinations",
         title: "Destination guides · leavemaxxing",
-        description: "Where to go on a holiday break: destinations matched to real 2026 and 2027 holiday dates.",
+        description:
+          "Where to go on a holiday break: destinations matched to real 2026 and 2027 holiday dates.",
       },
       "holiday-breaks": {
         label: "Holiday breaks",
         title: "Holiday break guides · leavemaxxing",
-        description: "How to turn Easter, Ascension, Midsummer and Christmas into longer trips with a few leave days.",
+        description:
+          "How to turn Easter, Ascension, Midsummer and Christmas into longer trips with a few leave days.",
       },
       "planning-tips": {
         label: "Planning tips",
         title: "Trip planning tips · leavemaxxing",
-        description: "Booking flights, packing light and planning short breaks so the days off go to the trip.",
+        description:
+          "Booking flights, packing light and planning short breaks so the days off go to the trip.",
       },
     },
     published: "Published",
@@ -117,12 +120,14 @@ export const GUIDE_COPY: Record<GuideLocale, GuideCopy> = {
       "holiday-breaks": {
         label: "Långledigheter",
         title: "Guider om långledigheter · leavemaxxing",
-        description: "Så gör du påsk, Kristi himmelfärd, midsommar och jul till längre ledigheter med några semesterdagar.",
+        description:
+          "Så gör du påsk, Kristi himmelfärd, midsommar och jul till längre ledigheter med några semesterdagar.",
       },
       "planning-tips": {
         label: "Planeringstips",
         title: "Tips för att planera resan · leavemaxxing",
-        description: "Flygbokning, packning och planering för korta resor, så att de lediga dagarna går till resan.",
+        description:
+          "Flygbokning, packning och planering för korta resor, så att de lediga dagarna går till resan.",
       },
     },
     published: "Publicerad",
@@ -164,12 +169,14 @@ export const GUIDE_COPY: Record<GuideLocale, GuideCopy> = {
       "holiday-breaks": {
         label: "Feiertage & Brückentage",
         title: "Ratgeber zu Feiertagen und Brückentagen · leavemaxxing",
-        description: "Wie aus Ostern, Christi Himmelfahrt, Pfingsten und Weihnachten mit wenigen Urlaubstagen eine richtige Reise wird.",
+        description:
+          "Wie aus Ostern, Christi Himmelfahrt, Pfingsten und Weihnachten mit wenigen Urlaubstagen eine richtige Reise wird.",
       },
       "planning-tips": {
         label: "Planungstipps",
         title: "Tipps zur Reiseplanung · leavemaxxing",
-        description: "Flüge buchen, leicht packen und Kurzurlaube planen, damit die freien Tage der Reise gehören.",
+        description:
+          "Flüge buchen, leicht packen und Kurzurlaube planen, damit die freien Tage der Reise gehören.",
       },
     },
     published: "Veröffentlicht",
@@ -277,10 +284,14 @@ export interface GuideSummary {
 }
 
 /** Newest first: by published date, then updated date, then title. */
-export function sortGuides<T extends Pick<GuideSummary, "published" | "updated" | "title">>(guides: T[]): T[] {
+export function sortGuides<T extends Pick<GuideSummary, "published" | "updated" | "title">>(
+  guides: T[],
+): T[] {
   return [...guides].sort(
     (a, b) =>
-      b.published.localeCompare(a.published) || b.updated.localeCompare(a.updated) || a.title.localeCompare(b.title),
+      b.published.localeCompare(a.published) ||
+      b.updated.localeCompare(a.updated) ||
+      a.title.localeCompare(b.title),
   );
 }
 
@@ -295,7 +306,8 @@ export function guideAlternates(
 ): HreflangLink[] {
   const versions = all.filter((guide) => guide.translationKey === self.translationKey);
   if (versions.length < 2) return [];
-  const url = (guide: Pick<GuideSummary, "locale" | "slug">) => `${siteUrl}${guidePath(guide.locale, guide.slug)}`;
+  const url = (guide: Pick<GuideSummary, "locale" | "slug">) =>
+    `${siteUrl}${guidePath(guide.locale, guide.slug)}`;
   const english = versions.find((guide) => guide.locale === "en");
   const links = versions
     .map((guide) => ({ lang: guide.locale, url: url(guide) }))
@@ -305,7 +317,8 @@ export function guideAlternates(
 
 /** Hubs and category pages exist in every guide language, so they always pair up. */
 export function hubAlternates(siteUrl: string, category?: GuideCategory): HreflangLink[] {
-  const path = (locale: GuideLocale) => (category ? guideCategoryPath(locale, category) : guideHubPath(locale));
+  const path = (locale: GuideLocale) =>
+    category ? guideCategoryPath(locale, category) : guideHubPath(locale);
   return [
     ...GUIDE_LOCALE_CODES.map((locale) => ({ lang: locale, url: `${siteUrl}${path(locale)}` })).sort((a, b) =>
       a.lang.localeCompare(b.lang),
@@ -347,13 +360,27 @@ export function guideJsonLd(input: {
         author: organization(siteUrl),
         publisher: organization(siteUrl),
         mainEntityOfPage: { "@type": "WebPage", "@id": url },
-        isPartOf: { "@type": "Blog", "@id": `${siteUrl}${guideHubPath(guide.locale)}#blog`, name: copy.hubH1 },
+        isPartOf: {
+          "@type": "Blog",
+          "@id": `${siteUrl}${guideHubPath(guide.locale)}#blog`,
+          name: copy.hubH1,
+        },
       },
       {
         "@type": "BreadcrumbList",
         itemListElement: [
-          { "@type": "ListItem", position: 1, name: copy.homeBreadcrumb, item: `${siteUrl}${guide.locale === "en" ? "/" : `/${guide.locale.toLowerCase()}/`}` },
-          { "@type": "ListItem", position: 2, name: copy.hubBreadcrumb, item: `${siteUrl}${guideHubPath(guide.locale)}` },
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: copy.homeBreadcrumb,
+            item: `${siteUrl}${guide.locale === "en" ? "/" : `/${guide.locale.toLowerCase()}/`}`,
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: copy.hubBreadcrumb,
+            item: `${siteUrl}${guideHubPath(guide.locale)}`,
+          },
           { "@type": "ListItem", position: 3, name: guide.title, item: url },
         ],
       },
@@ -398,7 +425,11 @@ export function hubJsonLd(input: {
       },
       {
         "@type": "BreadcrumbList",
-        itemListElement: crumbs.map((crumb, index) => ({ "@type": "ListItem", position: index + 1, ...crumb })),
+        itemListElement: crumbs.map((crumb, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          ...crumb,
+        })),
       },
     ],
   };
@@ -422,7 +453,10 @@ export function rssDate(iso: string): string {
 export function guideRss(locale: GuideLocale, guides: GuideSummary[], siteUrl: string): string {
   const copy = GUIDE_COPY[locale];
   const sorted = sortGuides(guides);
-  const latest = sorted.reduce((max, guide) => (guide.updated > max ? guide.updated : max), sorted[0]?.updated ?? "");
+  const latest = sorted.reduce(
+    (max, guide) => (guide.updated > max ? guide.updated : max),
+    sorted[0]?.updated ?? "",
+  );
   const items = sorted.map((guide) => {
     const url = `${siteUrl}${guidePath(guide.locale, guide.slug)}`;
     return [

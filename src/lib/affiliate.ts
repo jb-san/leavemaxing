@@ -287,7 +287,12 @@ export type GuideLinkSpec =
 
 export function guideLink(spec: GuideLinkSpec, options: AffiliateOptions = {}): TripLink {
   if (spec.kind === "flights") {
-    const url = kiwiUrl(spec.from.toUpperCase(), spec.to === "anywhere" ? "anywhere" : spec.to.toUpperCase(), spec.departure, spec.back);
+    const url = kiwiUrl(
+      spec.from.toUpperCase(),
+      spec.to === "anywhere" ? "anywhere" : spec.to.toUpperCase(),
+      spec.departure,
+      spec.back,
+    );
     return { kind: "flights", partner: "kiwi", href: affiliateUrl(url, "kiwi", options) };
   }
   if (spec.kind === "stays") {

@@ -42,7 +42,11 @@ function read(): File[] {
 
 const files = read();
 const english = files.filter((file) => file.folder === "en");
-const paths = new Set(files.map((file) => (file.folder === "en" ? `/guides/${file.slug}/` : `/${file.folder}/guides/${file.slug}/`)));
+const paths = new Set(
+  files.map((file) =>
+    file.folder === "en" ? `/guides/${file.slug}/` : `/${file.folder}/guides/${file.slug}/`,
+  ),
+);
 
 /** Internal routes guides may link to besides other guides. */
 const ROUTES = [
