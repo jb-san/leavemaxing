@@ -154,3 +154,11 @@ Links have `target="_blank"` and `rel="sponsored nofollow noopener"`. Clicks sen
 loaded from partner hosts until someone clicks. See [analytics.md](analytics.md).
 
 The privacy policy's "Affiliate links" section covers both these links and the Drive script.
+
+## Travel guides
+
+Partner searches inside the travel guides (`/guides/`) use the same helpers: `guideLink` in `src/lib/affiliate.ts`
+builds each link with `affiliateUrl`, so the marker, the Kiwi.com custom-link format and the `enabled` flags above
+apply unchanged (Booking.com and GetYourGuide links stay plain). Guide links always use Kiwi.com for flights. They
+carry the same `rel`, `target` and `affiliate_click` attributes as the row, and guides with partner links show the
+same disclosure line. How to write them is in [guides.md](guides.md).

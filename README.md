@@ -26,7 +26,8 @@ Live at [leavemaxxing.com](https://leavemaxxing.com). Everything runs in the bro
   can't shift weekdays). State is (leave used, current break length, break has leave); each style is a value curve for a
   break's length. Quarter pacing keeps plans spread over the year. It runs in a Web Worker in the browser.
 - **Pages** are static Astro pages with React islands: `/`, `/{cc}/`, `/{cc}/{year}/`, `/compare/`, `/best/{year}/`,
-  `/plans/`. Link preview images are rendered with satori at build time.
+  `/plans/`. Travel guides (`/guides/`, plus Swedish and German) are markdown in a content collection;
+  see [docs/guides.md](docs/guides.md). Link preview images are rendered with satori at build time.
 - **Shared plan previews**: crawlers don't run JavaScript, so `functions/_middleware.ts` (a Pages Function) rewrites
   the og: and twitter: tags of a shared link such as `/se/2027/?d=25` or `/de-de/brueckentage-2027/?d=30` to point at
   a card prepared at build time (`src/pages/og/s/`, about 750 PNGs: indexed countries this year and next, and every
