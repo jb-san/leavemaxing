@@ -108,6 +108,21 @@ describe("home and ranking hreflang", () => {
     expect(equivalentPath("/uk-ua/about/", "en")).toBe("/about/");
     expect(equivalentPath("/best/2027/", "uk-UA")).toBe("/uk-ua/best/2027/");
   });
+
+  it("switches guide hubs and categories between guide languages", () => {
+    expect(equivalentPath("/guides/", "sv-SE")).toBe("/sv-se/guides/");
+    expect(equivalentPath("/sv-se/guides/", "en")).toBe("/guides/");
+    expect(equivalentPath("/de-de/guides/category/planning-tips/", "en")).toBe(
+      "/guides/category/planning-tips/",
+    );
+    expect(equivalentPath("/guides/midsummer-2027-sweden/", "de-DE")).toBe("/de-de/guides/");
+    expect(equivalentPath("/guides/", "fr-FR")).toBe("/fr-fr/");
+  });
+
+  it("labels the guides link in every catalog", () => {
+    for (const [code, copy] of Object.entries(catalogs))
+      expect(copy.chrome.navGuides.trim(), code).not.toBe("");
+  });
 });
 
 describe("Ukrainian locale", () => {

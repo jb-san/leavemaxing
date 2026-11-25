@@ -1,0 +1,35 @@
+---
+import { fill } from "~/i18n";
+import {
+  GUIDE_COPY,
+  type GuideSummary,
+  formatGuideDate,
+  guideCategoryPath,
+  guidePath,
+  readingMinutes,
+} from "~/lib/guides";
+
+interface Props {
+  guide: GuideSummary;
+  /** Heading level of the title: h2 on the hub, h3 under a section heading. */
+  level?: 2 | 3;
+}
+
+const { guide, level = 2 } = Astro.props;
+const copy = GUIDE_COPY[guide.locale];
+const Heading = level === 2 ? "h2" : "h3";
+---
+
+<article class="card flex flex-col gap-3 p-5 sm:p-6">
+  <p class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-semibold text-muted">
+    <a href={guideCategoryPath(guide.locale, guide.category)} class="rounded-full bg-card-2 px-3 py-1 text-ink hover:text-lime-strong">
+      {copy.categories[guide.category].label}
+    </a>
+    <time datetime={guide.published}>{formatGuideDate(guide.locale, guide.published)}</time>
+    <span>{fill(copy.minRead, { n: readingMinutes(guide.words) })}</span>
+  </p>
+  <Heading class="text-xl font-bold leading-snug">
+    <a href={guidePath(guide.locale, guide.slug)} class="hover:underline hover:decoration-lime hover:decoration-[3px] hover:underline-offset-4">{guide.title}</a>
+  </Heading>
+  <p class="text-muted">{guide.description}</p>
+</article>

@@ -1,0 +1,98 @@
+---
+import GuideCard from "~/components/guides/GuideCard.astro";
+import { SITE } from "~/data/site";
+import Base from "~/layouts/Base.astro";
+import {
+  GUIDE_CATEGORIES,
+  GUIDE_COPY,
+  type GuideCategory,
+  type GuideLocale,
+  type GuideSummary,
+  guideCategoryPath,
+  guideHubPath,
+  guideRssPath,
+  hubAlternates,
+  hubJsonLd,
+} from "~/lib/guides";
+
+interface Props {
+  locale: GuideLocale;
+  guides: GuideSummary[];
+  /** Category page; omit for the hub. */
+  category?: GuideCategory;
+}
+
+const { locale, guides, category } = Astro.props;
+const copy = GUIDE_COPY[locale];
+const hub = guideHubPath(locale);
+const path = category ? guideCategoryPath(locale, category) : hub;
+const shown = category ? guides.filter((guide) => guide.category === category) : guides;
+const title = category ? copy.categories[category].title : copy.hubTitle;
+const description = category ? copy.categories[category].description : copy.hubDescription;
+const home = locale === "en" ? "/" : `/${locale.toLowerCase()}/`;
+const used = GUIDE_CATEGORIES.filter((item) => guides.some((guide) => guide.category === item));
+const feed = { href: guideRssPath(locale), title: copy.rssTitle };
+---
+
+<Base
+  title={title}
+  description={description}
+  locale={locale === "en" ? undefined : locale}
+  lang={copy.lang}
+  canonical={`${SITE.url}${path}`}
+  hreflangs={hubAlternates(SITE.url, category)}
+  jsonLd={hubJsonLd({ locale, siteUrl: SITE.url, guides: shown, category })}
+  feed={feed}
+>
+  <div class="flex flex-col gap-2 pb-5 pt-2">
+    <nav aria-label="Breadcrumb" class="text-sm font-semibold text-muted">
+      <a href={home} class="hover:text-ink">{copy.homeBreadcrumb}</a>{" / "}
+      {
+        category ? (
+          <>
+            <a href={hub} class="hover:text-ink">{copy.hubBreadcrumb}</a>{" / "}
+            <span aria-current="page">{copy.categories[category].label}</span>
+          </>
+        ) : (
+          <span aria-current="page">{copy.hubBreadcrumb}</span>
+        )
+      }
+    </nav>
+    <h1 class="text-[clamp(28px,4vw,44px)] font-extrabold leading-tight">
+      {category ? copy.categories[category].label : copy.hubH1}
+    </h1>
+    <p class="max-w-[68ch] text-lg text-muted">{category ? copy.categories[category].description : copy.hubIntro}</p>
+  </div>
+
+  <nav aria-label={copy.hubBreadcrumb} class="mb-6 flex flex-wrap gap-2 text-sm font-bold" data-guide-categories>
+    <a
+      href={hub}
+      aria-current={category ? undefined : "page"}
+      class:list={["rounded-full border px-4 py-2", category ? "border-line bg-card hover:border-lime-strong" : "border-ink bg-ink text-card"]}
+    >
+      {copy.allCategories}
+    </a>
+    {
+      used.map((item) => (
+        <a
+          href={guideCategoryPath(locale, item)}
+          aria-current={item === category ? "page" : undefined}
+          class:list={[
+            "rounded-full border px-4 py-2",
+            item === category ? "border-ink bg-ink text-card" : "border-line bg-card hover:border-lime-strong",
+          ]}
+        >
+          {copy.categories[item].label}
+        </a>
+      ))
+    }
+  </nav>
+
+  <div class="grid grid-cols-1 gap-5 md:grid-cols-2" data-guide-list>
+    {shown.map((guide) => <GuideCard guide={guide} />)}
+  </div>
+
+  <p class="mt-8 text-sm text-muted">
+    <a href={feed.href} class="font-semibold underline decoration-lime decoration-[3px] underline-offset-4 hover:text-ink">{copy.rss}</a>
+  </p>
+</Base>

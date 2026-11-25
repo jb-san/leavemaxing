@@ -9,7 +9,7 @@ names, exact dates, plan titles, or other personal data. Country and region valu
 (`DE`, `BY`), not names.
 
 `page` is one of `home`, `planner`, `compare`, `ranking`, `together`, `plans`, `about`, `contact`,
-`privacy`, `other`. `locale` is `en` or a full code such as `de-DE`. `days` is the leave-day budget.
+`privacy`, `guides` (travel guides), `other`. `locale` is `en` or a full code such as `de-DE`. `days` is the leave-day budget.
 
 | Event | When | Properties |
 | --- | --- | --- |
@@ -28,7 +28,7 @@ names, exact dates, plan titles, or other personal data. Country and region valu
 | `plan_save` | Save a plan in this browser. The name is not sent | `country`, `year`, `locale`, `days`, `page` |
 | `language_change` | Language switcher | `locale` (page language), `page`, `to` (chosen language) |
 | `outbound_click` | A link to another site. Host only, not the full URL | `host`, `page`, `locale` |
-| `affiliate_click` | A Flights, Stays, Things to do, Car rental or compact "Plan this break" link (`kind` is where it goes) under a suggested break (see [affiliate.md](affiliate.md)). Sent instead of `outbound_click`, never both. `days` here is the break's length, not the leave budget | `partner` (`kiwi`, `aviasales`, `booking`, `getyourguide`, `economybookings`), `kind` (`flights`, `stays`, `things`, `cars`), `country`, `days`, `page`, `locale` |
+| `affiliate_click` | A Flights, Stays, Things to do, Car rental or compact "Plan this break" link (`kind` is where it goes) under a suggested break, or a partner search inside a travel guide (`page: "guides"`; see [affiliate.md](affiliate.md) and [guides.md](guides.md)). Sent instead of `outbound_click`, never both. `days` here is the break's length, not the leave budget | `partner` (`kiwi`, `aviasales`, `booking`, `getyourguide`, `economybookings`), `kind` (`flights`, `stays`, `things`, `cars`), `country`, `days`, `page`, `locale` |
 | `together_create` | A Together group is created | none |
 | `together_join` | Someone joins a Together group | none |
 

@@ -10,6 +10,7 @@ export const itIT: Copy = {
     navBest: "Paesi migliori",
     navTogether: "Insieme",
     navPlans: "I miei piani",
+    navGuides: "Guide",
     navMenu: "Menu",
     navMain: "Navigazione",
     footerCare: "Pianifica con cautela: controlla sempre le date con il datore di lavoro.",

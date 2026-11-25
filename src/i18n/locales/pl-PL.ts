@@ -10,6 +10,7 @@ export const plPL: Copy = {
     navBest: "Najlepsze kraje",
     navTogether: "Razem",
     navPlans: "Moje plany",
+    navGuides: "Poradniki",
     navMenu: "Menu",
     navMain: "Nawigacja",
     footerCare: "Planuj ostrożnie: daty zawsze potwierdź u pracodawcy.",

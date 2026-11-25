@@ -1,4 +1,5 @@
 import { locales } from "~/data/locales";
+import { GUIDE_CATEGORIES, GUIDE_LOCALE_CODES, guideCategoryPath, guideHubPath } from "~/lib/guides";
 import {
   englishBestYears,
   localeAboutPath,
@@ -53,6 +54,16 @@ export function equivalentPath(pathname: string, target: string): string {
   const rest = current === "en" ? path.slice(1) : path.slice(current.length + 2);
 
   if (rest === "") return localeHomePath(target);
+
+  const guides = rest.match(/^guides\/(?:category\/([a-z-]+)\/)?/);
+  if (guides) {
+    // Guide pages exist in GUIDE_LOCALE_CODES. A translated guide's own slug comes from the page
+    // (Base's `switcher` prop); here a guide goes to the hub, a category page to the same category.
+    const locale = GUIDE_LOCALE_CODES.find((code) => code === target);
+    if (!locale) return localeHomePath(target);
+    const category = GUIDE_CATEGORIES.find((item) => item === guides[1]);
+    return category ? guideCategoryPath(locale, category) : guideHubPath(locale);
+  }
 
   if (rest === "about/") return localeAboutPath(target);
   if (rest === "contact/") return localeContactPath(target);

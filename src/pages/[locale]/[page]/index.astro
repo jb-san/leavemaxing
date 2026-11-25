@@ -1,4 +1,5 @@
 ---
+import PlannerGuides from "~/components/guides/PlannerGuides.astro";
 import BridgeTable from "~/components/BridgeTable.astro";
 import HolidayList from "~/components/HolidayList.astro";
 import NlSchoolRegions from "~/components/NlSchoolRegions.astro";
@@ -358,4 +359,5 @@ const jsonLd = pageJsonLd({
       </section>
     </aside>
   </div>
+  <PlannerGuides locale={locale.code} country={locale.country} year={year} />
 </Base>

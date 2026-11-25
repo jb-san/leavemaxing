@@ -10,6 +10,7 @@ export const fiFI: Copy = {
     navBest: "Parhaat maat",
     navTogether: "Yhdessä",
     navPlans: "Omat suunnitelmat",
+    navGuides: "Oppaat",
     navMenu: "Valikko",
     navMain: "Päävalikko",
     footerCare: "Suunnittele varauksella: tarkista päivät aina työnantajalta.",

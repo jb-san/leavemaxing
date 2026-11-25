@@ -7,10 +7,13 @@ import { getCopy } from "~/i18n";
 import { localizedBestYears, localeBestPath, localeHomePath } from "~/i18n/routes";
 import { switcherLinks } from "~/i18n/switcher";
 import type { Copy } from "~/i18n/types";
+import { guideHubPath, guideLocaleFor } from "~/lib/guides";
 
 interface Props {
   locale?: string;
   copy?: Copy;
+  /** Switcher targets that differ from the equivalent page (a translated guide's own slug). */
+  switcher?: Record<string, string> | undefined;
 }
 
 const locale = Astro.props.locale && Astro.props.locale !== "en" ? Astro.props.locale : "en";
@@ -30,20 +33,25 @@ const links = [
   { href: bestHref, label: c.navBest, id: "best" },
   { href: "/together/", label: c.navTogether, id: "together" },
   { href: "/plans/", label: c.navPlans, id: "plans" },
+  { href: guideHubPath(guideLocaleFor(locale)), label: c.navGuides, id: "guides" },
 ];
 const path = Astro.url.pathname;
 const isActive = (id: string) => {
   if (id === "planner") {
     if (path === home) return true;
     if (locale === "en") return /^\/[a-z]{2}\//.test(path);
-    return path.startsWith(`/${locale.toLowerCase()}/`) && !/\/(best|about|contact)\//.test(path);
+    return path.startsWith(`/${locale.toLowerCase()}/`) && !/\/(best|about|contact|guides)\//.test(path);
   }
+  if (id === "guides") return /^\/(?:[a-z]{2}-[a-z]{2}\/)?guides\//.test(path);
   if (id === "compare") return path.startsWith("/compare");
   if (id === "best") return path.includes("/best/");
   if (id === "together") return path.startsWith("/together");
   return path.startsWith("/plans");
 };
-const languages = switcherLinks(path);
+const overrides = Astro.props.switcher ?? {};
+const languages = switcherLinks(path).map((link) =>
+  overrides[link.code] ? { ...link, href: overrides[link.code] as string } : link,
+);
 const themeLabels = {
   group: c.themeLabel,
   light: c.themeLight,
@@ -65,7 +73,7 @@ const themeLabels = {
           href={l.href}
           aria-current={isActive(l.id) ? "page" : undefined}
           class:list={[
-            "whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition-colors",
+            "whitespace-nowrap rounded-full px-3 py-2 text-sm xl:px-4 font-semibold transition-colors",
             isActive(l.id) ? "bg-ink text-card" : "text-muted hover:text-ink",
           ]}
         >

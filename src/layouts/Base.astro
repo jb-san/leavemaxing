@@ -26,6 +26,12 @@ interface Props {
   hreflangs?: Array<{ lang: string; url: string }>;
   /** Site path of this page's machine-readable data, e.g. /data/best/de/2027.json */
   dataJson?: string;
+  /** RSS feed to advertise, e.g. the travel guides feed. */
+  feed?: { href: string; title: string };
+  /** Article dates for og:type=article (travel guides), as YYYY-MM-DD. */
+  article?: { published: string; modified: string; section?: string };
+  /** Language switcher targets that differ from the usual equivalent page, by locale code. */
+  switcher?: Record<string, string>;
 }
 
 const { 
@@ -40,6 +46,9 @@ const {
   canonical: canonicalProp,
   hreflangs = [],
   dataJson,
+  feed,
+  article,
+  switcher,
 } = Astro.props;
 const localeCode = locale ? normalizeLocale(locale) : "en";
 const copy = getCopy(localeCode);
@@ -96,13 +105,17 @@ const ogImage = new URL(image, SITE.url).href;
       <link rel="alternate" hreflang={hreflang} href={url} />
     ))}
     {dataJson && <link rel="alternate" type="application/json" href={dataJson} />}
+    {feed && <link rel="alternate" type="application/rss+xml" title={feed.title} href={feed.href} />}
     {noindex && <meta name="robots" content="noindex" />}
     <meta name="theme-color" content="#eef3ea" />
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={article ? "article" : "website"} />
+    {article && <meta property="article:published_time" content={article.published} />}
+    {article && <meta property="article:modified_time" content={article.modified} />}
+    {article?.section && <meta property="article:section" content={article.section} />}
     <meta property="og:site_name" content={SITE.name} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
@@ -135,7 +148,7 @@ const ogImage = new URL(image, SITE.url).href;
       class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-ink focus:px-4 focus:py-2 focus:text-card"
       >{copy.chrome.skip}</a
     >
-    <Header locale={localeCode} copy={copy} />
+    <Header locale={localeCode} copy={copy} switcher={switcher} />
     <main id="main" class:list={["mx-auto w-full flex-1 px-[max(16px,env(safe-area-inset-left))] pb-16", wide ? "max-w-[1280px]" : "max-w-[1100px]"]}>
       <slot />
     </main>

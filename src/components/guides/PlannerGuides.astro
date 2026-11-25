@@ -1,0 +1,50 @@
+---
+/**
+ * Travel guides for a planner page: the guides in this language about this country (and year).
+ * Static links only, rendered at build time.
+ */
+import { guideSummaries } from "~/lib/guideEntries";
+import { GUIDE_COPY, guideHubPath, guideLocaleFor, guidePath, guidesForPlanner } from "~/lib/guides";
+
+interface Props {
+  /** Page UI locale, e.g. en or sv-SE. */
+  locale: string;
+  country: string;
+  year?: number;
+  /** How many to show at most. */
+  limit?: number;
+}
+
+const { locale: uiLocale, country, year, limit = 4 } = Astro.props;
+const locale = guideLocaleFor(uiLocale);
+// Austrian and Swiss German pages would get Germany's guides; only show them for Germany itself.
+const own = uiLocale === "en" || uiLocale.toLowerCase() === locale.toLowerCase();
+const guides = own ? guidesForPlanner(await guideSummaries(locale), locale, country, year).slice(0, limit) : [];
+const copy = GUIDE_COPY[locale];
+---
+
+{
+  guides.length > 0 && (
+    <section class="card mt-5 p-5 sm:p-6" data-planner-guides>
+      <h2 class="text-xl font-bold">{copy.plannerHeading}</h2>
+      <p class="mt-1 text-sm text-muted">{copy.plannerIntro}</p>
+      <ul class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {guides.map((guide) => (
+          <li>
+            <a
+              href={guidePath(guide.locale, guide.slug)}
+              class="block rounded-2xl border border-line bg-card-2 p-4 font-bold leading-snug hover:border-lime-strong"
+            >
+              {guide.title}
+            </a>
+          </li>
+        ))}
+      </ul>
+      <p class="mt-4 text-sm font-semibold">
+        <a href={guideHubPath(locale)} class="underline decoration-lime decoration-[3px] underline-offset-4">
+          {copy.moreGuides}
+        </a>
+      </p>
+    </section>
+  )
+}

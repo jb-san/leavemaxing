@@ -1,0 +1,21 @@
+---
+import GuideList from "~/components/guides/GuideList.astro";
+import { guideSummaries } from "~/lib/guideEntries";
+import { GUIDE_CATEGORIES, GUIDE_LOCALE_CODES, type GuideCategory, type GuideLocale, type GuideSummary } from "~/lib/guides";
+
+export async function getStaticPaths() {
+  const paths = [];
+  for (const locale of GUIDE_LOCALE_CODES.filter((code) => code !== "en")) {
+    const guides = await guideSummaries(locale);
+    for (const category of GUIDE_CATEGORIES.filter((item) => guides.some((guide) => guide.category === item))) {
+      paths.push({ params: { locale: locale.toLowerCase(), category }, props: { locale, guides } });
+    }
+  }
+  return paths;
+}
+
+const category = Astro.params.category as GuideCategory;
+const { locale, guides } = Astro.props as { locale: GuideLocale; guides: GuideSummary[] };
+---
+
+<GuideList locale={locale} guides={guides} category={category} />

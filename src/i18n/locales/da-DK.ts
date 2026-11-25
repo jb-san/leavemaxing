@@ -10,6 +10,7 @@ export const daDK: Copy = {
     navBest: "Bedste lande",
     navTogether: "Sammen",
     navPlans: "Mine planer",
+    navGuides: "Guider",
     navMenu: "Menu",
     navMain: "Hovedmenu",
     footerCare: "Planlæg med forbehold: tjek altid datoerne med arbejdsgiveren.",

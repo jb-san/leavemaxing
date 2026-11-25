@@ -273,3 +273,38 @@ export function tripLinks(
   if (dest) add("cars", "economybookings", economyBookingsUrl(dest.city));
   return links;
 }
+
+/**
+ * One partner search for an article (the travel guides), with the same partners, `enabled` flags and
+ * tracking formats as the "Plan this break" row. Flights always use Kiwi.com, because a guide link
+ * usually searches from a city to `anywhere` (or a named airport) on fixed dates, which is what
+ * Kiwi.com's deep link does. Dates are `YYYY-MM-DD`.
+ */
+export type GuideLinkSpec =
+  | { kind: "flights"; from: string; to: string; departure: string; back: string }
+  | { kind: "stays"; city: string; checkin: string; checkout: string }
+  | { kind: "things"; query: string; from: string; to: string };
+
+export function guideLink(spec: GuideLinkSpec, options: AffiliateOptions = {}): TripLink {
+  if (spec.kind === "flights") {
+    const url = kiwiUrl(
+      spec.from.toUpperCase(),
+      spec.to === "anywhere" ? "anywhere" : spec.to.toUpperCase(),
+      spec.departure,
+      spec.back,
+    );
+    return { kind: "flights", partner: "kiwi", href: affiliateUrl(url, "kiwi", options) };
+  }
+  if (spec.kind === "stays") {
+    return {
+      kind: "stays",
+      partner: "booking",
+      href: affiliateUrl(bookingUrl(spec.city, spec.checkin, spec.checkout), "booking", options),
+    };
+  }
+  return {
+    kind: "things",
+    partner: "getyourguide",
+    href: affiliateUrl(getYourGuideUrl(spec.query, spec.from, spec.to), "getyourguide", options),
+  };
+}

@@ -10,6 +10,7 @@ export const ptPT: Copy = {
     navBest: "Melhores países",
     navTogether: "Juntos",
     navPlans: "Os meus planos",
+    navGuides: "Guias",
     navMenu: "Menu",
     navMain: "Navegação",
     footerCare: "Planeia com cuidado: confirma sempre as datas com a entidade patronal.",

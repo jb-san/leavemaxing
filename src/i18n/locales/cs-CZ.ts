@@ -10,6 +10,7 @@ export const csCZ: Copy = {
     navBest: "Nejlepší země",
     navTogether: "Společně",
     navPlans: "Moje plány",
+    navGuides: "Průvodce",
     navMenu: "Menu",
     navMain: "Navigace",
     footerCare: "Plánuj s rezervou: termíny si vždy ověř u zaměstnavatele.",

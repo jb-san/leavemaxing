@@ -3,6 +3,7 @@ import { SITE } from "~/data/site";
 import { getCopy } from "~/i18n";
 import { localeAboutPath, localeContactPath } from "~/i18n/routes";
 import type { Copy } from "~/i18n/types";
+import { guideHubPath, guideLocaleFor } from "~/lib/guides";
 
 interface Props {
   locale?: string;
@@ -28,6 +29,7 @@ const year = new Date().getFullYear();
       </p>
     </div>
     <nav aria-label={c.footerNav} class="flex flex-wrap items-center gap-x-5 gap-y-2 font-semibold">
+      <a href={guideHubPath(guideLocaleFor(locale))} class="hover:text-ink">{c.navGuides}</a>
       <a href={localeAboutPath(locale)} class="hover:text-ink">{c.footerAbout}</a>
       <a href={localeContactPath(locale)} class="hover:text-ink">{c.footerContact}</a>
       <a href="/privacy-policy/" class="hover:text-ink">{c.footerPrivacy}</a>

@@ -18,6 +18,8 @@ const COUNTRY = /^\/([a-z]{2})\/$/;
 const COUNTRY_YEAR = /^\/([a-z]{2})\/(\d{4})\/$/;
 const BEST = /^\/(?:[a-z]{2}-[a-z]{2}\/)?best\/(\d{4})\/$/;
 const ABOUT = /^\/(?:[a-z]{2}-[a-z]{2}\/)?about\/$/;
+const GUIDE = /^\/(?:[a-z]{2}-[a-z]{2}\/)?guides\/(?!category\/)[a-z0-9-]+\/$/;
+const GUIDE_HUB = /^\/(?:[a-z]{2}-[a-z]{2}\/)?guides\/$/;
 
 const decode = (text) =>
   text
@@ -52,6 +54,8 @@ function llmsTxt(pages, years) {
   const countryYears = by(COUNTRY_YEAR);
   const best = by(BEST);
   const about = by(ABOUT);
+  const guideHubs = by(GUIDE_HUB);
+  const guides = by(GUIDE);
   const home = pages.find((p) => p.path === "/");
   const dataYear = years.includes(2027) ? 2027 : years[0];
   const lines = [
@@ -94,6 +98,18 @@ function llmsTxt(pages, years) {
     "",
     ...best.map((p) => link(p)),
     "",
+    ...(guides.length > 0
+      ? [
+          "## Travel guides",
+          "",
+          "Dated articles on where to go on the holiday breaks the planner finds, with the leave days each one takes. RSS: " +
+            `${SITE}/guides/rss.xml.`,
+          "",
+          ...guideHubs.map((p) => link(p)),
+          ...guides.map((p) => link(p, true)),
+          "",
+        ]
+      : []),
     "## About",
     "",
     ...about.map((p) => link(p)),

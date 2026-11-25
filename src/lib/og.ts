@@ -183,6 +183,8 @@ export interface OgInput {
   subtitle: string;
   plan?: Plan;
   range?: { start: DayNum; end: DayNum };
+  /** Lime line under the title when there is no plan. */
+  tagline?: string;
 }
 
 const mascotUri = (mood: ReturnType<typeof moodFor>) =>
@@ -224,7 +226,7 @@ async function draw(tree: Node): Promise<Buffer> {
 const big = { fontFamily: "Display", fontSize: 60, lineHeight: 1.05 };
 
 /** Render a 1200×630 PNG link preview. */
-export async function renderOg({ title, subtitle, plan, range }: OgInput): Promise<Buffer> {
+export async function renderOg({ title, subtitle, plan, range, tagline }: OgInput): Promise<Buffer> {
   const mood = plan ? moodFor(plan.stats.multiplier, plan.stats.leaveUsed) : "happy";
   return draw(
     card(
@@ -242,7 +244,7 @@ export async function renderOg({ title, subtitle, plan, range }: OgInput): Promi
             { ...big, color: C.lime, marginTop: 6 },
             plan
               ? `${englishCount(plan.stats.leaveUsed, "leave day", "leave days")}, ${englishCount(plan.stats.daysOff, "day off", "days off")}`
-              : "Get the most from your leave.",
+              : (tagline ?? "Get the most from your leave."),
           ),
         ),
         plan ? badge(plan.stats.multiplier) : h("div", {}),

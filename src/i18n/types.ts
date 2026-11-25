@@ -17,6 +17,8 @@ export interface Copy {
     navBest: string;
     navTogether: string;
     navPlans: string;
+    /** Travel guides hub (src/lib/guides.ts). */
+    navGuides: string;
     navMenu: string;
     navMain: string;
     footerCare: string;
